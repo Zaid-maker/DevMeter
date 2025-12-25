@@ -61,22 +61,37 @@ export async function GET(req: NextRequest) {
             .sort((a, b) => b.value - a.value)
             .slice(0, 5);
 
-        // 3. Top Project
+        // 3. Top Projects List
         const projectMap = new Map<string, number>();
         heartbeats.forEach(h => {
             projectMap.set(h.project, (projectMap.get(h.project) || 0) + 1);
         });
 
-        const topProject = Array.from(projectMap.entries())
-            .sort((a, b) => b[1] - a[1])[0]?.[0] || "None";
+        const projects = Array.from(projectMap.entries())
+            .map(([name, count]) => ({
+                name,
+                value: Math.round((count / totalHeartbeats) * 100),
+                hours: parseFloat(((count * 2) / 60).toFixed(1))
+            }))
+            .sort((a, b) => b.value - a.value)
+            .slice(0, 5);
+
+        const topProject = projects[0]?.name || "None";
 
         const totalMinutes = totalHeartbeats * 2;
         const totalHours = Math.floor(totalMinutes / 60);
         const remainingMinutes = totalMinutes % 60;
 
+        // 4. Recent Activity
+        const recentActivity = heartbeats
+            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+            .slice(0, 10);
+
         return NextResponse.json({
             activityByDay,
             languages,
+            projects,
+            recentActivity,
             summary: {
                 totalTime: `${totalHours}h ${remainingMinutes}m`,
                 dailyAverage: `${((totalMinutes / 7) / 60).toFixed(1)}h`,
