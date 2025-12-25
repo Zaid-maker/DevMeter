@@ -1,0 +1,55 @@
+{
+  "name": "devmeter",
+  "displayName": "DevMeter",
+  "description": "Automatic coding time tracker clone of WakaTime.",
+  "version": "0.0.1",
+  "publisher": "devmeter",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "devmeter.apiKey",
+        "title": "DevMeter: Enter API Key"
+      }
+    ],
+    "configuration": {
+      "title": "DevMeter",
+      "properties": {
+        "devmeter.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Your DevMeter API Key"
+        },
+        "devmeter.apiUrl": {
+          "type": "string",
+          "default": "http://localhost:3000/api",
+          "description": "DevMeter API URL"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "bun run build",
+    "build": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node",
+    "watch": "esbuild ./src/extension.ts --bundle --outfile=out/extension.js --external:vscode --format=cjs --platform=node --watch",
+    "compile": "tsc -p ./",
+    "lint": "eslint src --ext ts"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.75.0",
+    "esbuild": "^0.27.2",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "axios": "^1.7.9"
+  }
+}
