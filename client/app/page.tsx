@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { Skeleton } from "@/components/ui/skeleton";
 
+import useSWR from "swr";
+
 interface Stats {
   activityByDay: { name: string; total: number }[];
   languages: { name: string; value: number; color: string }[];
@@ -21,35 +23,14 @@ interface Stats {
   };
 }
 
-interface ApiKey {
-  id: string;
-  key: string;
-  name: string;
-  createdAt: string;
-}
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
 export default function DashboardPage() {
   const { data: session, isPending: isAuthPending } = authClient.useSession();
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (session) {
-      fetchData();
-    }
-  }, [session]);
-
-  async function fetchData() {
-    setLoading(true);
-    try {
-      const res = await fetch("/api/stats");
-      if (res.ok) setStats(await res.json());
-    } catch (error) {
-      console.error("Failed to fetch data:", error);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const { data: stats, isLoading } = useSWR<Stats>(
+    session ? "/api/stats" : null,
+    fetcher
+  );
 
   if (isAuthPending) {
     return (
@@ -91,10 +72,10 @@ export default function DashboardPage() {
 
         <TabsContent value="overview" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <StatCard title="Total Coding Time" value={stats?.summary.totalTime} subtitle="+12% from last week" icon={Clock} loading={loading} />
-            <StatCard title="Daily Average" value={stats?.summary.dailyAverage} subtitle="+5% from last month" icon={Activity} loading={loading} />
-            <StatCard title="Top Project" value={stats?.summary.topProject} subtitle="39% of total time" icon={Layout} loading={loading} />
-            <StatCard title="Top Language" value={stats?.summary.topLanguage} subtitle="Primary language" icon={Code} loading={loading} />
+            <StatCard title="Total Coding Time" value={stats?.summary.totalTime} subtitle="+12% from last week" icon={Clock} loading={isLoading} />
+            <StatCard title="Daily Average" value={stats?.summary.dailyAverage} subtitle="+5% from last month" icon={Activity} loading={isLoading} />
+            <StatCard title="Top Project" value={stats?.summary.topProject} subtitle="39% of total time" icon={Layout} loading={isLoading} />
+            <StatCard title="Top Language" value={stats?.summary.topLanguage} subtitle="Primary language" icon={Code} loading={isLoading} />
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
@@ -103,7 +84,7 @@ export default function DashboardPage() {
                 <CardTitle>Activity (Last 7 Days)</CardTitle>
               </CardHeader>
               <CardContent className="pl-2">
-                {loading ? (
+                {isLoading ? (
                   <Skeleton className="h-[350px] w-full" />
                 ) : (
                   <ResponsiveContainer width="100%" height={350}>
@@ -124,7 +105,7 @@ export default function DashboardPage() {
                 <CardDescription>Breakdown by usage</CardDescription>
               </CardHeader>
               <CardContent>
-                {loading ? (
+                {isLoading ? (
                   <div className="space-y-4">
                     {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-8 w-full" />)}
                   </div>

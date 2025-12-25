@@ -25,6 +25,7 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
+import useSWR, { mutate } from "swr";
 
 interface ApiKey {
     id: string;
@@ -33,28 +34,16 @@ interface ApiKey {
     createdAt: string;
 }
 
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
 export default function SettingsPage() {
     const { data: session } = authClient.useSession();
-    const [keys, setKeys] = useState<ApiKey[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { data: keys, isLoading, error } = useSWR<ApiKey[]>(
+        session ? "/api/keys" : null,
+        fetcher
+    );
     const [generating, setGenerating] = useState(false);
     const [showKeyId, setShowKeyId] = useState<string | null>(null);
-
-    useEffect(() => {
-        if (session) {
-            fetchKeys();
-        }
-    }, [session]);
-
-    async function fetchKeys() {
-        setLoading(true);
-        try {
-            const res = await fetch("/api/keys");
-            if (res.ok) setKeys(await res.json());
-        } finally {
-            setLoading(false);
-        }
-    }
 
     async function generateKey() {
         setGenerating(true);
@@ -64,8 +53,7 @@ export default function SettingsPage() {
                 body: JSON.stringify({ name: `Key ${new Date().toLocaleDateString()}` }),
             });
             if (res.ok) {
-                const newKey = await res.json();
-                setKeys([newKey, ...keys]);
+                mutate("/api/keys");
             }
         } finally {
             setGenerating(false);
@@ -77,7 +65,7 @@ export default function SettingsPage() {
         try {
             const res = await fetch(`/api/keys?id=${id}`, { method: "DELETE" });
             if (res.ok) {
-                setKeys(keys.filter(k => k.id !== id));
+                mutate("/api/keys");
             }
         } catch (error) {
             console.error("Failed to revoke key:", error);
@@ -178,11 +166,11 @@ export default function SettingsPage() {
                             </Button>
                         </CardHeader>
                         <CardContent className="space-y-4">
-                            {loading ? (
+                            {isLoading ? (
                                 <div className="space-y-3">
                                     {[1, 2].map(i => <div key={i} className="h-20 bg-muted animate-pulse rounded-lg" />)}
                                 </div>
-                            ) : keys.length === 0 ? (
+                            ) : !keys || keys.length === 0 ? (
                                 <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-xl">
                                     <div className="h-12 w-12 rounded-full bg-primary/5 flex items-center justify-center mx-auto mb-4">
                                         <Key className="h-6 w-6 opacity-50" />
@@ -193,7 +181,7 @@ export default function SettingsPage() {
                                 </div>
                             ) : (
                                 <div className="grid gap-4">
-                                    {keys.map(apiKey => (
+                                    {keys?.map(apiKey => (
                                         <div key={apiKey.id} className="group relative flex flex-col space-y-2 p-4 border rounded-xl bg-card hover:border-primary/50 transition-colors">
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center space-x-2">
