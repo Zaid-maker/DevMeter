@@ -31,9 +31,7 @@ interface ApiKey {
 export default function DashboardPage() {
   const { data: session, isPending: isAuthPending } = authClient.useSession();
   const [stats, setStats] = useState<Stats | null>(null);
-  const [keys, setKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
-  const [generating, setGenerating] = useState(false);
 
   useEffect(() => {
     if (session) {
@@ -44,41 +42,14 @@ export default function DashboardPage() {
   async function fetchData() {
     setLoading(true);
     try {
-      const [statsRes, keysRes] = await Promise.all([
-        fetch("/api/stats"),
-        fetch("/api/keys")
-      ]);
-
-      if (statsRes.ok) setStats(await statsRes.json());
-      if (keysRes.ok) setKeys(await keysRes.json());
+      const res = await fetch("/api/stats");
+      if (res.ok) setStats(await res.json());
     } catch (error) {
       console.error("Failed to fetch data:", error);
     } finally {
       setLoading(false);
     }
   }
-
-  async function generateKey() {
-    setGenerating(true);
-    try {
-      const res = await fetch("/api/keys", {
-        method: "POST",
-        body: JSON.stringify({ name: `Key ${keys.length + 1}` }),
-      });
-      if (res.ok) {
-        const newKey = await res.json();
-        setKeys([newKey, ...keys]);
-      }
-    } finally {
-      setGenerating(false);
-    }
-  }
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    // Simple alert for feedback
-    alert("API Key copied to clipboard!");
-  };
 
   if (isAuthPending) {
     return (
@@ -116,7 +87,6 @@ export default function DashboardPage() {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="projects">Projects</TabsTrigger>
           <TabsTrigger value="languages">Languages</TabsTrigger>
-          <TabsTrigger value="settings">Settings</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -184,42 +154,6 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
-
-        <TabsContent value="settings" className="space-y-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>API Keys</CardTitle>
-                <CardDescription>Manage keys to connect your IDE extensions.</CardDescription>
-              </div>
-              <Button onClick={generateKey} disabled={generating} size="sm">
-                {generating ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
-                New Key
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {keys.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  No API keys found. Create one to start tracking.
-                </div>
-              ) : (
-                keys.map(apiKey => (
-                  <div key={apiKey.id} className="flex items-center justify-between p-4 border rounded-lg bg-muted/50">
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">{apiKey.name}</p>
-                      <p className="text-xs font-mono text-muted-foreground">
-                        {apiKey.key.substring(0, 8)}...{apiKey.key.substring(apiKey.key.length - 4)}
-                      </p>
-                    </div>
-                    <Button variant="ghost" size="icon" onClick={() => copyToClipboard(apiKey.key)}>
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))
-              )}
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
     </div>
