@@ -15,7 +15,15 @@ export async function GET(req: NextRequest) {
 
     const userId = session.user.id;
     const now = new Date();
-    const last7Days = subDays(now, 7);
+
+    // Check for range query parameter
+    const searchParams = req.nextUrl.searchParams;
+    const range = searchParams.get("range"); // e.g., "today"
+
+    let startDate = subDays(now, 7);
+    if (range === "today") {
+        startDate = startOfDay(now);
+    }
 
     try {
         // Fetch heartbeats for the last 7 days
@@ -23,7 +31,7 @@ export async function GET(req: NextRequest) {
             where: {
                 userId,
                 timestamp: {
-                    gte: last7Days,
+                    gte: startDate,
                 },
             },
         });

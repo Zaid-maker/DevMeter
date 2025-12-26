@@ -1,11 +1,19 @@
 import * as vscode from 'vscode';
 import axios from 'axios';
 
-let lastHeartbeat: number = 0;
-const HEARTBEAT_INTERVAL = 120000; // 2 minutes
+let statusBarItem: vscode.StatusBarItem;
+let refreshInterval: NodeJS.Timeout | undefined;
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('DevMeter is now active!');
+
+    // Status Bar Item
+    statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+    statusBarItem.command = 'devmeter.apiKey';
+    statusBarItem.tooltip = 'DevMeter: Click to configure';
+    statusBarItem.text = '$(clock) DevMeter: ...';
+    statusBarItem.show();
+    context.subscriptions.push(statusBarItem);
 
     // Command to set API Key
     let disposable = vscode.commands.registerCommand('devmeter.apiKey', async () => {
@@ -18,6 +26,7 @@ export function activate(context: vscode.ExtensionContext) {
         if (apiKey) {
             await vscode.workspace.getConfiguration('devmeter').update('apiKey', apiKey, vscode.ConfigurationTarget.Global);
             vscode.window.showInformationMessage('DevMeter API Key saved successfully!');
+            updateStatusBar();
         }
     });
 
@@ -34,6 +43,36 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Initial check for API Key
     checkApiKey();
+    updateStatusBar();
+
+    // Refresh status bar every 5 minutes
+    refreshInterval = setInterval(() => {
+        updateStatusBar();
+    }, 5 * 60 * 1000);
+}
+
+async function updateStatusBar() {
+    const config = vscode.workspace.getConfiguration('devmeter');
+    const apiKey = config.get<string>('apiKey');
+    const apiUrl = config.get<string>('apiUrl');
+
+    if (!apiKey || !apiUrl) {
+        statusBarItem.text = '$(warning) DevMeter: Missing Config';
+        return;
+    }
+
+    try {
+        const response = await axios.get(`${apiUrl}/stats?range=today`, {
+            headers: {
+                'Authorization': `Bearer ${apiKey}`
+            }
+        });
+
+        const { totalTime } = response.data.summary;
+        statusBarItem.text = `$(clock) DevMeter: ${totalTime}`;
+    } catch (error) {
+        console.error('[DevMeter] Error fetching stats:', error);
+    }
 }
 
 async function checkApiKey() {
@@ -52,6 +91,8 @@ async function checkApiKey() {
     }
 }
 
+let lastHeartbeat: number = 0;
+const HEARTBEAT_INTERVAL = 120000; // 2 minutes
 let isProcessing: boolean = false;
 
 async function sendHeartbeat(document: vscode.TextDocument, isSave: boolean) {
@@ -102,6 +143,7 @@ async function sendHeartbeat(document: vscode.TextDocument, isSave: boolean) {
             timeout: 5000 // Add timeout
         });
         console.log(`[DevMeter] Heartbeat sent for ${file}`);
+        updateStatusBar(); // Refresh status bar on success
     } catch (error: any) {
         console.error(`[DevMeter] Failed to send heartbeat: ${error.message}`);
         // On failure, we keep the lastHeartbeat as "now" so we don't retry immediately
@@ -110,4 +152,8 @@ async function sendHeartbeat(document: vscode.TextDocument, isSave: boolean) {
     }
 }
 
-export function deactivate() { }
+export function deactivate() {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+    }
+}
