@@ -3,9 +3,18 @@ import axios from 'axios';
 
 let statusBarItem: vscode.StatusBarItem;
 let refreshInterval: NodeJS.Timeout | undefined;
+let outputChannel: vscode.OutputChannel;
+
+function log(message: string) {
+    if (outputChannel) {
+        outputChannel.appendLine(`[${new Date().toLocaleTimeString()}] ${message}`);
+    }
+    console.log(`[DevMeter] ${message}`);
+}
 
 export function activate(context: vscode.ExtensionContext) {
-    console.log('DevMeter is now active!');
+    outputChannel = vscode.window.createOutputChannel("DevMeter");
+    log('DevMeter is now active!');
 
     // Status Bar Item
     statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
@@ -62,16 +71,22 @@ async function updateStatusBar() {
     }
 
     try {
+        log(`Fetching stats from ${apiUrl}/stats?range=today`);
         const response = await axios.get(`${apiUrl}/stats?range=today`, {
             headers: {
                 'Authorization': `Bearer ${apiKey}`
-            }
+            },
+            timeout: 5000
         });
 
         const { totalTime } = response.data.summary;
         statusBarItem.text = `$(clock) DevMeter: ${totalTime}`;
-    } catch (error) {
-        console.error('[DevMeter] Error fetching stats:', error);
+        log(`Stats updated: ${totalTime}`);
+    } catch (error: any) {
+        log(`Error fetching stats: ${error.message}`);
+        if (error.response) {
+            log(`Response error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+        }
     }
 }
 
@@ -116,8 +131,6 @@ async function sendHeartbeat(document: vscode.TextDocument, isSave: boolean) {
         return;
     }
 
-    // Update timestamp immediately to prevent spamming on rapid events
-    lastHeartbeat = now;
     isProcessing = true;
 
     const project = vscode.workspace.name || 'Unknown Project';
@@ -135,18 +148,23 @@ async function sendHeartbeat(document: vscode.TextDocument, isSave: boolean) {
     };
 
     try {
+        log(`Sending heartbeat for ${file} to ${apiUrl}/heartbeat`);
         await axios.post(`${apiUrl}/heartbeat`, payload, {
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
                 'Content-Type': 'application/json'
             },
-            timeout: 5000 // Add timeout
+            timeout: 5000
         });
-        console.log(`[DevMeter] Heartbeat sent for ${file}`);
+        log(`Heartbeat sent successfully for ${file}`);
+        lastHeartbeat = now; // Only update on success
         updateStatusBar(); // Refresh status bar on success
     } catch (error: any) {
-        console.error(`[DevMeter] Failed to send heartbeat: ${error.message}`);
-        // On failure, we keep the lastHeartbeat as "now" so we don't retry immediately
+        log(`Failed to send heartbeat: ${error.message}`);
+        if (error.response) {
+            log(`Response error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+        }
+        // Don't update lastHeartbeat so we can retry on next change if it's been long enough
     } finally {
         isProcessing = false;
     }
