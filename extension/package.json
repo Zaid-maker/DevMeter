@@ -3,17 +3,25 @@
   "displayName": "DevMeter",
   "description": "Automatic coding time tracker clone of WakaTime.",
   "version": "0.0.1",
-  "publisher": "devmeter",
+  "publisher": "DevMitrza",
   "engines": {
     "vscode": "^1.75.0"
   },
   "categories": [
+    "Visualization",
     "Other"
+  ],
+  "icon": "resources/icon.png",
+  "keywords": [
+    "wakatime",
+    "time-tracker",
+    "devmeter",
+    "coding-stats"
   ],
   "activationEvents": [
     "onStartupFinished"
   ],
-  "main": "./dist/extension.js",
+  "main": "./out/extension.js",
   "contributes": {
     "commands": [
       {
@@ -46,6 +54,7 @@
   },
   "devDependencies": {
     "@types/vscode": "^1.75.0",
+    "@vscode/vsce": "^3.7.1",
     "esbuild": "^0.27.2",
     "typescript": "^5.0.0"
   },
