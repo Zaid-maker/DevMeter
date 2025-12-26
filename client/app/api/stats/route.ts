@@ -9,11 +9,28 @@ export async function GET(req: NextRequest) {
         headers: await headers(),
     });
 
-    if (!session) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    let userId: string;
 
-    const userId = session.user.id;
+    if (session) {
+        userId = session.user.id;
+    } else {
+        // Fallback to API Key for extension
+        const authHeader = req.headers.get("authorization");
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        }
+
+        const apiKeyStr = authHeader.split(" ")[1];
+        const apiKey = await prisma.apiKey.findUnique({
+            where: { key: apiKeyStr },
+        });
+
+        if (!apiKey) {
+            return NextResponse.json({ error: "Invalid API Key" }, { status: 401 });
+        }
+
+        userId = apiKey.userId;
+    }
     const now = new Date();
 
     // Check for range query parameter
