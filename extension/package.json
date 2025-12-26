@@ -2,7 +2,7 @@
   "name": "devmeter",
   "displayName": "DevMeter",
   "description": "Automatic coding time tracker clone of WakaTime.",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "publisher": "DevMitrza",
   "engines": {
     "vscode": "^1.75.0"
@@ -39,7 +39,7 @@
         },
         "devmeter.apiUrl": {
           "type": "string",
-          "default": "http://localhost:3000/api",
+          "default": "https://dev-meter.vercel.app/api",
           "description": "DevMeter API URL"
         }
       }

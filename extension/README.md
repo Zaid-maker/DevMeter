@@ -21,7 +21,7 @@ DevMeter is a coding time tracker that automatically records your coding activit
 You can configure the following settings in VS Code:
 
 - `devmeter.apiKey`: Your personal API key.
-- `devmeter.apiUrl`: The URL of your DevMeter backend (default: `http://localhost:3000/api`).
+- `devmeter.apiUrl`: The URL of your DevMeter backend (default: `https://dev-meter.vercel.app/api`).
 
 ## License
 
