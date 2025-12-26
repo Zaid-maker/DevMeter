@@ -28,6 +28,35 @@ export async function GET(req: NextRequest) {
             },
         });
 
+        // Helper function to calculate duration in hours from heartbeats
+        const calculateDuration = (hList: typeof heartbeats) => {
+            if (hList.length === 0) return 0;
+            const sorted = [...hList].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+
+            let totalSeconds = 0;
+            const SESSION_GAP = 15 * 60 * 1000; // 15 minutes session gap
+            const HEARTBEAT_VAL = 2 * 60 * 1000; // Each heartbeat assumes at least 2 mins of work
+
+            let lastTime = new Date(sorted[0].timestamp).getTime();
+            totalSeconds += HEARTBEAT_VAL / 1000;
+
+            for (let i = 1; i < sorted.length; i++) {
+                const currentTime = new Date(sorted[i].timestamp).getTime();
+                const diff = currentTime - lastTime;
+
+                if (diff < SESSION_GAP) {
+                    // Part of same session
+                    totalSeconds += diff / 1000;
+                } else {
+                    // New session starts
+                    totalSeconds += HEARTBEAT_VAL / 1000;
+                }
+                lastTime = currentTime;
+            }
+
+            return totalSeconds / 3600;
+        };
+
         // 1. Activity by Day
         const activityByDay = Array.from({ length: 7 }).map((_, i) => {
             const date = subDays(now, 6 - i);
@@ -35,52 +64,63 @@ export async function GET(req: NextRequest) {
             const dayStart = startOfDay(date);
             const dayEnd = new Date(dayStart.getTime() + 86400000);
 
-            // Simple heuristic: count distinct 2-minute slots (heartbeats)
             const dayHeartbeats = heartbeats.filter(h =>
                 new Date(h.timestamp) >= dayStart && new Date(h.timestamp) < dayEnd
-            ).length;
+            );
 
-            const hours = (dayHeartbeats * 2) / 60; // 2 minutes per heartbeat
+            const hours = calculateDuration(dayHeartbeats);
 
             return { name: dateStr, total: parseFloat(hours.toFixed(1)) };
         });
 
         // 2. Language Breakdown
-        const langMap = new Map<string, number>();
+        const langGroups = new Map<string, typeof heartbeats>();
         heartbeats.forEach(h => {
-            langMap.set(h.language, (langMap.get(h.language) || 0) + 1);
+            if (!langGroups.has(h.language)) langGroups.set(h.language, []);
+            langGroups.get(h.language)!.push(h);
         });
 
-        const totalHeartbeats = heartbeats.length;
-        const languages = Array.from(langMap.entries())
-            .map(([name, count]) => ({
-                name,
-                value: Math.round((count / totalHeartbeats) * 100),
-                color: getLanguageColor(name)
+        const langDurations = Array.from(langGroups.entries()).map(([name, hList]) => ({
+            name,
+            duration: calculateDuration(hList)
+        }));
+
+        const totalDuration = langDurations.reduce((acc, curr) => acc + curr.duration, 0);
+
+        const languages = langDurations
+            .map(ld => ({
+                name: ld.name,
+                value: totalDuration > 0 ? Math.round((ld.duration / totalDuration) * 100) : 0,
+                color: getLanguageColor(ld.name)
             }))
             .sort((a, b) => b.value - a.value)
             .slice(0, 5);
 
         // 3. Top Projects List
-        const projectMap = new Map<string, number>();
+        const projectGroups = new Map<string, typeof heartbeats>();
         heartbeats.forEach(h => {
-            projectMap.set(h.project, (projectMap.get(h.project) || 0) + 1);
+            if (!projectGroups.has(h.project)) projectGroups.set(h.project, []);
+            projectGroups.get(h.project)!.push(h);
         });
 
-        const projects = Array.from(projectMap.entries())
-            .map(([name, count]) => ({
-                name,
-                value: Math.round((count / totalHeartbeats) * 100),
-                hours: parseFloat(((count * 2) / 60).toFixed(1))
+        const projectDurations = Array.from(projectGroups.entries()).map(([name, hList]) => ({
+            name,
+            duration: calculateDuration(hList)
+        }));
+
+        const projects = projectDurations
+            .map(pd => ({
+                name: pd.name,
+                value: totalDuration > 0 ? Math.round((pd.duration / totalDuration) * 100) : 0,
+                hours: parseFloat(pd.duration.toFixed(1))
             }))
             .sort((a, b) => b.value - a.value)
             .slice(0, 5);
 
         const topProject = projects[0]?.name || "None";
 
-        const totalMinutes = totalHeartbeats * 2;
-        const totalHours = Math.floor(totalMinutes / 60);
-        const remainingMinutes = totalMinutes % 60;
+        const totalHoursVal = Math.floor(totalDuration);
+        const remainingMinutes = Math.round((totalDuration - totalHoursVal) * 60);
 
         // 4. Recent Activity
         const recentActivity = heartbeats
@@ -93,8 +133,8 @@ export async function GET(req: NextRequest) {
             projects,
             recentActivity,
             summary: {
-                totalTime: `${totalHours}h ${remainingMinutes}m`,
-                dailyAverage: `${((totalMinutes / 7) / 60).toFixed(1)}h`,
+                totalTime: `${totalHoursVal}h ${remainingMinutes}m`,
+                dailyAverage: `${(totalDuration / 7).toFixed(1)}h`,
                 topProject,
                 topLanguage: languages[0]?.name || "None"
             }

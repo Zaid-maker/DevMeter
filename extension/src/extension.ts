@@ -52,9 +52,18 @@ async function checkApiKey() {
     }
 }
 
+let isProcessing: boolean = false;
+
 async function sendHeartbeat(document: vscode.TextDocument, isSave: boolean) {
     const now = Date.now();
+
+    // Check interval
     if (!isSave && now - lastHeartbeat < HEARTBEAT_INTERVAL) {
+        return;
+    }
+
+    // Prevent simultaneous requests
+    if (isProcessing) {
         return;
     }
 
@@ -62,9 +71,13 @@ async function sendHeartbeat(document: vscode.TextDocument, isSave: boolean) {
     const apiKey = config.get<string>('apiKey');
     const apiUrl = config.get<string>('apiUrl');
 
-    if (!apiKey) {
+    if (!apiKey || !apiUrl) {
         return;
     }
+
+    // Update timestamp immediately to prevent spamming on rapid events
+    lastHeartbeat = now;
+    isProcessing = true;
 
     const project = vscode.workspace.name || 'Unknown Project';
     const language = document.languageId;
@@ -85,12 +98,15 @@ async function sendHeartbeat(document: vscode.TextDocument, isSave: boolean) {
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
                 'Content-Type': 'application/json'
-            }
+            },
+            timeout: 5000 // Add timeout
         });
-        lastHeartbeat = now;
         console.log(`[DevMeter] Heartbeat sent for ${file}`);
     } catch (error: any) {
         console.error(`[DevMeter] Failed to send heartbeat: ${error.message}`);
+        // On failure, we keep the lastHeartbeat as "now" so we don't retry immediately
+    } finally {
+        isProcessing = false;
     }
 }
 
