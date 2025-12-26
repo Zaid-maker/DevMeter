@@ -1,0 +1,12 @@
+.vscode/
+.vscode-test/
+out/test/
+src/
+node_modules/
+.gitignore
+.vscodeignore
+tsconfig.json
+bun.lock
+bunfig.toml
+*.vsix
+index.ts

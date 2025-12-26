@@ -2,8 +2,13 @@
   "name": "devmeter",
   "displayName": "DevMeter",
   "description": "Automatic coding time tracker clone of WakaTime.",
-  "version": "0.0.5",
+  "version": "0.0.6",
+  "license": "MIT",
   "publisher": "DevMitrza",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Zaid-maker/DevMeter"
+  },
   "engines": {
     "vscode": "^1.75.0"
   },
