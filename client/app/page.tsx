@@ -16,7 +16,7 @@ import useSWR from "swr";
 
 interface Stats {
   activityByDay: { name: string; total: number }[];
-  languages: { name: string; value: number; color: string }[];
+  languages: { name: string; value: number; color: string; icon: string }[];
   projects: { name: string; value: number; hours: number }[];
   recentActivity: {
     id: string;
@@ -24,12 +24,15 @@ interface Stats {
     language: string;
     file: string;
     timestamp: string;
+    color: string;
+    icon: string;
   }[];
   summary: {
     totalTime: string;
     dailyAverage: string;
     topProject: string;
     topLanguage: string;
+    topLanguageIcon?: string;
     isLive?: boolean;
     lastHeartbeatAt?: string;
     percentGrowth?: number;
@@ -131,7 +134,7 @@ export default function DashboardPage() {
             <StatCard title="Coding Time" value={stats?.summary.totalTime} subtitle="Last 7 Days" icon={Clock} loading={isLoading} />
             <StatCard title="Daily Mean" value={stats?.summary.dailyAverage} subtitle="Consistency Goal: 4h" icon={Activity} loading={isLoading} />
             <StatCard title="Primary Target" value={stats?.summary.topProject} subtitle="Highest engagement" icon={Layout} loading={isLoading} />
-            <StatCard title="Main Stack" value={stats?.summary.topLanguage} subtitle="Primary language" icon={Code} loading={isLoading} />
+            <StatCard title="Main Stack" value={stats?.summary.topLanguage} subtitle="Primary language" icon={Code} logo={stats?.summary.topLanguageIcon} loading={isLoading} />
           </div>
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-12">
@@ -188,17 +191,27 @@ export default function DashboardPage() {
                   <ScrollArea className="h-[350px] pr-4">
                     <div className="space-y-6">
                       {stats?.recentActivity.map((activity) => (
-                        <div key={activity.id} className="flex items-start space-x-3">
-                          <div className="mt-1 h-2 w-2 rounded-full bg-primary ring-4 ring-primary/10" />
-                          <div className="space-y-1">
-                            <p className="text-sm font-medium leading-none">
+                        <div key={activity.id} className="flex items-start space-x-4">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted/30 p-2 shadow-sm">
+                            <img
+                              src={activity.icon}
+                              alt={activity.language}
+                              className="h-full w-full object-contain"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                                (e.target as HTMLImageElement).parentElement!.style.backgroundColor = activity.color;
+                              }}
+                            />
+                          </div>
+                          <div className="space-y-1 overflow-hidden">
+                            <p className="text-sm font-semibold leading-none truncate">
                               {activity.project}
-                              <span className="text-muted-foreground font-normal ml-2">in {activity.language}</span>
+                              <span className="text-muted-foreground font-normal ml-2 opacity-80">({activity.language})</span>
                             </p>
-                            <p className="text-xs text-muted-foreground truncate w-48">
+                            <p className="text-xs text-muted-foreground truncate opacity-70">
                               {activity.file.split('/').pop()}
                             </p>
-                            <p className="text-[10px] text-muted-foreground uppercase opacity-70">
+                            <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider opacity-60">
                               {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
                             </p>
                           </div>
@@ -255,13 +268,23 @@ export default function DashboardPage() {
                   {stats?.languages.map(lang => (
                     <div key={lang.name} className="space-y-2">
                       <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center">
-                          <div className="mr-2 h-3 w-3 rounded-full shadow-sm" style={{ backgroundColor: lang.color }} />
-                          <span className="font-bold">{lang.name}</span>
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted/30 p-1.5 shadow-inner">
+                            <img
+                              src={lang.icon}
+                              alt={lang.name}
+                              className="h-full w-full object-contain"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).style.display = 'none';
+                                (e.target as HTMLImageElement).parentElement!.style.backgroundColor = lang.color;
+                              }}
+                            />
+                          </div>
+                          <span className="font-bold text-base">{lang.name}</span>
                         </div>
-                        <span className="text-muted-foreground">{lang.value}%</span>
+                        <span className="text-muted-foreground font-medium">{lang.value}%</span>
                       </div>
-                      <Progress value={lang.value} className="h-2" style={{ backgroundColor: 'rgba(0,0,0,0.05)' }} />
+                      <Progress value={lang.value} className="h-2.5 rounded-full" style={{ backgroundColor: 'rgba(0,0,0,0.05)' }} />
                     </div>
                   ))}
                 </div>
@@ -281,13 +304,17 @@ export default function DashboardPage() {
   );
 }
 
-function StatCard({ title, value, subtitle, icon: Icon, loading }: any) {
+function StatCard({ title, value, subtitle, icon: Icon, logo, loading }: any) {
   return (
     <Card className="relative overflow-hidden group border-muted/60 hover:border-primary/50 transition-all duration-300">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium group-hover:text-primary transition-colors">{title}</CardTitle>
-        <div className="p-2 rounded-lg bg-primary/5 group-hover:bg-primary/10 transition-colors">
-          <Icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+        <div className="p-2 rounded-lg bg-primary/5 group-hover:bg-primary/10 transition-colors h-8 w-8 flex items-center justify-center">
+          {logo ? (
+            <img src={logo} alt={title} className="h-4 w-4 object-contain grayscale group-hover:grayscale-0 transition-all" />
+          ) : (
+            <Icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+          )}
         </div>
       </CardHeader>
       <CardContent>
@@ -303,7 +330,11 @@ function StatCard({ title, value, subtitle, icon: Icon, loading }: any) {
         )}
       </CardContent>
       <div className="absolute bottom-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-        <Icon className="h-12 w-12" />
+        {logo ? (
+          <img src={logo} alt="" className="h-12 w-12 object-contain grayscale" />
+        ) : (
+          <Icon className="h-12 w-12" />
+        )}
       </div>
     </Card>
   );

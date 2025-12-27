@@ -121,7 +121,8 @@ export async function GET(req: NextRequest) {
             .map(ld => ({
                 name: ld.name,
                 value: totalDuration > 0 ? Math.round((ld.duration / totalDuration) * 100) : 0,
-                color: getLanguageColor(ld.name)
+                color: getLanguageColor(ld.name),
+                icon: getLanguageIcon(ld.name)
             }))
             .sort((a, b) => b.value - a.value)
             .slice(0, 5);
@@ -155,7 +156,12 @@ export async function GET(req: NextRequest) {
         // 4. Recent Activity
         const recentActivity = heartbeats
             .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-            .slice(0, 10);
+            .slice(0, 10)
+            .map(h => ({
+                ...h,
+                color: getLanguageColor(h.language),
+                icon: getLanguageIcon(h.language)
+            }));
 
         const lastHeartbeat = recentActivity[0];
         const isLive = lastHeartbeat
@@ -182,6 +188,7 @@ export async function GET(req: NextRequest) {
                 dailyAverage: `${(totalDuration / 7).toFixed(1)}h`,
                 topProject,
                 topLanguage: languages[0]?.name || "None",
+                topLanguageIcon: languages[0]?.icon,
                 isLive,
                 lastHeartbeatAt: lastHeartbeat?.timestamp,
                 percentGrowth
@@ -203,6 +210,73 @@ function getLanguageColor(lang: string): string {
         html: "#e34c26",
         css: "#563d7c",
         go: "#00ADD8",
+        java: "#b07219",
+        cpp: "#f34b7d",
+        c: "#555555",
+        csharp: "#178600",
+        php: "#4F5D95",
+        ruby: "#701516",
+        swift: "#ffac45",
+        kotlin: "#F18E33",
+        dart: "#00B4AB",
+        elixir: "#6e4a7e",
+        haskell: "#5e5086",
+        lua: "#000080",
+        matlab: "#e16737",
+        r: "#198ce7",
+        scala: "#c22d40",
+        shell: "#89e051",
+        sql: "#e38c00",
+        zig: "#ec915c",
+        vue: "#41b883",
+        react: "#61dafb",
+        svelte: "#ff3e00",
+        nextjs: "#000000",
+        docker: "#2496ed",
+        kubernetes: "#326ce5",
+        markdown: "#083fa1",
+        json: "#292929",
+        yaml: "#cb171e",
     };
     return colors[lang.toLowerCase()] || "#888888";
+}
+
+function getLanguageIcon(lang: string): string {
+    const langMap: Record<string, string> = {
+        typescript: "typescript",
+        javascript: "javascript",
+        rust: "rust",
+        python: "python",
+        html: "html5",
+        css: "css3",
+        go: "go",
+        java: "java",
+        cpp: "cplusplus",
+        c: "c",
+        csharp: "csharp",
+        php: "php",
+        ruby: "ruby",
+        swift: "swift",
+        kotlin: "kotlin",
+        dart: "dart",
+        elixir: "elixir",
+        haskell: "haskell",
+        lua: "lua",
+        matlab: "matlab",
+        r: "r",
+        scala: "scala",
+        shell: "bash",
+        sql: "mysql", // Fallback to mysql for generic SQL
+        zig: "zig",
+        vue: "vuejs",
+        react: "react",
+        svelte: "svelte",
+        nextjs: "nextjs",
+        docker: "docker",
+        kubernetes: "kubernetes",
+        markdown: "markdown",
+    };
+
+    const name = langMap[lang.toLowerCase()] || lang.toLowerCase();
+    return `https://cdn.jsdelivr.net/gh/devicons/devicon/icons/${name}/${name}-original.svg`;
 }
