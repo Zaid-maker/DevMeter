@@ -1,8 +1,8 @@
 {
   "name": "devmeter",
   "displayName": "DevMeter",
-  "description": "Automatic coding time tracker clone of WakaTime.",
-  "version": "0.0.6",
+  "description": "Open-source automated coding time tracker. Master your craft with real-time insights.",
+  "version": "0.0.7",
   "license": "MIT",
   "publisher": "DevMitrza",
   "repository": {
