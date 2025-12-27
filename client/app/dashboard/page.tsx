@@ -14,6 +14,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
 import useSWR from "swr";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 interface Stats {
     activityByDay: { name: string; total: number }[];
@@ -116,7 +117,17 @@ export default function DashboardPage() {
                         <Activity className={`mr-2 h-4 w-4 ${stats?.summary.isLive ? "animate-pulse" : "opacity-50"}`} />
                         {stats?.summary.isLive ? "Extension Live" : "Extension Offline"}
                     </Badge>
-                    <Button variant="outline" size="sm" className="hidden sm:flex rounded-lg h-9">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="hidden sm:flex rounded-lg h-9"
+                        onClick={() => {
+                            navigator.clipboard.writeText(window.location.href);
+                            toast.success("Stats link copied!", {
+                                description: "You can now share your dashboard with others.",
+                            });
+                        }}
+                    >
                         Share Stats <ArrowUpRight className="ml-2 h-4 w-4" />
                     </Button>
                 </div>
@@ -166,7 +177,7 @@ export default function DashboardPage() {
                                                 </linearGradient>
                                             </defs>
                                             <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                                            <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}h`} />
+                                            <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value} h`} />
                                             <Tooltip
                                                 cursor={{ fill: 'rgba(255,255,255,0.03)' }}
                                                 contentStyle={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '8px' }}

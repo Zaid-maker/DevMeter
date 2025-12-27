@@ -18,6 +18,8 @@ export const metadata: Metadata = {
   description: "Gain insights into your coding habits and productivity.",
 };
 
+import { Toaster } from "@/components/ui/sonner";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -28,6 +30,7 @@ export default function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background`}>
         <MainNav />
         <main>{children}</main>
+        <Toaster position="bottom-right" closeButton richColors expand={false} />
       </body>
     </html>
   );

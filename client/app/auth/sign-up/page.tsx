@@ -10,6 +10,8 @@ import { Loader2, Activity, Sparkles, Github, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { toast } from "sonner";
+
 export default function SignUpPage() {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
@@ -26,8 +28,17 @@ export default function SignUpPage() {
                 password,
                 name,
             }, {
-                onSuccess: () => router.push("/dashboard"),
-                onError: (ctx) => alert(ctx.error.message || "Sign up failed"),
+                onSuccess: () => {
+                    toast.success("Account created!", {
+                        description: "Welcome to DevMeter. Your journey begins now.",
+                    });
+                    router.push("/dashboard");
+                },
+                onError: (ctx) => {
+                    toast.error("Sign up failed", {
+                        description: ctx.error.message || "Please check your information.",
+                    });
+                },
             });
         } finally {
             setLoading(false);

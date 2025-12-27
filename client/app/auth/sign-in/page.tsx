@@ -10,6 +10,8 @@ import { Loader2, Activity, ArrowRight, Github } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import { toast } from "sonner";
+
 export default function SignInPage() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -24,8 +26,17 @@ export default function SignInPage() {
                 email,
                 password,
             }, {
-                onSuccess: () => router.push("/dashboard"),
-                onError: (ctx) => alert(ctx.error.message || "Sign in failed"),
+                onSuccess: () => {
+                    toast.success("Welcome back!", {
+                        description: "You've successfully signed in.",
+                    });
+                    router.push("/dashboard");
+                },
+                onError: (ctx) => {
+                    toast.error("Sign in failed", {
+                        description: ctx.error.message || "Please check your credentials.",
+                    });
+                },
             });
         } finally {
             setLoading(false);
@@ -71,7 +82,7 @@ export default function SignInPage() {
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between ml-1">
                                     <Label htmlFor="password" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Password</Label>
-                                    <Link href="#" onClick={() => alert("coming soon")} className="text-[10px] font-bold uppercase tracking-widest text-primary hover:underline">Forgot password?</Link>
+                                    <Link href="#" onClick={() => toast.info("Coming soon", { description: "Password reset functionality is under development." })} className="text-[10px] font-bold uppercase tracking-widest text-primary hover:underline">Forgot password?</Link>
                                 </div>
                                 <Input
                                     id="password"
