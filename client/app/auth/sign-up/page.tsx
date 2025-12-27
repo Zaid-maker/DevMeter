@@ -26,7 +26,7 @@ export default function SignUpPage() {
                 password,
                 name,
             }, {
-                onSuccess: () => router.push("/"),
+                onSuccess: () => router.push("/dashboard"),
                 onError: (ctx) => alert(ctx.error.message || "Sign up failed"),
             });
         } finally {

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Activity, LogOut, Settings, User } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -18,6 +18,9 @@ import { Button } from "@/components/ui/button";
 export function MainNav() {
     const { data: session } = authClient.useSession();
     const router = useRouter();
+    const pathname = usePathname();
+
+    if (pathname === "/") return null;
 
     const handleSignOut = async () => {
         await authClient.signOut({
@@ -38,12 +41,12 @@ export function MainNav() {
     return (
         <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
             <div className="flex h-16 items-center px-8">
-                <div className="flex items-center space-x-2 mr-6">
+                <Link href="/" className="flex items-center space-x-2 mr-6 hover:opacity-80 transition-opacity">
                     <Activity className="h-6 w-6 text-primary" />
                     <span className="text-xl font-bold">DevMeter</span>
-                </div>
+                </Link>
                 <nav className="flex items-center space-x-6 text-sm font-medium">
-                    <Link href="/" className="transition-colors hover:text-foreground/80 text-foreground">Dashboard</Link>
+                    <Link href="/dashboard" className="transition-colors hover:text-foreground/80 text-foreground">Dashboard</Link>
                     <Link href="/projects" className="transition-colors hover:text-foreground/80 text-muted-foreground">Projects</Link>
                     <Link href="/goals" className="transition-colors hover:text-foreground/80 text-muted-foreground">Goals</Link>
                     <Link href="/leaderboard" className="transition-colors hover:text-foreground/80 text-muted-foreground">Leaderboard</Link>

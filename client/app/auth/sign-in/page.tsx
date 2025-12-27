@@ -24,7 +24,7 @@ export default function SignInPage() {
                 email,
                 password,
             }, {
-                onSuccess: () => router.push("/"),
+                onSuccess: () => router.push("/dashboard"),
                 onError: (ctx) => alert(ctx.error.message || "Sign in failed"),
             });
         } finally {
