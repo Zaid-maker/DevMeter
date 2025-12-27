@@ -1,353 +1,200 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from "recharts";
-import { Activity, Clock, Code, Layout, Key, Copy, Plus, RefreshCw, Loader2, Zap, ArrowUpRight, TrendingUp } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Progress } from "@/components/ui/progress";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { formatDistanceToNow } from "date-fns";
-import useSWR from "swr";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import {
+  Activity,
+  Clock,
+  Code,
+  Zap,
+  Shield,
+  Globe,
+  BarChart3,
+  Github,
+  ArrowRight,
+  MousePointer2,
+  Terminal,
+  Cpu
+} from "lucide-react";
 
-interface Stats {
-  activityByDay: { name: string; total: number }[];
-  languages: { name: string; value: number; color: string; icon: string }[];
-  projects: { name: string; value: number; hours: number }[];
-  recentActivity: {
-    id: string;
-    project: string;
-    language: string;
-    file: string;
-    timestamp: string;
-    color: string;
-    icon: string;
-  }[];
-  summary: {
-    totalTime: string;
-    dailyAverage: string;
-    topProject: string;
-    topLanguage: string;
-    topLanguageIcon?: string;
-    isLive?: boolean;
-    lastHeartbeatAt?: string;
-    percentGrowth?: number;
-  };
-}
+export default function LandingPage() {
+  const router = useRouter();
+  const { data: session } = authClient.useSession();
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+  // Redirect if already logged in
+  useEffect(() => {
+    if (session) {
+      router.push("/dashboard");
+    }
+  }, [session, router]);
 
-export default function DashboardPage() {
-  const { data: session, isPending: isAuthPending } = authClient.useSession();
-  const { data: stats, isLoading } = useSWR<Stats>(
-    session ? "/api/stats" : null,
-    fetcher,
-    { refreshInterval: 60000 } // Refresh every minute
-  );
-
-  if (isAuthPending) {
-    return (
-      <div className="flex items-center justify-center min-h-[600px]">
-        <div className="flex flex-col items-center space-y-4">
-          <Loader2 className="h-10 w-10 animate-spin text-primary" />
-          <p className="text-muted-foreground animate-pulse text-sm">Synchronizing your statistics...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!session) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[600px] space-y-6">
-        <div className="p-4 rounded-full bg-primary/5">
-          <Zap className="h-12 w-12 text-primary" />
-        </div>
-        <div className="text-center space-y-2">
-          <h2 className="text-3xl font-bold">Track your craft.</h2>
-          <p className="text-muted-foreground max-w-xs mx-auto">
-            Join the elite circle of developers tracking their progress in real-time.
-          </p>
-        </div>
-        <Button size="lg" onClick={() => (window.location.href = "/auth/sign-in")} className="px-8">
-          Get Started
-        </Button>
-      </div>
-    );
-  }
+  if (session) return null;
 
   return (
-    <div className="flex-1 space-y-8 p-8 pt-6 max-w-7xl mx-auto">
-      {/* Hero Section */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="space-y-1">
-          <h2 className="text-4xl font-extrabold tracking-tight">Bonjour, {session.user.name?.split(' ')[0]}</h2>
-          <p className="text-muted-foreground flex items-center">
-            {stats?.summary.percentGrowth !== undefined && (
-              <>
-                {stats.summary.percentGrowth >= 0 ? (
-                  <TrendingUp className="mr-2 h-4 w-4 text-green-500" />
-                ) : (
-                  <TrendingUp className="mr-2 h-4 w-4 text-red-500 transform rotate-180" />
-                )}
-                Your coding output is {stats.summary.percentGrowth >= 0 ? 'up' : 'down'} {Math.abs(stats.summary.percentGrowth)}% compared to last week.
-              </>
-            )}
-            {stats?.summary.percentGrowth === undefined && !isLoading && (
-              <>
-                <TrendingUp className="mr-2 h-4 w-4 text-primary opacity-50" />
-                Track your progress to see weekly insights.
-              </>
-            )}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Badge
-            variant="secondary"
-            className={`px-3 py-1.5 border transition-all duration-500 ${stats?.summary.isLive
-              ? "bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500/20"
-              : "bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20"
-              }`}
-          >
-            <Activity className={`mr-2 h-4 w-4 ${stats?.summary.isLive ? "animate-pulse" : "opacity-50"}`} />
-            {stats?.summary.isLive ? "Extension Live" : "Extension Offline"}
-          </Badge>
-          <Button variant="outline" size="sm" className="hidden sm:flex">
-            Share Stats <ArrowUpRight className="ml-2 h-4 w-4" />
-          </Button>
-        </div>
+    <div className="min-h-screen bg-black text-white selection:bg-primary/30 selection:text-primary overflow-x-hidden">
+      {/* Background gradients */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none opacity-40">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] animate-pulse" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/10 rounded-full blur-[120px]" />
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-8">
-        <TabsList className="bg-muted/50 p-1">
-          <TabsTrigger value="overview" className="px-6">Overview</TabsTrigger>
-          <TabsTrigger value="projects" className="px-6">Projects</TabsTrigger>
-          <TabsTrigger value="languages" className="px-6">Languages</TabsTrigger>
-        </TabsList>
+      <main className="relative z-10">
+        {/* Navbar */}
+        <nav className="flex items-center justify-between p-6 max-w-7xl mx-auto border-b border-white/5 backdrop-blur-md sticky top-0 bg-black/50">
+          <div className="flex items-center gap-2 group cursor-pointer" onClick={() => router.push("/")}>
+            <div className="bg-primary p-1.5 rounded-lg rotate-3 group-hover:rotate-12 transition-transform duration-300">
+              <Activity className="h-6 w-6 text-black" />
+            </div>
+            <span className="text-xl font-black tracking-tighter">DevMeter</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" onClick={() => router.push("/auth/sign-in")} className="text-sm font-medium hover:text-primary transition-colors">
+              Sign In
+            </Button>
+            <Button onClick={() => router.push("/auth/sign-up")} className="bg-white text-black hover:bg-white/90 font-bold rounded-full px-6">
+              Get Started
+            </Button>
+          </div>
+        </nav>
 
-        <TabsContent value="overview" className="space-y-8">
-          {/* Quick Stats Grid */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <StatCard title="Coding Time" value={stats?.summary.totalTime} subtitle="Last 7 Days" icon={Clock} loading={isLoading} />
-            <StatCard title="Daily Mean" value={stats?.summary.dailyAverage} subtitle="Consistency Goal: 4h" icon={Activity} loading={isLoading} />
-            <StatCard title="Primary Target" value={stats?.summary.topProject} subtitle="Highest engagement" icon={Layout} loading={isLoading} />
-            <StatCard title="Main Stack" value={stats?.summary.topLanguage} subtitle="Primary language" icon={Code} logo={stats?.summary.topLanguageIcon} loading={isLoading} />
+        {/* Hero Section */}
+        <section className="pt-16 md:pt-24 pb-12 md:pb-20 px-4 md:px-6 max-w-7xl mx-auto text-center overflow-hidden">
+          <Badge variant="outline" className="mb-6 py-1 px-4 border-primary/20 bg-primary/5 text-primary animate-bounce text-[10px] md:text-sm">
+            <Zap className="h-3 w-3 mr-2" /> 100% Open Source
+          </Badge>
+          <h1 className="text-5xl md:text-8xl font-black tracking-tighter mb-6 md:mb-8 leading-[1.05] md:leading-[1.1]">
+            Master your <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-blue-400 to-primary bg-[length:200%_auto] animate-gradient">craft.</span><br className="hidden md:block" />
+            Track every <span className="text-primary/90 italic">stroke.</span>
+          </h1>
+          <p className="text-muted-foreground text-lg md:text-2xl max-w-2xl mx-auto mb-10 md:mb-12 font-medium leading-relaxed px-2">
+            The ultimate automated coding time tracker for elite developers. Get deep insights into your productivity without lifting a finger.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
+            <Button size="lg" onClick={() => router.push("/auth/sign-up")} className="h-14 px-10 text-lg bg-primary text-black hover:bg-primary/90 font-black rounded-full w-full sm:w-auto shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)]">
+              Start Tracking Now <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+            <Button variant="outline" size="lg" asChild className="h-14 px-10 text-lg border-white/10 hover:bg-white/5 rounded-full w-full sm:w-auto font-bold">
+              <a href="https://github.com/Zaid-maker/DevMeter" target="_blank" rel="noopener noreferrer">
+                <Github className="mr-2 h-5 w-5" /> View on GitHub
+              </a>
+            </Button>
           </div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-12">
-            {/* Main Chart */}
-            <Card className="lg:col-span-8 shadow-sm border-muted/60 overflow-hidden">
-              <CardHeader className="flex flex-row items-center justify-between pb-8">
-                <div className="space-y-1">
-                  <CardTitle>Activity Pulse</CardTitle>
-                  <CardDescription>Daily coding intensity for the past week</CardDescription>
+          {/* Code Visual Mockup */}
+          <div className="relative max-w-4xl mx-auto group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-primary/50 to-blue-500/50 rounded-2xl blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+            <Card className="relative bg-[#0d0d0d] border-white/10 overflow-hidden rounded-2xl flex flex-col items-center justify-center p-8 md:p-12">
+              <div className="w-full flex items-center justify-between mb-8 border-b border-white/5 pb-4">
+                <div className="flex gap-1.5">
+                  <div className="h-3 w-3 rounded-full bg-red-500/50" />
+                  <div className="h-3 w-3 rounded-full bg-yellow-500/50" />
+                  <div className="h-3 w-3 rounded-full bg-green-500/50" />
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full bg-primary" />
-                  <span className="text-xs font-medium">Coding Hours</span>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <Skeleton className="h-[350px] w-full" />
-                ) : (
-                  <ResponsiveContainer width="100%" height={350}>
-                    <BarChart data={stats?.activityByDay || []}>
-                      <defs>
-                        <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={1} />
-                          <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
-                        </linearGradient>
-                      </defs>
-                      <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
-                      <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}h`} />
-                      <Tooltip
-                        cursor={{ fill: 'rgba(255,255,255,0.03)' }}
-                        contentStyle={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '8px' }}
-                        itemStyle={{ color: '#fff' }}
-                      />
-                      <Bar dataKey="total" fill="url(#barGradient)" radius={[6, 6, 0, 0]} barSize={40} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Recent Activity Feed */}
-            <Card className="lg:col-span-4 shadow-sm border-muted/60">
-              <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>Real-time heartbeat logs</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="space-y-4">
-                    {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-12 w-full" />)}
-                  </div>
-                ) : (
-                  <ScrollArea className="h-[350px] pr-4">
-                    <div className="space-y-6">
-                      {stats?.recentActivity.map((activity) => (
-                        <div key={activity.id} className="flex items-start space-x-4">
-                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-muted/40 p-2.5 shadow-sm border border-muted/50 backdrop-blur-sm">
-                            <img
-                              src={activity.icon}
-                              alt={activity.language}
-                              className="h-full w-full object-contain"
-                              style={{ filter: "brightness(1.2) saturate(1.3) drop-shadow(0 2px 4px rgba(0,0,0,0.2))" }}
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = 'none';
-                                (e.target as HTMLImageElement).parentElement!.style.backgroundColor = activity.color;
-                              }}
-                            />
-                          </div>
-                          <div className="space-y-1 overflow-hidden">
-                            <p className="text-sm font-semibold leading-none truncate">
-                              {activity.project}
-                              <span className="text-muted-foreground font-normal ml-2 opacity-80">({activity.language})</span>
-                            </p>
-                            <p className="text-xs text-muted-foreground truncate opacity-70">
-                              {activity.file.split('/').pop()}
-                            </p>
-                            <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider opacity-60">
-                              {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </ScrollArea>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </TabsContent>
-
-        <TabsContent value="projects" className="space-y-8">
-          <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle>Project Decomposition</CardTitle>
-              <CardDescription>Visualizing your efforts across workspace projects.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoading ? (
-                <div className="space-y-8 py-4">
-                  {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
-                </div>
-              ) : (
-                <div className="grid gap-8 py-4">
-                  {stats?.projects.map(project => (
-                    <div key={project.name} className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="flex flex-col">
-                          <span className="font-semibold text-lg">{project.name}</span>
-                          <span className="text-xs text-muted-foreground uppercase tracking-widest">{project.hours} Hours tracked</span>
-                        </div>
-                        <Badge variant="outline" className="text-lg px-4 py-1.5 font-bold">{project.value}%</Badge>
-                      </div>
-                      <Progress value={project.value} className="h-3" />
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="languages" className="space-y-8">
-          <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle>Technological Stack</CardTitle>
-              <CardDescription>Language proficiency measured by total coding time.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid gap-12 md:grid-cols-2 py-6">
-                <div className="space-y-6">
-                  {stats?.languages.map(lang => (
-                    <div key={lang.name} className="space-y-2">
-                      <div className="flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-muted/40 p-2 shadow-inner border border-muted/50 backdrop-blur-sm">
-                            <img
-                              src={lang.icon}
-                              alt={lang.name}
-                              className="h-full w-full object-contain"
-                              style={{ filter: "brightness(1.2) saturate(1.3) drop-shadow(0 2px 4px rgba(0,0,0,0.2))" }}
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = 'none';
-                                (e.target as HTMLImageElement).parentElement!.style.backgroundColor = lang.color;
-                              }}
-                            />
-                          </div>
-                          <span className="font-bold text-base">{lang.name}</span>
-                        </div>
-                        <span className="text-muted-foreground font-medium">{lang.value}%</span>
-                      </div>
-                      <Progress value={lang.value} className="h-2.5 rounded-full" style={{ backgroundColor: 'rgba(0,0,0,0.05)' }} />
-                    </div>
-                  ))}
-                </div>
-                <div className="flex items-center justify-center p-8 bg-muted/20 rounded-2xl border-2 border-dashed border-muted">
-                  <div className="text-center space-y-2">
-                    <TrendingUp className="h-12 w-12 text-primary mx-auto opacity-20" />
-                    <p className="text-sm font-medium">Stack Insights coming soon</p>
-                    <p className="text-xs text-muted-foreground max-w-xs">Detailed historical stack comparison and predictions will appear here.</p>
-                  </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono bg-white/5 px-3 py-1 rounded-full">
+                  <Terminal className="h-3 w-3" /> dev-meter heartbeat_v1.sh
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full">
+                <div className="space-y-1 text-left">
+                  <p className="text-[10px] text-primary font-mono uppercase tracking-widest opacity-70">Tracking Live</p>
+                  <p className="text-3xl md:text-4xl font-black">4h 32m</p>
+                  <p className="text-[10px] text-muted-foreground">Recorded today</p>
+                </div>
+                <div className="space-y-1 text-left">
+                  <p className="text-[10px] text-blue-400 font-mono uppercase tracking-widest opacity-70">Top Stack</p>
+                  <p className="text-3xl md:text-4xl font-black">Typescript</p>
+                  <p className="text-[10px] text-muted-foreground">84% of workload</p>
+                </div>
+                <div className="space-y-1 text-left">
+                  <p className="text-[10px] text-green-400 font-mono uppercase tracking-widest opacity-70">Weekly Growth</p>
+                  <p className="text-3xl md:text-4xl font-black text-green-400">+12%</p>
+                  <p className="text-[10px] text-muted-foreground">Up from last week</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </section>
+
+        {/* Features Section */}
+        <section className="py-32 px-6 max-w-7xl mx-auto">
+          <div className="text-center mb-20 space-y-4">
+            <h2 className="text-4xl md:text-5xl font-black tracking-tighter">Engineered for Transparency.</h2>
+            <p className="text-muted-foreground text-lg max-w-xl mx-auto">
+              DevMeter isn't just a tool; it's a statement. Open source, privacy-focused, and developer-first.
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            <FeatureCard
+              icon={Zap}
+              title="Automated Precision"
+              description="Record your focus time without lifting a finger. Our extension handles everything silently."
+              color="text-primary"
+            />
+            <FeatureCard
+              icon={BarChart3}
+              title="Deep Visuals"
+              description="Understand your habits with vibrant charts, language breakdowns, and project intensity stats."
+              color="text-blue-400"
+            />
+            <FeatureCard
+              icon={Shield}
+              title="Audit-Ready"
+              description="100% open-source software. Verify exactly how your data is handled from heartbeats to dashboard."
+              color="text-green-400"
+            />
+          </div>
+        </section>
+
+        {/* Stack Highlights */}
+        <section className="py-24 border-t border-white/5 bg-white/[0.02]">
+          <div className="max-w-7xl mx-auto px-6 overflow-hidden">
+            <p className="text-center text-xs font-mono text-muted-foreground uppercase tracking-widest mb-12">Universal Language Support</p>
+            <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-30 grayscale hover:grayscale-0 transition-all duration-700">
+              <Cpu className="h-10 w-10" />
+              <MousePointer2 className="h-10 w-10" />
+              <Code className="h-10 w-10" />
+              <Globe className="h-10 w-10" />
+              <Activity className="h-10 w-10" />
+              <Clock className="h-10 w-10" />
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="py-32 px-6 text-center">
+          <div className="max-w-4xl mx-auto bg-primary rounded-[3rem] p-12 md:p-20 text-black relative overflow-hidden group">
+            <div className="absolute top-0 right-0 h-40 w-40 bg-white/20 rounded-full blur-3xl -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-1000" />
+            <h2 className="text-4xl md:text-6xl font-black tracking-tighter mb-8 leading-tight">Ready to verify<br /> your intensity?</h2>
+            <Button size="lg" onClick={() => router.push("/auth/sign-up")} className="bg-black text-white hover:bg-black/90 font-black px-10 h-16 text-xl rounded-full">
+              Join DevMeter Free
+            </Button>
+          </div>
+        </section>
+
+        {/* Footer */}
+        <footer className="py-12 px-6 border-t border-white/5 text-center">
+          <p className="text-muted-foreground text-sm font-medium">
+            © {new Date().getFullYear()} DevMeter. Built with passion for open source.
+          </p>
+        </footer>
+      </main>
     </div>
   );
 }
 
-function StatCard({ title, value, subtitle, icon: Icon, logo, loading }: any) {
+function FeatureCard({ icon: Icon, title, description, color }: any) {
   return (
-    <Card className="relative overflow-hidden group border-muted/60 hover:border-primary/50 transition-all duration-300">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium group-hover:text-primary transition-colors">{title}</CardTitle>
-        <div className="p-2 rounded-lg bg-primary/5 group-hover:bg-primary/10 transition-colors h-8 w-8 flex items-center justify-center">
-          {logo ? (
-            <img
-              src={logo}
-              alt={title}
-              className="h-4 w-4 object-contain transition-all duration-300"
-              style={{ filter: "brightness(1.2) saturate(1.2) drop-shadow(0 2px 4px rgba(0,0,0,0.3))" }}
-            />
-          ) : (
-            <Icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
-          )}
-        </div>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <Skeleton className="h-8 w-24" />
-        ) : (
-          <div className="space-y-1">
-            <div className="text-3xl font-bold tracking-tighter">{value || "0h 0m"}</div>
-            <p className="text-xs text-muted-foreground font-medium flex items-center">
-              {subtitle}
-            </p>
-          </div>
-        )}
-      </CardContent>
-      <div className="absolute bottom-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
-        {logo ? (
-          <img
-            src={logo}
-            alt=""
-            className="h-12 w-12 object-contain"
-            style={{ filter: "brightness(1.1) saturate(1.1)" }}
-          />
-        ) : (
-          <Icon className="h-12 w-12" />
-        )}
+    <Card className="bg-white/5 border-white/5 p-8 hover:bg-white/10 transition-colors group relative overflow-hidden">
+      <div className={`p-3 rounded-2xl bg-white/5 w-fit mb-6 ${color} group-hover:scale-110 transition-transform`}>
+        <Icon className="h-8 w-8" />
       </div>
+      <h3 className="text-xl font-bold mb-3">{title}</h3>
+      <p className="text-muted-foreground leading-relaxed">{description}</p>
     </Card>
   );
 }
