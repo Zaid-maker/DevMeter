@@ -37,14 +37,14 @@ export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
     const range = searchParams.get("range"); // e.g., "today"
 
-    let startDate = subDays(now, 7);
+    let startDate = subDays(now, 14); // Fetch last 14 days for growth comparison
     if (range === "today") {
         startDate = startOfDay(now);
     }
 
     try {
-        // Fetch heartbeats for the last 7 days
-        const heartbeats = await prisma.heartbeat.findMany({
+        // Fetch heartbeats
+        const allHeartbeats = await prisma.heartbeat.findMany({
             where: {
                 userId,
                 timestamp: {
@@ -52,6 +52,11 @@ export async function GET(req: NextRequest) {
                 },
             },
         });
+
+        // Split heartbeats into current week and previous week
+        const currentWeekStart = subDays(now, 7);
+        const heartbeats = allHeartbeats.filter(h => new Date(h.timestamp) >= currentWeekStart);
+        const prevWeekHeartbeats = allHeartbeats.filter(h => new Date(h.timestamp) < currentWeekStart);
 
         // Helper function to calculate duration in hours from heartbeats
         const calculateDuration = (hList: typeof heartbeats) => {
@@ -152,6 +157,21 @@ export async function GET(req: NextRequest) {
             .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
             .slice(0, 10);
 
+        const lastHeartbeat = recentActivity[0];
+        const isLive = lastHeartbeat
+            ? (now.getTime() - new Date(lastHeartbeat.timestamp).getTime()) < 15 * 60 * 1000
+            : false;
+
+        // Calculate Weekly Growth
+        const currentWeekHours = calculateDuration(heartbeats);
+        const prevWeekHours = calculateDuration(prevWeekHeartbeats);
+        let percentGrowth = 0;
+        if (prevWeekHours > 0) {
+            percentGrowth = Math.round(((currentWeekHours - prevWeekHours) / prevWeekHours) * 100);
+        } else if (currentWeekHours > 0) {
+            percentGrowth = 100; // 100% growth if starting from zero
+        }
+
         return NextResponse.json({
             activityByDay,
             languages,
@@ -161,7 +181,10 @@ export async function GET(req: NextRequest) {
                 totalTime: `${totalHoursVal}h ${remainingMinutes}m`,
                 dailyAverage: `${(totalDuration / 7).toFixed(1)}h`,
                 topProject,
-                topLanguage: languages[0]?.name || "None"
+                topLanguage: languages[0]?.name || "None",
+                isLive,
+                lastHeartbeatAt: lastHeartbeat?.timestamp,
+                percentGrowth
             }
         });
 

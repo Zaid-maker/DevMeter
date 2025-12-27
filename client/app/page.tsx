@@ -30,6 +30,9 @@ interface Stats {
     dailyAverage: string;
     topProject: string;
     topLanguage: string;
+    isLive?: boolean;
+    lastHeartbeatAt?: string;
+    percentGrowth?: number;
   };
 }
 
@@ -80,14 +83,34 @@ export default function DashboardPage() {
         <div className="space-y-1">
           <h2 className="text-4xl font-extrabold tracking-tight">Bonjour, {session.user.name?.split(' ')[0]}</h2>
           <p className="text-muted-foreground flex items-center">
-            <TrendingUp className="mr-2 h-4 w-4 text-green-500" />
-            Your coding output is up 12% compared to last week.
+            {stats?.summary.percentGrowth !== undefined && (
+              <>
+                {stats.summary.percentGrowth >= 0 ? (
+                  <TrendingUp className="mr-2 h-4 w-4 text-green-500" />
+                ) : (
+                  <TrendingUp className="mr-2 h-4 w-4 text-red-500 transform rotate-180" />
+                )}
+                Your coding output is {stats.summary.percentGrowth >= 0 ? 'up' : 'down'} {Math.abs(stats.summary.percentGrowth)}% compared to last week.
+              </>
+            )}
+            {stats?.summary.percentGrowth === undefined && !isLoading && (
+              <>
+                <TrendingUp className="mr-2 h-4 w-4 text-primary opacity-50" />
+                Track your progress to see weekly insights.
+              </>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Badge variant="secondary" className="px-3 py-1.5 bg-green-500/10 text-green-500 hover:bg-green-500/20 border-green-500/20">
-            <Activity className="mr-2 h-4 w-4 animate-pulse" />
-            Live Tracking Active
+          <Badge
+            variant="secondary"
+            className={`px-3 py-1.5 border transition-all duration-500 ${stats?.summary.isLive
+              ? "bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500/20"
+              : "bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20"
+              }`}
+          >
+            <Activity className={`mr-2 h-4 w-4 ${stats?.summary.isLive ? "animate-pulse" : "opacity-50"}`} />
+            {stats?.summary.isLive ? "Extension Live" : "Extension Offline"}
           </Badge>
           <Button variant="outline" size="sm" className="hidden sm:flex">
             Share Stats <ArrowUpRight className="ml-2 h-4 w-4" />
