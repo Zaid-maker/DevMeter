@@ -9,7 +9,7 @@
 - 🚀 **Zero-Config Automation**: Just install and enter your API key. DevMeter handles the rest in the background.
 - 📊 **Real-Time Status Bar**: See your daily coding time directly in your VS Code status bar.
 - 🧠 **Smart Session Tracking**: Automatically detects active coding sessions vs. idle time.
-- 🌍 **Vibrant Dashboard**: Syncs with the [DevMeter Web Dashboard](https://dev-meter.vercel.app) to show beautiful, high-contrast language and project breakdowns.
+- 🌍 **Vibrant Dashboard**: Syncs with the [DevMeter Web Dashboard](https://devmeter.zaidcode.me) to show beautiful, high-contrast language and project breakdowns.
 - 📦 **Feather-light**: Optimized for performance, weighing in at less than 1MB.
 - 🔓 **100% Open Source**: Built for transparency. Audit the code, contribute, or host it yourself. Unlike other trackers, your data's journey is fully visible.
 
@@ -17,7 +17,7 @@
 
 ## 🚀 Getting Started
 
-1. **Sign Up**: Create an account at [DevMeter Dashboard](https://dev-meter.vercel.app).
+1. **Sign Up**: Create an account at [DevMeter Dashboard](https://devmeter.zaidcode.me).
 2. **Get API Key**: Copy your unique API Key from your profile settings.
 3. **Install Extension**: Add this extension to your VS Code.
 4. **Configure**:

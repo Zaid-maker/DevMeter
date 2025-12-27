@@ -44,7 +44,7 @@
         },
         "devmeter.apiUrl": {
           "type": "string",
-          "default": "https://dev-meter.vercel.app/api",
+          "default": "https://devmeter.zaidcode.me/api",
           "description": "DevMeter API URL"
         }
       }
