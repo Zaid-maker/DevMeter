@@ -13,6 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
 import useSWR from "swr";
+import { useRouter } from "next/navigation";
 
 interface Stats {
     activityByDay: { name: string; total: number }[];
@@ -39,7 +40,18 @@ interface Stats {
     };
 }
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = async (url: string) => {
+    const res = await fetch(url);
+    if (!res.ok) {
+        const errorData = await res.json().catch(() => null);
+        const errorText = !errorData ? await res.text().catch(() => "Unknown error") : null;
+        const error = new Error(errorData?.message || errorText || "An error occurred while fetching the data.");
+        (error as any).status = res.status;
+        (error as any).info = errorData;
+        throw error;
+    }
+    return res.json();
+};
 
 export default function DashboardPage() {
     const { data: session, isPending: isAuthPending } = authClient.useSession();
@@ -48,6 +60,7 @@ export default function DashboardPage() {
         fetcher,
         { refreshInterval: 60000 } // Refresh every minute
     );
+    const router = useRouter()
 
     if (isAuthPending) {
         return (
@@ -61,7 +74,7 @@ export default function DashboardPage() {
     }
 
     if (!session) {
-        window.location.href = "/auth/sign-in";
+        router.replace("/auth/sign-in");
         return null;
     }
 
