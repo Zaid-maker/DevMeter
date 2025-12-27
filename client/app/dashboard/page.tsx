@@ -79,12 +79,12 @@ export default function DashboardPage() {
     }
 
     return (
-        <div className="flex-1 space-y-8 p-8 pt-6 max-w-7xl mx-auto">
+        <div className="flex-1 space-y-6 md:space-y-8 p-4 md:p-8 pt-4 md:pt-6 max-w-7xl mx-auto">
             {/* Hero Section */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div className="space-y-1">
-                    <h2 className="text-4xl font-extrabold tracking-tight">Bonjour, {session.user.name?.split(' ')[0]}</h2>
-                    <p className="text-muted-foreground flex items-center">
+                    <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">Bonjour, {session.user.name?.split(' ')[0]}</h2>
+                    <p className="text-sm md:text-base text-muted-foreground flex items-center">
                         {stats?.summary.percentGrowth !== undefined && (
                             <>
                                 {stats.summary.percentGrowth >= 0 ? (
@@ -92,7 +92,9 @@ export default function DashboardPage() {
                                 ) : (
                                     <TrendingUp className="mr-2 h-4 w-4 text-red-500 transform rotate-180" />
                                 )}
-                                Your coding output is {stats.summary.percentGrowth >= 0 ? 'up' : 'down'} {Math.abs(stats.summary.percentGrowth)}% compared to last week.
+                                <span className="line-clamp-1">
+                                    Your output is {stats.summary.percentGrowth >= 0 ? 'up' : 'down'} {Math.abs(stats.summary.percentGrowth)}% vs last week.
+                                </span>
                             </>
                         )}
                         {stats?.summary.percentGrowth === undefined && !isLoading && (
@@ -103,10 +105,10 @@ export default function DashboardPage() {
                         )}
                     </p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center gap-2 md:gap-3">
                     <Badge
                         variant="secondary"
-                        className={`px-3 py-1.5 border transition-all duration-500 ${stats?.summary.isLive
+                        className={`px-3 py-1.5 border transition-all duration-500 text-[10px] md:text-xs ${stats?.summary.isLive
                             ? "bg-green-500/10 text-green-500 border-green-500/20 hover:bg-green-500/20"
                             : "bg-red-500/10 text-red-500 border-red-500/20 hover:bg-red-500/20"
                             }`}
@@ -114,18 +116,20 @@ export default function DashboardPage() {
                         <Activity className={`mr-2 h-4 w-4 ${stats?.summary.isLive ? "animate-pulse" : "opacity-50"}`} />
                         {stats?.summary.isLive ? "Extension Live" : "Extension Offline"}
                     </Badge>
-                    <Button variant="outline" size="sm" className="hidden sm:flex">
+                    <Button variant="outline" size="sm" className="hidden sm:flex rounded-lg h-9">
                         Share Stats <ArrowUpRight className="ml-2 h-4 w-4" />
                     </Button>
                 </div>
             </div>
 
-            <Tabs defaultValue="overview" className="space-y-8">
-                <TabsList className="bg-muted/50 p-1">
-                    <TabsTrigger value="overview" className="px-6">Overview</TabsTrigger>
-                    <TabsTrigger value="projects" className="px-6">Projects</TabsTrigger>
-                    <TabsTrigger value="languages" className="px-6">Languages</TabsTrigger>
-                </TabsList>
+            <Tabs defaultValue="overview" className="space-y-6 md:space-y-8">
+                <div className="w-full overflow-x-auto pb-1 no-scrollbar">
+                    <TabsList className="bg-muted/50 p-1 w-full sm:w-auto flex">
+                        <TabsTrigger value="overview" className="flex-1 sm:flex-none px-4 md:px-6">Overview</TabsTrigger>
+                        <TabsTrigger value="projects" className="flex-1 sm:flex-none px-4 md:px-6">Projects</TabsTrigger>
+                        <TabsTrigger value="languages" className="flex-1 sm:flex-none px-4 md:px-6">Languages</TabsTrigger>
+                    </TabsList>
+                </div>
 
                 <TabsContent value="overview" className="space-y-8">
                     {/* Quick Stats Grid */}

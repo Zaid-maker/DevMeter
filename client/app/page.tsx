@@ -62,15 +62,15 @@ export default function LandingPage() {
         </nav>
 
         {/* Hero Section */}
-        <section className="pt-24 pb-20 px-6 max-w-7xl mx-auto text-center">
-          <Badge variant="outline" className="mb-6 py-1 px-4 border-primary/20 bg-primary/5 text-primary animate-bounce">
+        <section className="pt-16 md:pt-24 pb-12 md:pb-20 px-4 md:px-6 max-w-7xl mx-auto text-center overflow-hidden">
+          <Badge variant="outline" className="mb-6 py-1 px-4 border-primary/20 bg-primary/5 text-primary animate-bounce text-[10px] md:text-sm">
             <Zap className="h-3 w-3 mr-2" /> 100% Open Source
           </Badge>
-          <h1 className="text-6xl md:text-8xl font-black tracking-tighter mb-8 leading-[1.1]">
-            Master your <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-blue-400 to-primary bg-[length:200%_auto] animate-gradient">craft.</span><br />
+          <h1 className="text-5xl md:text-8xl font-black tracking-tighter mb-6 md:mb-8 leading-[1.05] md:leading-[1.1]">
+            Master your <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-blue-400 to-primary bg-[length:200%_auto] animate-gradient">craft.</span><br className="hidden md:block" />
             Track every <span className="text-primary/90 italic">stroke.</span>
           </h1>
-          <p className="text-muted-foreground text-xl md:text-2xl max-w-2xl mx-auto mb-12 font-medium leading-relaxed">
+          <p className="text-muted-foreground text-lg md:text-2xl max-w-2xl mx-auto mb-10 md:mb-12 font-medium leading-relaxed px-2">
             The ultimate automated coding time tracker for elite developers. Get deep insights into your productivity without lifting a finger.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
@@ -99,20 +99,20 @@ export default function LandingPage() {
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full">
-                <div className="space-y-2 text-left">
-                  <p className="text-xs text-primary font-mono uppercase tracking-widest">Tracking Live</p>
-                  <p className="text-4xl font-black">4h 32m</p>
-                  <p className="text-xs text-muted-foreground">Recorded today from VS Code</p>
+                <div className="space-y-1 text-left">
+                  <p className="text-[10px] text-primary font-mono uppercase tracking-widest opacity-70">Tracking Live</p>
+                  <p className="text-3xl md:text-4xl font-black">4h 32m</p>
+                  <p className="text-[10px] text-muted-foreground">Recorded today</p>
                 </div>
-                <div className="space-y-2 text-left">
-                  <p className="text-xs text-blue-400 font-mono uppercase tracking-widest">Top Stack</p>
-                  <p className="text-4xl font-black">Typescript</p>
-                  <p className="text-xs text-muted-foreground">84% of your daily workload</p>
+                <div className="space-y-1 text-left">
+                  <p className="text-[10px] text-blue-400 font-mono uppercase tracking-widest opacity-70">Top Stack</p>
+                  <p className="text-3xl md:text-4xl font-black">Typescript</p>
+                  <p className="text-[10px] text-muted-foreground">84% of workload</p>
                 </div>
-                <div className="space-y-2 text-left">
-                  <p className="text-xs text-green-400 font-mono uppercase tracking-widest">Growth</p>
-                  <p className="text-4xl font-black text-green-400">+12%</p>
-                  <p className="text-xs text-muted-foreground">Up from last week</p>
+                <div className="space-y-1 text-left">
+                  <p className="text-[10px] text-green-400 font-mono uppercase tracking-widest opacity-70">Weekly Growth</p>
+                  <p className="text-3xl md:text-4xl font-black text-green-400">+12%</p>
+                  <p className="text-[10px] text-muted-foreground">Up from last week</p>
                 </div>
               </div>
             </Card>
