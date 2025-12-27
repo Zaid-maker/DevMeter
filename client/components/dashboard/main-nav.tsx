@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export function MainNav() {
     const { data: session } = authClient.useSession();
@@ -38,66 +39,98 @@ export function MainNav() {
         .join("")
         .toUpperCase() || "DM";
 
+    const navItems = [
+        { name: "Dashboard", href: "/dashboard" },
+        { name: "Projects", href: "/projects" },
+        { name: "Goals", href: "/goals" },
+        { name: "Leaderboard", href: "/leaderboard" },
+    ];
+
     return (
-        <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="flex h-16 items-center px-8">
-                <Link href="/" className="flex items-center space-x-2 mr-6 hover:opacity-80 transition-opacity">
-                    <Activity className="h-6 w-6 text-primary" />
-                    <span className="text-xl font-bold">DevMeter</span>
+        <header className="sticky top-0 z-50 w-full border-b border-white/5 bg-background/40 backdrop-blur-xl supports-[backdrop-filter]:bg-background/20">
+            <div className="flex h-16 items-center px-8 max-w-7xl mx-auto">
+                <Link href="/" className="flex items-center space-x-2 mr-8 group transition-all">
+                    <div className="bg-primary p-1.5 rounded-lg group-hover:rotate-12 transition-transform duration-300 shadow-[0_0_15px_rgba(var(--primary-rgb),0.3)]">
+                        <Activity className="h-5 w-5 text-black" />
+                    </div>
+                    <span className="text-xl font-black tracking-tighter group-hover:text-primary transition-colors">DevMeter</span>
                 </Link>
-                <nav className="flex items-center space-x-6 text-sm font-medium">
-                    <Link href="/dashboard" className="transition-colors hover:text-foreground/80 text-foreground">Dashboard</Link>
-                    <Link href="/projects" className="transition-colors hover:text-foreground/80 text-muted-foreground">Projects</Link>
-                    <Link href="/goals" className="transition-colors hover:text-foreground/80 text-muted-foreground">Goals</Link>
-                    <Link href="/leaderboard" className="transition-colors hover:text-foreground/80 text-muted-foreground">Leaderboard</Link>
+
+                <nav className="flex items-center space-x-1 text-sm font-medium">
+                    {navItems.map((item) => {
+                        const isActive = pathname === item.href;
+                        return (
+                            <Link
+                                key={item.href}
+                                href={item.href}
+                                className={cn(
+                                    "px-4 py-2 rounded-full transition-all duration-300 relative group",
+                                    isActive
+                                        ? "text-primary bg-primary/5 font-bold"
+                                        : "text-muted-foreground hover:text-foreground hover:bg-white/5"
+                                )}
+                            >
+                                {item.name}
+                                {isActive && (
+                                    <span className="absolute bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary rounded-full" />
+                                )}
+                            </Link>
+                        );
+                    })}
                 </nav>
+
                 <div className="ml-auto flex items-center space-x-4">
                     {session ? (
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                                    <Avatar className="h-8 w-8">
-                                        <AvatarImage src={session.user.image || ""} alt={session.user.name} />
-                                        <AvatarFallback className="bg-primary/10">{userInitial}</AvatarFallback>
-                                    </Avatar>
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-56" align="end" forceMount>
-                                <DropdownMenuLabel className="font-normal">
-                                    <div className="flex flex-col space-y-1">
-                                        <p className="text-sm font-medium leading-none">{session.user.name}</p>
-                                        <p className="text-xs leading-none text-muted-foreground">
-                                            {session.user.email}
-                                        </p>
-                                    </div>
-                                </DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem asChild>
-                                    <Link href="/profile">
-                                        <User className="mr-2 h-4 w-4" />
-                                        <span>Profile</span>
-                                    </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem asChild>
-                                    <Link href="/settings">
-                                        <Settings className="mr-2 h-4 w-4" />
-                                        <span>Settings</span>
-                                    </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={handleSignOut} className="text-destructive focus:text-destructive">
-                                    <LogOut className="mr-2 h-4 w-4" />
-                                    <span>Log out</span>
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                        <div className="flex items-center gap-4">
+                            <span className="text-xs font-mono text-muted-foreground hidden md:inline-block border border-white/5 px-2 py-1 rounded bg-white/5 uppercase tracking-tighter">
+                                {session.user.name?.split(' ')[0]}
+                            </span>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" className="relative h-9 w-9 rounded-xl p-0 hover:bg-white/5 transition-colors border border-white/5">
+                                        <Avatar className="h-8 w-8 rounded-lg">
+                                            <AvatarImage src={session.user.image || ""} alt={session.user.name} />
+                                            <AvatarFallback className="bg-primary/10 text-[10px] font-bold text-primary">{userInitial}</AvatarFallback>
+                                        </Avatar>
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-56 mt-2 bg-black/90 border-white/10 backdrop-blur-xl rounded-2xl p-2" align="end" forceMount>
+                                    <DropdownMenuLabel className="font-normal px-2 pb-2">
+                                        <div className="flex flex-col space-y-1">
+                                            <p className="text-sm font-bold leading-none">{session.user.name}</p>
+                                            <p className="text-[10px] font-mono leading-none text-muted-foreground uppercase opacity-70">
+                                                {session.user.email}
+                                            </p>
+                                        </div>
+                                    </DropdownMenuLabel>
+                                    <DropdownMenuSeparator className="bg-white/5" />
+                                    <DropdownMenuItem className="rounded-xl cursor-pointer focus:bg-white/5 py-2.5" asChild>
+                                        <Link href="/profile">
+                                            <User className="mr-2 h-4 w-4 text-muted-foreground" />
+                                            <span className="font-medium text-sm">Profile</span>
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem className="rounded-xl cursor-pointer focus:bg-white/5 py-2.5" asChild>
+                                        <Link href="/settings">
+                                            <Settings className="mr-2 h-4 w-4 text-muted-foreground" />
+                                            <span className="font-medium text-sm">Settings</span>
+                                        </Link>
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator className="bg-white/5" />
+                                    <DropdownMenuItem onClick={handleSignOut} className="rounded-xl cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/5 py-2.5">
+                                        <LogOut className="mr-2 h-4 w-4" />
+                                        <span className="font-medium text-sm">Log out</span>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
                     ) : (
-                        <Button variant="outline" size="sm" asChild>
+                        <Button variant="outline" size="sm" asChild className="rounded-full px-6 border-white/10 hover:bg-white/5 font-bold transition-all">
                             <Link href="/auth/sign-in">Sign In</Link>
                         </Button>
                     )}
                 </div>
             </div>
-        </div>
+        </header>
     );
 }
