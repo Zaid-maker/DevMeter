@@ -20,7 +20,7 @@ export function MainNav() {
     const router = useRouter();
     const pathname = usePathname();
 
-    if (pathname === "/") return null;
+    if (pathname === "/" || pathname.startsWith("/auth")) return null;
 
     const handleSignOut = async () => {
         await authClient.signOut({
