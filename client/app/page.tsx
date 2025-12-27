@@ -192,11 +192,12 @@ export default function DashboardPage() {
                     <div className="space-y-6">
                       {stats?.recentActivity.map((activity) => (
                         <div key={activity.id} className="flex items-start space-x-4">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted/30 p-2 shadow-sm">
+                          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-muted/40 p-2.5 shadow-sm border border-muted/50 backdrop-blur-sm">
                             <img
                               src={activity.icon}
                               alt={activity.language}
                               className="h-full w-full object-contain"
+                              style={{ filter: "brightness(1.2) saturate(1.3) drop-shadow(0 2px 4px rgba(0,0,0,0.2))" }}
                               onError={(e) => {
                                 (e.target as HTMLImageElement).style.display = 'none';
                                 (e.target as HTMLImageElement).parentElement!.style.backgroundColor = activity.color;
@@ -269,11 +270,12 @@ export default function DashboardPage() {
                     <div key={lang.name} className="space-y-2">
                       <div className="flex items-center justify-between text-sm">
                         <div className="flex items-center gap-3">
-                          <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted/30 p-1.5 shadow-inner">
+                          <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-muted/40 p-2 shadow-inner border border-muted/50 backdrop-blur-sm">
                             <img
                               src={lang.icon}
                               alt={lang.name}
                               className="h-full w-full object-contain"
+                              style={{ filter: "brightness(1.2) saturate(1.3) drop-shadow(0 2px 4px rgba(0,0,0,0.2))" }}
                               onError={(e) => {
                                 (e.target as HTMLImageElement).style.display = 'none';
                                 (e.target as HTMLImageElement).parentElement!.style.backgroundColor = lang.color;
@@ -311,7 +313,12 @@ function StatCard({ title, value, subtitle, icon: Icon, logo, loading }: any) {
         <CardTitle className="text-sm font-medium group-hover:text-primary transition-colors">{title}</CardTitle>
         <div className="p-2 rounded-lg bg-primary/5 group-hover:bg-primary/10 transition-colors h-8 w-8 flex items-center justify-center">
           {logo ? (
-            <img src={logo} alt={title} className="h-4 w-4 object-contain grayscale group-hover:grayscale-0 transition-all" />
+            <img
+              src={logo}
+              alt={title}
+              className="h-4 w-4 object-contain transition-all duration-300"
+              style={{ filter: "brightness(1.2) saturate(1.2) drop-shadow(0 2px 4px rgba(0,0,0,0.3))" }}
+            />
           ) : (
             <Icon className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
           )}
@@ -331,7 +338,12 @@ function StatCard({ title, value, subtitle, icon: Icon, logo, loading }: any) {
       </CardContent>
       <div className="absolute bottom-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
         {logo ? (
-          <img src={logo} alt="" className="h-12 w-12 object-contain grayscale" />
+          <img
+            src={logo}
+            alt=""
+            className="h-12 w-12 object-contain"
+            style={{ filter: "brightness(1.1) saturate(1.1)" }}
+          />
         ) : (
           <Icon className="h-12 w-12" />
         )}
