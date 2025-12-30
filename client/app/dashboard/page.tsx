@@ -31,10 +31,14 @@ interface Stats {
     }[];
     summary: {
         totalTime: string;
+        totalTime24h: string;
         dailyAverage: string;
         topProject: string;
+        topProject24h: string;
         topLanguage: string;
+        topLanguage24h: string;
         topLanguageIcon?: string;
+        topLanguageIcon24h?: string;
         isLive?: boolean;
         lastHeartbeatAt?: string;
         percentGrowth?: number;
@@ -145,10 +149,10 @@ export default function DashboardPage() {
                 <TabsContent value="overview" className="space-y-8">
                     {/* Quick Stats Grid */}
                     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                        <StatCard title="Coding Time" value={stats?.summary.totalTime} subtitle="Last 7 Days" icon={Clock} loading={isLoading} />
+                        <StatCard title="Coding Time" value={stats?.summary.totalTime24h} subtitle="Last 24 Hours" icon={Clock} loading={isLoading} />
                         <StatCard title="Daily Mean" value={stats?.summary.dailyAverage} subtitle="Consistency Goal: 4h" icon={Activity} loading={isLoading} />
-                        <StatCard title="Primary Target" value={stats?.summary.topProject} subtitle="Highest engagement" icon={Layout} loading={isLoading} />
-                        <StatCard title="Main Stack" value={stats?.summary.topLanguage} subtitle="Primary language" icon={Code} logo={stats?.summary.topLanguageIcon} loading={isLoading} />
+                        <StatCard title="Primary Target" value={stats?.summary.topProject24h} subtitle="Active Project (24h)" icon={Layout} loading={isLoading} />
+                        <StatCard title="Main Stack" value={stats?.summary.topLanguage24h} subtitle="Last 24 Hours" icon={Code} logo={stats?.summary.topLanguageIcon24h} loading={isLoading} />
                     </div>
 
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-12">

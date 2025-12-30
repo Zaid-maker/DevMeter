@@ -168,6 +168,38 @@ export async function GET(req: NextRequest) {
             ? (now.getTime() - new Date(lastHeartbeat.timestamp).getTime()) < 15 * 60 * 1000
             : false;
 
+        // 5. 24-Hour Specific Stats (for Quick Stats Cards)
+        const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        const last24hHeartbeats = heartbeats.filter(h => new Date(h.timestamp) >= dayAgo);
+
+        const totalDuration24h = calculateDuration(last24hHeartbeats);
+        const totalHours24h = Math.floor(totalDuration24h);
+        const remainingMinutes24h = Math.round((totalDuration24h - totalHours24h) * 60);
+
+        // Top Project (24h)
+        const proj24hGroups = new Map<string, typeof heartbeats>();
+        last24hHeartbeats.forEach(h => {
+            if (!proj24hGroups.has(h.project)) proj24hGroups.set(h.project, []);
+            proj24hGroups.get(h.project)!.push(h);
+        });
+        const proj24hDurs = Array.from(proj24hGroups.entries()).map(([name, hList]) => ({
+            name,
+            duration: calculateDuration(hList)
+        })).sort((a, b) => b.duration - a.duration);
+        const topProject24h = proj24hDurs[0]?.name || "None";
+
+        // Top Language (24h)
+        const lang24hGroups = new Map<string, typeof heartbeats>();
+        last24hHeartbeats.forEach(h => {
+            if (!lang24hGroups.has(h.language)) lang24hGroups.set(h.language, []);
+            lang24hGroups.get(h.language)!.push(h);
+        });
+        const lang24hDurs = Array.from(lang24hGroups.entries()).map(([name, hList]) => ({
+            name,
+            duration: calculateDuration(hList)
+        })).sort((a, b) => b.duration - a.duration);
+        const topLanguage24h = lang24hDurs[0]?.name || "None";
+
         // Calculate Weekly Growth
         const currentWeekHours = calculateDuration(heartbeats);
         const prevWeekHours = calculateDuration(prevWeekHeartbeats);
@@ -185,10 +217,14 @@ export async function GET(req: NextRequest) {
             recentActivity,
             summary: {
                 totalTime: `${totalHoursVal}h ${remainingMinutes}m`,
+                totalTime24h: `${totalHours24h}h ${remainingMinutes24h}m`,
                 dailyAverage: `${(totalDuration / 7).toFixed(1)}h`,
                 topProject,
+                topProject24h,
                 topLanguage: languages[0]?.name || "None",
+                topLanguage24h,
                 topLanguageIcon: languages[0]?.icon,
+                topLanguageIcon24h: topLanguage24h !== "None" ? getLanguageIcon(topLanguage24h) : undefined,
                 isLive,
                 lastHeartbeatAt: lastHeartbeat?.timestamp,
                 percentGrowth
