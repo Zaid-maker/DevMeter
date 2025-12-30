@@ -27,7 +27,7 @@ model Session {
   id        String   @id @default(cuid())
   userId    String
   expiresAt DateTime
-  token     String
+  token     String   @unique
   createdAt DateTime
   updatedAt DateTime
   ipAddress String?
@@ -50,6 +50,8 @@ model Account {
   createdAt             DateTime
   updatedAt             DateTime
   user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
 }
 
 model Verification {

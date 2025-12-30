@@ -64,7 +64,7 @@ export default function LandingPage() {
         </nav>
 
         {/* Hero Section */}
-        <section className="pt-16 md:pt-24 pb-12 md:pb-20 px-4 md:px-6 max-w-7xl mx-auto text-center overflow-hidden">
+        <section className="pt-10 md:pt-16 pb-12 md:pb-20 px-4 md:px-6 max-w-7xl mx-auto text-center overflow-hidden">
           <Badge variant="outline" className="mb-6 py-1 px-4 border-primary/20 bg-primary/5 text-primary animate-bounce text-[10px] md:text-sm">
             <Zap className="h-3 w-3 mr-2" /> 100% Open Source
           </Badge>
