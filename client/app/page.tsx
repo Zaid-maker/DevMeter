@@ -18,8 +18,10 @@ import {
   ArrowRight,
   MousePointer2,
   Terminal,
-  Cpu
+  Cpu,
+  Download
 } from "lucide-react";
+import Link from "next/link";
 
 export default function LandingPage() {
   const router = useRouter();
@@ -74,13 +76,15 @@ export default function LandingPage() {
             The ultimate automated coding time tracker for elite developers. Get deep insights into your productivity without lifting a finger.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
-            <Button size="lg" onClick={() => router.push("/auth/sign-up")} className="h-14 px-10 text-lg bg-primary text-black hover:bg-primary/90 font-black rounded-full w-full sm:w-auto shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)]">
-              Start Tracking Now <ArrowRight className="ml-2 h-5 w-5" />
-            </Button>
-            <Button variant="outline" size="lg" asChild className="h-14 px-10 text-lg border-white/10 hover:bg-white/5 rounded-full w-full sm:w-auto font-bold">
-              <a href="https://github.com/Zaid-maker/DevMeter" target="_blank" rel="noopener noreferrer">
-                <Github className="mr-2 h-5 w-5" /> View on GitHub
+            <Button size="lg" asChild className="h-14 px-10 text-lg bg-primary text-black hover:bg-primary/90 font-black rounded-full w-full sm:w-auto shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)]">
+              <a href="https://marketplace.visualstudio.com/items?itemName=DevMitrza.devmeter" target="_blank" rel="noopener noreferrer">
+                Install Extension <Download className="ml-2 h-5 w-5" />
               </a>
+            </Button>
+            <Button variant="outline" size="lg" asChild className="h-14 px-10 text-lg border-white/10 hover:bg-white/5 rounded-full w-full sm:w-auto font-bold text-white">
+              <Link href="/auth/sign-up">
+                Start Tracking <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
             </Button>
           </div>
 
@@ -170,9 +174,16 @@ export default function LandingPage() {
           <div className="max-w-4xl mx-auto bg-primary rounded-[3rem] p-12 md:p-20 text-black relative overflow-hidden group">
             <div className="absolute top-0 right-0 h-40 w-40 bg-white/20 rounded-full blur-3xl -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-1000" />
             <h2 className="text-4xl md:text-6xl font-black tracking-tighter mb-8 leading-tight">Ready to verify<br /> your intensity?</h2>
-            <Button size="lg" onClick={() => router.push("/auth/sign-up")} className="bg-black text-white hover:bg-black/90 font-black px-10 h-16 text-xl rounded-full">
-              Join DevMeter Free
-            </Button>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <Button size="lg" asChild className="bg-black text-white hover:bg-black/90 font-black px-10 h-16 text-xl rounded-full w-full sm:w-auto">
+                <Link href="/auth/sign-up">Join DevMeter Free</Link>
+              </Button>
+              <Button size="lg" variant="outline" asChild className="border-black/20 hover:bg-black/5 font-black px-10 h-16 text-xl rounded-full w-full sm:w-auto">
+                <a href="https://marketplace.visualstudio.com/items?itemName=DevMitrza.devmeter" target="_blank" rel="noopener noreferrer">
+                  Get Extension
+                </a>
+              </Button>
+            </div>
           </div>
         </section>
 
