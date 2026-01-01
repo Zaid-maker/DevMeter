@@ -27,7 +27,7 @@ import {
   LogOut,
   Zap
 } from 'lucide-react';
-import { cn } from '../../client/lib/utils';
+import { cn } from '@workspace/client/lib/utils';
 
 const App = () => {
   const [adminSecret, setAdminSecret] = useState(localStorage.getItem('devmeter_admin_secret') || '');
