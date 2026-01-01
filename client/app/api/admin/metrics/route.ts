@@ -2,7 +2,18 @@ import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { startOfDay, subDays, format } from "date-fns";
 
-const ADMIN_SECRET = process.env.DEV_ADMIN_SECRET || "dev-secret-123";
+const ADMIN_SECRET = process.env.DEV_ADMIN_SECRET;
+
+// SECURITY: Ensure the admin secret is configured.
+// Fallback to a development default ONLY if NODE_ENV is "development".
+const getAdminSecret = () => {
+    const isDev = process.env.NODE_ENV === "development";
+    if (!ADMIN_SECRET) {
+        if (isDev) return "dev-secret-123";
+        throw new Error("DEV_ADMIN_SECRET is not configured in production environment.");
+    }
+    return ADMIN_SECRET;
+};
 
 function isOriginAllowed(origin: string | null) {
     if (!origin) return false;
@@ -32,7 +43,8 @@ export async function GET(req: NextRequest) {
     const origin = req.headers.get("origin");
     const secret = req.headers.get("X-Admin-Secret");
 
-    if (secret !== ADMIN_SECRET) {
+    const activeSecret = getAdminSecret();
+    if (secret !== activeSecret) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: getCorsHeaders(origin) });
     }
 
@@ -65,10 +77,11 @@ export async function GET(req: NextRequest) {
             projectCounts.set(h.project, (projectCounts.get(h.project) || 0) + 1);
         });
 
+        const totalHeartbeats = heartbeats.length;
         const topProjects = Array.from(projectCounts.entries())
             .map(([name, count]) => ({
                 name,
-                value: Math.round((count / heartbeats.length) * 100),
+                value: totalHeartbeats === 0 ? 0 : Math.round((count / totalHeartbeats) * 100),
                 requests: count
             }))
             .sort((a, b) => b.requests - a.requests)
@@ -83,7 +96,7 @@ export async function GET(req: NextRequest) {
         const languages = Array.from(langCounts.entries())
             .map(([name, count]) => ({
                 name,
-                value: Math.round((count / heartbeats.length) * 100),
+                value: totalHeartbeats === 0 ? 0 : Math.round((count / totalHeartbeats) * 100),
                 color: getLanguageColor(name)
             }))
             .sort((a, b) => b.value - a.value)
