@@ -32,6 +32,18 @@
       {
         "command": "devmeter.apiKey",
         "title": "DevMeter: Enter API Key"
+      },
+      {
+        "command": "devmeter.dashboard",
+        "title": "DevMeter: Open Dashboard"
+      },
+      {
+        "command": "devmeter.profile",
+        "title": "DevMeter: Open Profile"
+      },
+      {
+        "command": "devmeter.showMenu",
+        "title": "DevMeter: Show Menu"
       }
     ],
     "configuration": {
@@ -46,6 +58,16 @@
           "type": "string",
           "default": "https://devmeter.zaidcode.me/api",
           "description": "DevMeter API URL"
+        },
+        "devmeter.showProject": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show current project name in status bar"
+        },
+        "devmeter.showStreak": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show current streak in status bar"
         }
       }
     }

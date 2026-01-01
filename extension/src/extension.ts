@@ -18,14 +18,14 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Status Bar Item
     statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-    statusBarItem.command = 'devmeter.apiKey';
-    statusBarItem.tooltip = 'DevMeter: Click to configure';
+    statusBarItem.command = 'devmeter.showMenu';
+    statusBarItem.tooltip = 'DevMeter: Click for more options';
     statusBarItem.text = '$(clock) DevMeter: ...';
     statusBarItem.show();
     context.subscriptions.push(statusBarItem);
 
     // Command to set API Key
-    let disposable = vscode.commands.registerCommand('devmeter.apiKey', async () => {
+    context.subscriptions.push(vscode.commands.registerCommand('devmeter.apiKey', async () => {
         const apiKey = await vscode.window.showInputBox({
             prompt: 'Enter your DevMeter API Key',
             placeHolder: 'API Key from dashboard',
@@ -37,9 +37,39 @@ export function activate(context: vscode.ExtensionContext) {
             vscode.window.showInformationMessage('DevMeter API Key saved successfully!');
             updateStatusBar();
         }
-    });
+    }));
 
-    context.subscriptions.push(disposable);
+    // Command to open Dashboard
+    context.subscriptions.push(vscode.commands.registerCommand('devmeter.dashboard', () => {
+        openInBrowser('dashboard');
+    }));
+
+    // Command to open Profile
+    context.subscriptions.push(vscode.commands.registerCommand('devmeter.profile', () => {
+        openInBrowser('profile');
+    }));
+
+    // Command to show Menu
+    context.subscriptions.push(vscode.commands.registerCommand('devmeter.showMenu', async () => {
+        const items = [
+            { label: "$(layout) Open Private Dashboard", description: "View your personal stats", command: 'devmeter.dashboard' },
+            { label: "$(person) View Public Profile", description: "View your shareable profile", command: 'devmeter.profile' },
+            { label: "$(key) Update API Key", description: "Change your authentication key", command: 'devmeter.apiKey' },
+            { label: "$(settings) Extension Settings", description: "Configure visibility options", command: 'workbench.action.openSettings', args: '@ext:DevMitrza.devmeter' }
+        ];
+
+        const selection = await vscode.window.showQuickPick(items, {
+            placeHolder: 'DevMeter: Select an action'
+        });
+
+        if (selection) {
+            if (selection.command === 'workbench.action.openSettings') {
+                vscode.commands.executeCommand(selection.command, selection.args);
+            } else {
+                vscode.commands.executeCommand(selection.command);
+            }
+        }
+    }));
 
     // Monitor file changes/typing
     vscode.workspace.onDidChangeTextDocument((event) => {
@@ -60,10 +90,19 @@ export function activate(context: vscode.ExtensionContext) {
     }, 5 * 60 * 1000);
 }
 
+function openInBrowser(page: string) {
+    const config = vscode.workspace.getConfiguration('devmeter');
+    const apiUrl = config.get<string>('apiUrl') || 'https://devmeter.zaidcode.me/api';
+    const baseUrl = apiUrl.replace(/\/api$/, '');
+    vscode.env.openExternal(vscode.Uri.parse(`${baseUrl}/${page}`));
+}
+
 async function updateStatusBar() {
     const config = vscode.workspace.getConfiguration('devmeter');
     const apiKey = config.get<string>('apiKey');
     const apiUrl = config.get<string>('apiUrl');
+    const showProject = config.get<boolean>('showProject');
+    const showStreak = config.get<boolean>('showStreak');
 
     if (!apiKey || !apiUrl) {
         statusBarItem.text = '$(warning) DevMeter: Missing Config';
@@ -71,7 +110,6 @@ async function updateStatusBar() {
     }
 
     try {
-        log(`Fetching stats from ${apiUrl}/stats?range=today`);
         const response = await axios.get(`${apiUrl}/stats?range=today`, {
             headers: {
                 'Authorization': `Bearer ${apiKey}`
@@ -79,14 +117,30 @@ async function updateStatusBar() {
             timeout: 5000
         });
 
-        const { totalTime } = response.data.summary;
-        statusBarItem.text = `$(clock) DevMeter: ${totalTime}`;
-        log(`Stats updated: ${totalTime}`);
+        const { totalTime, currentStreak, topProject24h } = response.data.summary;
+
+        let statusText = `$(clock) ${totalTime}`;
+
+        if (showStreak && currentStreak > 0) {
+            statusText += ` | $(flame) ${currentStreak}d`;
+        }
+
+        if (showProject && topProject24h !== "None") {
+            statusText += ` | $(project) ${topProject24h}`;
+        }
+
+        statusBarItem.text = statusText;
+        statusBarItem.tooltip = new vscode.MarkdownString(
+            `### DevMeter Stats Today\n\n` +
+            `**Time:** ${totalTime}\n\n` +
+            `**Streak:** ${currentStreak} days\n\n` +
+            `**Top Project:** ${topProject24h}\n\n` +
+            `---\n\n` +
+            `Click for menu`
+        );
+
     } catch (error: any) {
         log(`Error fetching stats: ${error.message}`);
-        if (error.response) {
-            log(`Response error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
-        }
     }
 }
 

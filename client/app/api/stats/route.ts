@@ -210,6 +210,27 @@ export async function GET(req: NextRequest) {
             percentGrowth = 100; // 100% growth if starting from zero
         }
 
+        // Calculate Current Streak
+        // Fetch all heartbeat dates for the user (only need dates)
+        const streakHeartbeats = await prisma.heartbeat.findMany({
+            where: { userId },
+            select: { timestamp: true },
+            orderBy: { timestamp: 'desc' }
+        });
+
+        const activeDays = new Set(streakHeartbeats.map(h => format(new Date(h.timestamp), "yyyy-MM-dd")));
+        let currentStreak = 0;
+        const todayStr = format(now, "yyyy-MM-dd");
+        const yesterdayStr = format(subDays(now, 1), "yyyy-MM-dd");
+
+        if (activeDays.has(todayStr) || activeDays.has(yesterdayStr)) {
+            let checkDate = activeDays.has(todayStr) ? now : subDays(now, 1);
+            while (activeDays.has(format(checkDate, "yyyy-MM-dd"))) {
+                currentStreak++;
+                checkDate = subDays(checkDate, 1);
+            }
+        }
+
         return NextResponse.json({
             activityByDay,
             languages,
@@ -227,7 +248,8 @@ export async function GET(req: NextRequest) {
                 topLanguageIcon24h: topLanguage24h !== "None" ? getLanguageIcon(topLanguage24h) : undefined,
                 isLive,
                 lastHeartbeatAt: lastHeartbeat?.timestamp,
-                percentGrowth
+                percentGrowth,
+                currentStreak
             }
         });
 
