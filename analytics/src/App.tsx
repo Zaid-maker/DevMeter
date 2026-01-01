@@ -28,12 +28,7 @@ import {
   LogOut,
   Zap
 } from 'lucide-react';
-import { clsx, type ClassValue } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
+import { cn } from '../../client/lib/utils';
 
 const App = () => {
   const [apiKey, setApiKey] = useState(localStorage.getItem('devmeter_api_key') || '');
