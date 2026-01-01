@@ -4,6 +4,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { startOfDay, subDays, format } from "date-fns";
 
+const corsHeaders = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+export async function OPTIONS() {
+    return NextResponse.json({}, { headers: corsHeaders });
+}
+
 export async function GET(req: NextRequest) {
     const session = await auth.api.getSession({
         headers: await headers(),
@@ -251,11 +261,11 @@ export async function GET(req: NextRequest) {
                 percentGrowth,
                 currentStreak
             }
-        });
+        }, { headers: corsHeaders });
 
     } catch (error) {
         console.error("Stats API error:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500, headers: corsHeaders });
     }
 }
 
