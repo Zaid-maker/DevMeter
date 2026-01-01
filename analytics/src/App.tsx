@@ -20,7 +20,6 @@ import {
   Clock,
   Code,
   Cpu,
-  Flame,
   Globe,
   Layout,
   Key,
@@ -31,27 +30,27 @@ import {
 import { cn } from '../../client/lib/utils';
 
 const App = () => {
-  const [apiKey, setApiKey] = useState(localStorage.getItem('devmeter_api_key') || '');
-  const [tempKey, setTempKey] = useState('');
-  const [isSetup, setIsSetup] = useState(!!apiKey);
+  const [adminSecret, setAdminSecret] = useState(localStorage.getItem('devmeter_admin_secret') || '');
+  const [tempSecret, setTempSecret] = useState('');
+  const [isSetup, setIsSetup] = useState(!!adminSecret);
 
   const { data, error, isLoading, mutate } = useSWR(
-    isSetup ? [apiKey, 'stats'] : null,
-    ([key]) => fetchStats(key),
-    { refreshInterval: 60000 }
+    isSetup ? [adminSecret, 'metrics'] : null,
+    ([secret]) => fetchStats(secret),
+    { refreshInterval: 30000 }
   );
 
-  const handleSaveKey = () => {
-    if (tempKey.trim()) {
-      localStorage.setItem('devmeter_api_key', tempKey);
-      setApiKey(tempKey);
+  const handleSaveSecret = () => {
+    if (tempSecret.trim()) {
+      localStorage.setItem('devmeter_admin_secret', tempSecret);
+      setAdminSecret(tempSecret);
       setIsSetup(true);
     }
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('devmeter_api_key');
-    setApiKey('');
+    localStorage.removeItem('devmeter_admin_secret');
+    setAdminSecret('');
     setIsSetup(false);
   };
 
@@ -64,33 +63,33 @@ const App = () => {
               <Cpu size={40} />
             </div>
           </div>
-          <h1 className="text-3xl font-bold text-center mb-2">DevMeter API Analytics</h1>
-          <p className="text-gray-400 text-center mb-8">Enter your API key to connect your Developer Dashboard</p>
+          <h1 className="text-3xl font-bold text-center mb-2">DevMeter Admin</h1>
+          <p className="text-gray-400 text-center mb-8">Enter the Admin Secret to monitor system performance</p>
 
           <div className="space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-300 ml-1">API Key</label>
+              <label className="text-sm font-medium text-gray-300 ml-1">Admin Secret</label>
               <div className="relative">
                 <Key className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={18} />
                 <input
                   type="password"
-                  value={tempKey}
-                  onChange={(e) => setTempKey(e.target.value)}
-                  placeholder="Paste your key here..."
+                  value={tempSecret}
+                  onChange={(e) => setTempSecret(e.target.value)}
+                  placeholder="Enter secret..."
                   className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-10 pr-4 focus:outline-none focus:ring-2 focus:ring-blue-500/40 transition-all font-mono text-sm"
                 />
               </div>
             </div>
             <button
-              onClick={handleSaveKey}
+              onClick={handleSaveSecret}
               className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold py-3 rounded-xl transition-all shadow-lg shadow-blue-600/20 active:scale-95"
             >
-              Get Started
+              Access Dashboard
             </button>
           </div>
 
-          <p className="mt-8 text-xs text-center text-gray-500">
-            You can find your API key in the DevMeter settings page.
+          <p className="mt-8 text-xs text-center text-gray-500 italic">
+            Internal developers only.
           </p>
         </div>
       </div>
@@ -104,17 +103,17 @@ const App = () => {
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
-              API Analytics Dashboard
+              System Performance Monitor
             </h1>
-            <p className="text-gray-400">Monitoring DevMeter API usage and coding performance</p>
+            <p className="text-gray-400">Aggregated DevMeter API traffic and ecosystem health</p>
           </div>
           <div className="flex items-center gap-3">
             <div className={cn(
               "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border animate-pulse",
-              data?.summary.isLive ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-gray-500/10 border-gray-500/20 text-gray-400"
+              data?.summary.isSystemOnline ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" : "bg-red-500/10 border-red-500/20 text-red-400"
             )}>
-              <span className={cn("w-2 h-2 rounded-full", data?.summary.isLive ? "bg-emerald-500" : "bg-gray-500")} />
-              {data?.summary.isLive ? 'ACTIVE NOW' : 'OFFLINE'}
+              <span className={cn("w-2 h-2 rounded-full", data?.summary.isSystemOnline ? "bg-emerald-500" : "bg-red-500")} />
+              {data?.summary.isSystemOnline ? 'SYSTEM ONLINE' : 'SYSTEM OFFLINE'}
             </div>
             <button
               onClick={() => mutate()}
@@ -133,50 +132,50 @@ const App = () => {
 
         {error && (
           <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-            Failed to fetch analytics data. Please check your API key or ensure the DevMeter app is running.
+            {error.message || "Failed to fetch system metrics."}
           </div>
         )}
 
         {/* Summary Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <StatCard
-            title="Total API Requests"
-            value={data?.summary.totalTime || '0h 0m'}
-            subValue="Volume accumulated"
+            title="Total API Volume"
+            value={data?.summary.totalRequests.toLocaleString() || '0'}
+            subValue="All-time requests"
             icon={<Activity className="text-blue-400" />}
             color="blue"
           />
           <StatCard
-            title="Avg. Request Duration"
-            value={data?.summary.dailyAverage || '0h'}
-            subValue="Per active day"
+            title="Avg. System Load"
+            value={`${data?.summary.systemLoad || '0.00'} RPM`}
+            subValue="Requests per minute"
             icon={<Clock className="text-purple-400" />}
             color="purple"
           />
           <StatCard
-            title="Current Streak"
-            value={data?.summary.currentStreak?.toString() || '0'}
-            subValue="Consecutive days"
-            icon={<Flame className="text-orange-400" />}
+            title="Active Users"
+            value={data?.summary.activeUsers.toLocaleString() || '0'}
+            subValue="Sent heartbeats (7d)"
+            icon={<Globe className="text-orange-400" />}
             color="orange"
           />
           <StatCard
-            title="Growth Rate"
-            value={`${data?.summary.percentGrowth || 0}%`}
-            subValue="From previous week"
+            title="Traffic Growth"
+            value={`${data?.summary.growth || 0}%`}
+            subValue="vs previous 24h"
             icon={<Zap className="text-yellow-400" />}
             color="yellow"
-            trend={data?.summary.percentGrowth ? (data.summary.percentGrowth > 0 ? 'up' : 'down') : undefined}
+            trend={data?.summary.growth ? (data.summary.growth > 0 ? 'up' : 'down') : undefined}
           />
         </div>
 
         {/* Main Charts */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Usage Over Time */}
+          {/* Traffic Over Time */}
           <div className="lg:col-span-2 p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm">
             <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
               <Activity size={20} className="text-blue-400" />
-              API activity over time
+              API Traffic Distribution
             </h3>
             <div className="h-[300px] w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -200,7 +199,7 @@ const App = () => {
                     fontSize={12}
                     tickLine={false}
                     axisLine={false}
-                    tickFormatter={(value) => `${value}h`}
+                    tickFormatter={(value) => `${value}`}
                   />
                   <Tooltip
                     contentStyle={{ backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '8px' }}
@@ -222,15 +221,15 @@ const App = () => {
           {/* Top Systems */}
           <div className="p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm">
             <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-              <Globe size={20} className="text-purple-400" />
-              API Consumers
+              <Layout size={20} className="text-purple-400" />
+              Top Ecosystem Projects
             </h3>
             <div className="space-y-6">
-              {data?.projects.slice(0, 4).map((p, i) => (
+              {data?.projects.map((p, i) => (
                 <div key={p.name} className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-300 font-medium">{p.name}</span>
-                    <span className="text-gray-400">{p.hours}h ({p.value}%)</span>
+                    <span className="text-gray-400">{p.requests.toLocaleString()} reqs ({p.value}%)</span>
                   </div>
                   <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
                     <div
@@ -242,7 +241,7 @@ const App = () => {
               ))}
               {(!data || data.projects.length === 0) && (
                 <div className="flex flex-col items-center justify-center h-40 text-gray-500 italic">
-                  No project data available
+                  No ecosystem data available
                 </div>
               )}
             </div>
@@ -255,7 +254,7 @@ const App = () => {
           <div className="p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm">
             <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
               <Code size={20} className="text-emerald-400" />
-              Language Context
+              Ecosystem Language Context
             </h3>
             <div className="h-[250px] w-full flex items-center">
               <ResponsiveContainer width="100%" height="100%">
@@ -279,7 +278,7 @@ const App = () => {
                 </PieChart>
               </ResponsiveContainer>
               <div className="w-1/2 space-y-3">
-                {data?.languages.slice(0, 4).map((l) => (
+                {data?.languages.map((l) => (
                   <div key={l.name} className="flex items-center gap-2">
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: l.color }} />
                     <span className="text-sm text-gray-300 truncate">{l.name}</span>
@@ -290,40 +289,20 @@ const App = () => {
             </div>
           </div>
 
-          {/* Recent API Logs */}
-          <div className="p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm">
-            <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-              <Layout size={20} className="text-orange-400" />
-              Recent API Events
-            </h3>
-            <div className="space-y-4">
-              {data?.recentActivity.slice(0, 5).map((log: any, i: number) => (
-                <div key={i} className="flex items-center gap-4 p-3 rounded-xl hover:bg-white/5 transition-colors border border-transparent hover:border-white/5">
-                  <div className="p-2 rounded-lg bg-white/5">
-                    <img src={log.icon} alt={log.language} className="w-5 h-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-200 truncate">{log.file.split('/').pop()}</p>
-                    <p className="text-xs text-gray-500 truncate">{log.project} • {log.language}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-xs text-gray-400">
-                      {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                  </div>
-                </div>
-              ))}
-              {(!data || data.recentActivity.length === 0) && (
-                <div className="flex flex-col items-center justify-center h-40 text-gray-500 italic">
-                  No recent events
-                </div>
-              )}
+          {/* System Health */}
+          <div className="p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm flex flex-col items-center justify-center text-center">
+            <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 mb-4 animate-bounce">
+              <Zap size={32} />
             </div>
+            <h3 className="text-xl font-bold mb-2 text-emerald-400">System Healthy</h3>
+            <p className="text-gray-400 max-w-xs">
+              DevMeter API is responding efficiently across {data?.summary.activeProjects} projects.
+            </p>
           </div>
         </div>
 
         <footer className="pt-8 pb-4 text-center text-gray-600 text-sm border-t border-white/5">
-          DevMeter API Analytics &copy; {new Date().getFullYear()} • premium developer insights
+          DevMeter Developer Monitor &copy; {new Date().getFullYear()} • premium system insights
         </footer>
       </div>
     </div>
