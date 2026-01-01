@@ -31,6 +31,12 @@
     "paths": {
       "@workspace/client/*": [
         "../client/*"
+      ],
+      "clsx": [
+        "./node_modules/clsx"
+      ],
+      "tailwind-merge": [
+        "./node_modules/tailwind-merge"
       ]
     }
   },

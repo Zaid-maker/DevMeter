@@ -12,6 +12,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@workspace/client': path.resolve(__dirname, '../client'),
+      'clsx': path.resolve(__dirname, 'node_modules/clsx'),
+      'tailwind-merge': path.resolve(__dirname, 'node_modules/tailwind-merge'),
     },
   },
 })
