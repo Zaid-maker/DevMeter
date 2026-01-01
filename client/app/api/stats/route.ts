@@ -4,10 +4,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { startOfDay, subDays, format } from "date-fns";
 
+// SECURITY: Never use wildcard ("*") for authenticated endpoints. 
+// Only allow explicit origins defined in ALLOWED_ORIGINS environment variable.
 function isOriginAllowed(origin: string | null) {
     if (!origin) return false;
-    const allowedOrigins = (process.env.ALLOWED_ORIGINS || "http://localhost:5173").split(",").map(o => o.trim());
-    return allowedOrigins.includes(origin) || allowedOrigins.includes("*");
+
+    const rawAllowed = process.env.ALLOWED_ORIGINS || "http://localhost:5173";
+    const allowedOrigins = rawAllowed
+        .split(",")
+        .map(o => o.trim())
+        // Explicitly filter out any wildcard entries to prevent security bypass
+        .filter(o => o !== "*");
+
+    return allowedOrigins.includes(origin);
 }
 
 function getCorsHeaders(origin: string | null) {
