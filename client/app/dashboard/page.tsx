@@ -15,6 +15,15 @@ import { formatDistanceToNow } from "date-fns";
 import useSWR from "swr";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
+import { Mail } from "lucide-react";
 
 interface Stats {
     activityByDay: { name: string; total: number }[];
@@ -66,6 +75,36 @@ export default function DashboardPage() {
         { refreshInterval: 60000 } // Refresh every minute
     );
     const router = useRouter()
+    const [sendingEmail, setSendingEmail] = useState(false);
+    const [showVerificationDialog, setShowVerificationDialog] = useState(false);
+
+    useEffect(() => {
+        if (session && !session.user.emailVerified) {
+            setShowVerificationDialog(true);
+        }
+    }, [session]);
+
+    const handleSendVerification = async () => {
+        if (!session?.user.email) return;
+
+        setSendingEmail(true);
+        try {
+            await authClient.sendVerificationEmail({
+                email: session.user.email,
+                callbackURL: window.location.href,
+            });
+            toast.success("Verification email sent!", {
+                description: "Check your inbox for the verification link.",
+            });
+            setShowVerificationDialog(false);
+        } catch (error: any) {
+            toast.error("Failed to send verification email", {
+                description: error.message || "Something went wrong.",
+            });
+        } finally {
+            setSendingEmail(false);
+        }
+    };
 
     if (isAuthPending) {
         return (
@@ -320,6 +359,44 @@ export default function DashboardPage() {
                     </Card>
                 </TabsContent>
             </Tabs>
+
+            <Dialog open={showVerificationDialog} onOpenChange={setShowVerificationDialog}>
+                <DialogContent className="sm:max-w-md bg-black border-white/10">
+                    <DialogHeader>
+                        <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                            <Mail className="h-6 w-6 text-primary" />
+                        </div>
+                        <DialogTitle className="text-2xl font-bold text-center">Verify your email</DialogTitle>
+                        <DialogDescription className="text-center text-muted-foreground pt-2">
+                            To protect your account and access all features, please verify your email address.
+                            If you haven't received the link, we can send it again.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="sm:justify-center gap-2 pt-4">
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowVerificationDialog(false)}
+                            className="rounded-full border-white/10 hover:bg-white/5"
+                        >
+                            Later
+                        </Button>
+                        <Button
+                            onClick={handleSendVerification}
+                            disabled={sendingEmail}
+                            className="rounded-full bg-primary text-black hover:bg-primary/90 font-bold px-8 shadow-[0_0_15px_rgba(var(--primary-rgb),0.2)]"
+                        >
+                            {sendingEmail ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Sending...
+                                </>
+                            ) : (
+                                "Send Verification Link"
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
