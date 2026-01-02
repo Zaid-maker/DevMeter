@@ -15,7 +15,7 @@ if (process.env.NODE_ENV === "production") {
     }
 }
 
-const resend = resendApiKey ? new Resend(resendApiKey) : null;
+export const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 export const auth = betterAuth({
     database: prismaAdapter(prisma, {
