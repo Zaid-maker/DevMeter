@@ -40,18 +40,81 @@ export const auth = betterAuth({
                 <!DOCTYPE html>
                 <html>
                 <head>
+                    <meta name="color-scheme" content="light dark">
+                    <meta name="supported-color-schemes" content="light dark">
                     <style>
-                        body { background-color: #000000; color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
+                        :root {
+                            color-scheme: light dark;
+                            supported-color-schemes: light dark;
+                        }
+                        body { 
+                            background-color: #ffffff; 
+                            color: #000000; 
+                            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+                            margin: 0; 
+                            padding: 0; 
+                        }
                         .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
-                        .card { background-color: #0a0a0a; border: 1px solid #1f2937; border-radius: 16px; padding: 40px; text-align: center; }
-                        .logo { font-size: 24px; font-weight: 900; color: #ffffff; margin-bottom: 32px; letter-spacing: -0.05em; }
-                        .primary-color { color: hsl(var(--primary)); } /* Note: Standard email clients won't support CSS variables, using hex fallback */
+                        .card { 
+                            background-color: #f9fafb; 
+                            border: 1px solid #e5e7eb; 
+                            border-radius: 16px; 
+                            padding: 40px; 
+                            text-align: center; 
+                        }
+                        .logo { 
+                            font-size: 24px; 
+                            font-weight: 900; 
+                            color: #000000; 
+                            margin-bottom: 32px; 
+                            letter-spacing: -0.05em; 
+                        }
                         .accent { color: #facc15; }
-                        .title { font-size: 32px; font-weight: 800; margin-bottom: 16px; letter-spacing: -0.05em; line-height: 1.1; }
-                        .description { font-size: 16px; color: #9ca3af; line-height: 1.6; margin-bottom: 32px; }
-                        .button { background-color: #ffffff; color: #000000 !important; padding: 16px 40px; border-radius: 100px; text-decoration: none; font-weight: 700; display: inline-block; transition: opacity 0.2s; }
-                        .footer { margin-top: 40px; font-size: 12px; color: #4b5563; line-height: 1.5; }
-                        .divider { height: 1px; background-color: #1f2937; margin: 32px 0; }
+                        .title { 
+                            font-size: 32px; 
+                            font-weight: 800; 
+                            margin-bottom: 16px; 
+                            letter-spacing: -0.05em; 
+                            line-height: 1.1; 
+                            color: #000000;
+                        }
+                        .description { 
+                            font-size: 16px; 
+                            color: #4b5563; 
+                            line-height: 1.6; 
+                            margin-bottom: 32px; 
+                        }
+                        .button { 
+                            background-color: #000000; 
+                            color: #ffffff !important; 
+                            padding: 16px 40px; 
+                            border-radius: 100px; 
+                            text-decoration: none; 
+                            font-weight: 700; 
+                            display: inline-block; 
+                        }
+                        .footer { 
+                            margin-top: 40px; 
+                            font-size: 12px; 
+                            color: #6b7280; 
+                            line-height: 1.5; 
+                        }
+                        .divider { 
+                            height: 1px; 
+                            background-color: #e5e7eb; 
+                            margin: 32px 0; 
+                        }
+
+                        @media (prefers-color-scheme: dark) {
+                            body { background-color: #000000 !important; color: #ffffff !important; }
+                            .card { background-color: #0a0a0a !important; border-color: #1f2937 !important; }
+                            .logo { color: #ffffff !important; }
+                            .title { color: #ffffff !important; }
+                            .description { color: #9ca3af !important; }
+                            .button { background-color: #ffffff !important; color: #000000 !important; }
+                            .divider { background-color: #1f2937 !important; }
+                            .footer { color: #4b5563 !important; }
+                        }
                     </style>
                 </head>
                 <body>

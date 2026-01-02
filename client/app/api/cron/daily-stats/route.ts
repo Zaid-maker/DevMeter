@@ -46,31 +46,57 @@ export async function GET(req: NextRequest) {
                     <!DOCTYPE html>
                     <html>
                     <head>
+                        <meta name="color-scheme" content="light dark">
+                        <meta name="supported-color-schemes" content="light dark">
                         <style>
-                            body { background-color: #000000; color: #ffffff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
+                            :root {
+                                color-scheme: light dark;
+                                supported-color-schemes: light dark;
+                            }
+                            body { 
+                                background-color: #ffffff; 
+                                color: #000000; 
+                                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+                                margin: 0; 
+                                padding: 0; 
+                            }
                             .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
-                            .card { background-color: #0a0a0a; border: 1px solid #1f2937; border-radius: 20px; padding: 40px; }
-                            .logo { font-size: 20px; font-weight: 900; color: #ffffff; margin-bottom: 40px; letter-spacing: -0.05em; text-align: center; }
+                            .card { background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 20px; padding: 40px; }
+                            .logo { font-size: 20px; font-weight: 900; color: #000000; margin-bottom: 40px; letter-spacing: -0.05em; text-align: center; }
                             .header { text-align: center; margin-bottom: 40px; }
-                            .title { font-size: 14px; text-transform: uppercase; color: #9ca3af; letter-spacing: 0.1em; margin-bottom: 8px; }
-                            .date { font-size: 24px; font-weight: 800; color: #ffffff; margin: 0; }
+                            .title { font-size: 14px; text-transform: uppercase; color: #6b7280; letter-spacing: 0.1em; margin-bottom: 8px; }
+                            .date { font-size: 24px; font-weight: 800; color: #000000; margin: 0; }
                             
-                            .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 40px; }
-                            .stat-box { background-color: #111111; border: 1px solid #1f2937; border-radius: 12px; padding: 20px; text-align: left; }
+                            .stat-box { background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; padding: 20px; text-align: left; }
                             .stat-label { font-size: 11px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
-                            .stat-value { font-size: 20px; font-weight: 700; color: #ffffff; }
+                            .stat-value { font-size: 20px; font-weight: 700; color: #000000; }
                             
-                            .section-title { font-size: 14px; font-weight: 700; margin-bottom: 16px; color: #ffffff; border-left: 3px solid #facc15; padding-left: 12px; }
+                            .section-title { font-size: 14px; font-weight: 700; margin-bottom: 16px; color: #000000; border-left: 3px solid #facc15; padding-left: 12px; }
                             
-                            .list-item { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 12px; background-color: #0d0d0d; border-radius: 8px; }
-                            .item-info { display: flex; items-center; gap: 12px; }
-                            .item-name { font-size: 14px; font-weight: 600; color: #ffffff; }
-                            .item-bar-container { height: 6px; background-color: #1f2937; border-radius: 3px; width: 100px; }
+                            .list-item { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 12px; background-color: #ffffff; border: 1px solid #f3f4f6; border-radius: 8px; }
+                            .item-name { font-size: 14px; font-weight: 600; color: #000000; }
+                            .item-bar-container { height: 6px; background-color: #f3f4f6; border-radius: 3px; width: 100px; }
                             .item-bar { height: 100%; border-radius: 3px; }
-                            .item-percent { font-size: 12px; color: #9ca3af; width: 40px; text-align: right; }
+                            .item-percent { font-size: 12px; color: #6b7280; width: 40px; text-align: right; }
                             
-                            .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #4b5563; }
-                            .button { display: block; background-color: #ffffff; color: #000000 !important; padding: 14px; border-radius: 12px; text-decoration: none; font-weight: 700; text-align: center; margin-top: 20px; }
+                            .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #6b7280; }
+                            .button { display: block; background-color: #000000; color: #ffffff !important; padding: 14px; border-radius: 12px; text-decoration: none; font-weight: 700; text-align: center; margin-top: 20px; }
+
+                            @media (prefers-color-scheme: dark) {
+                                body { background-color: #000000 !important; color: #ffffff !important; }
+                                .card { background-color: #0a0a0a !important; border-color: #1f2937 !important; }
+                                .logo { color: #ffffff !important; }
+                                .date { color: #ffffff !important; }
+                                .stat-box { background-color: #111111 !important; border-color: #1f2937 !important; }
+                                .stat-value { color: #ffffff !important; }
+                                .section-title { color: #ffffff !important; }
+                                .list-item { background-color: #0d0d0d !important; border-color: #1f2937 !important; }
+                                .item-name { color: #ffffff !important; }
+                                .item-bar-container { background-color: #1f2937 !important; }
+                                .item-percent { color: #9ca3af !important; }
+                                .button { background-color: #ffffff !important; color: #000000 !important; }
+                                .footer { color: #4b5563 !important; }
+                            }
                         </style>
                     </head>
                     <body>
@@ -82,17 +108,19 @@ export async function GET(req: NextRequest) {
                                     <h1 class="date">${yesterdayStr}</h1>
                                 </div>
                                 
-                                <div style="display: table; width: 100%; margin-bottom: 30px;">
-                                    <div style="display: table-cell; width: 50%; padding-right: 10px;">
-                                        <div class="stat-box">
-                                            <div class="stat-label">Coding Time</div>
-                                            <div class="stat-value">${stats.summary.totalTime24h}</div>
+                                <div style="display: table; width: 100%; margin-bottom: 30px; border-collapse: separate; border-spacing: 10px 0;">
+                                    <div style="display: table-row;">
+                                        <div style="display: table-cell; width: 50%;">
+                                            <div class="stat-box">
+                                                <div class="stat-label">Coding Time</div>
+                                                <div class="stat-value">${stats.summary.totalTime24h}</div>
+                                            </div>
                                         </div>
-                                    </div>
-                                    <div style="display: table-cell; width: 50%; padding-left: 10px;">
-                                        <div class="stat-box">
-                                            <div class="stat-label">Current Streak</div>
-                                            <div class="stat-value">${stats.summary.currentStreak} Days</div>
+                                        <div style="display: table-cell; width: 50%;">
+                                            <div class="stat-box">
+                                                <div class="stat-label">Current Streak</div>
+                                                <div class="stat-value">${stats.summary.currentStreak} Days</div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
