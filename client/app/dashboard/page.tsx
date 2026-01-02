@@ -77,12 +77,14 @@ export default function DashboardPage() {
     const router = useRouter()
     const [sendingEmail, setSendingEmail] = useState(false);
     const [showVerificationDialog, setShowVerificationDialog] = useState(false);
+    const [hasDismissed, setHasDismissed] = useState(false);
 
     useEffect(() => {
-        if (session && !session.user.emailVerified) {
+        const isEmailVerified = session?.user.emailVerified;
+        if (session && isEmailVerified === false && !hasDismissed) {
             setShowVerificationDialog(true);
         }
-    }, [session]);
+    }, [session?.user.emailVerified, hasDismissed, session]);
 
     const handleSendVerification = async () => {
         if (!session?.user.email) return;
@@ -360,7 +362,13 @@ export default function DashboardPage() {
                 </TabsContent>
             </Tabs>
 
-            <Dialog open={showVerificationDialog} onOpenChange={setShowVerificationDialog}>
+            <Dialog 
+                open={showVerificationDialog} 
+                onOpenChange={(open) => {
+                    setShowVerificationDialog(open);
+                    if (!open) setHasDismissed(true);
+                }}
+            >
                 <DialogContent className="sm:max-w-md bg-black border-white/10">
                     <DialogHeader>
                         <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
@@ -368,14 +376,17 @@ export default function DashboardPage() {
                         </div>
                         <DialogTitle className="text-2xl font-bold text-center">Verify your email</DialogTitle>
                         <DialogDescription className="text-center text-muted-foreground pt-2">
-                            To protect your account and access all features, please verify your email address.
+                            To protect your account and access all features, please verify your email address. 
                             If you haven't received the link, we can send it again.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter className="sm:justify-center gap-2 pt-4">
-                        <Button
-                            variant="outline"
-                            onClick={() => setShowVerificationDialog(false)}
+                        <Button 
+                            variant="outline" 
+                            onClick={() => {
+                                setShowVerificationDialog(false);
+                                setHasDismissed(true);
+                            }}
                             className="rounded-full border-white/10 hover:bg-white/5"
                         >
                             Later
