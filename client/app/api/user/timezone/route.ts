@@ -19,6 +19,13 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Invalid timezone" }, { status: 400 });
         }
 
+        // Runtime IANA validation
+        try {
+            new Intl.DateTimeFormat(undefined, { timeZone: timezone });
+        } catch (e) {
+            return NextResponse.json({ error: "Invalid timezone" }, { status: 400 });
+        }
+
         await prisma.user.update({
             where: { id: session.user.id },
             data: { timezone },

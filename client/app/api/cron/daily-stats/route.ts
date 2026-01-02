@@ -3,7 +3,7 @@ import { resend } from "@/lib/auth";
 import { calculateUserStats } from "@/lib/stats-service";
 import { NextRequest, NextResponse } from "next/server";
 import { subDays, format } from "date-fns";
-import { toZonedTime, formatInTimeZone } from "date-fns-tz";
+import { TZDate } from "@date-fns/tz";
 
 export async function GET(req: NextRequest) {
     const authHeader = req.headers.get("x-cron-secret");
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
         for (const user of users) {
             try {
                 const timezone = user.timezone || "UTC";
-                const zonedNow = toZonedTime(now, timezone);
+                const zonedNow = new TZDate(now, timezone);
                 const currentHour = zonedNow.getHours();
 
                 // Send at 8 AM local time (each hourly cron job checks this)
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
                 const yesterday = subDays(zonedNow, 1);
                 const yesterdayStr = format(yesterday, "MMMM do, yyyy");
 
-                const stats = await calculateUserStats(user.id, "today", timezone);
+                const stats = await calculateUserStats(user.id, "yesterday", timezone);
 
                 // Only send if there was some activity yesterday
                 if (stats.summary.totalTime24h === "0h 0m") {

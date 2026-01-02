@@ -1,6 +1,6 @@
 import { prisma } from "./prisma";
 import { startOfDay, subDays, format } from "date-fns";
-import { toZonedTime, formatInTimeZone } from "date-fns-tz";
+import { TZDate } from "@date-fns/tz";
 
 export interface Stats {
     activityByDay: { name: string; total: number }[];
@@ -32,17 +32,21 @@ export interface Stats {
     };
 }
 
-export async function calculateUserStats(userId: string, range?: "today" | "all", timezone: string = "UTC"): Promise<Stats> {
+export async function calculateUserStats(userId: string, range?: "today" | "all" | "yesterday", timezone: string = "UTC"): Promise<Stats> {
     const now = new Date();
     // Get the current time in the user's timezone
-    const zonedNow = toZonedTime(now, timezone);
+    const zonedNow = new TZDate(now, timezone);
 
     // Calculate the start of "today" in the user's timezone
     const zonedTodayStart = startOfDay(zonedNow);
 
     let startDate: Date;
+    let endDate: Date = now;
     if (range === "today") {
         startDate = zonedTodayStart;
+    } else if (range === "yesterday") {
+        startDate = subDays(zonedTodayStart, 1);
+        endDate = zonedTodayStart;
     } else {
         startDate = subDays(zonedTodayStart, 14); // Fetch 14 days for growth comparison
     }
@@ -54,19 +58,20 @@ export async function calculateUserStats(userId: string, range?: "today" | "all"
             userId,
             timestamp: {
                 gte: startDate,
+                lte: endDate,
             },
         },
     });
 
     // We need to compare heartbeats against the user's local days
     // Helper to get local date string (YYYY-MM-DD) for a heartbeat in user's timezone
-    const getLocalDateStr = (date: Date) => formatInTimeZone(date, timezone, "yyyy-MM-dd");
+    const getLocalDateStr = (date: Date) => format(new TZDate(date, timezone), "yyyy-MM-dd");
 
     // Split heartbeats into current week and previous week (local time)
     const currentWeekStartLocal = subDays(zonedTodayStart, 6); // Last 7 days including today
-    const heartbeats = allHeartbeats.filter(h => toZonedTime(h.timestamp, timezone) >= currentWeekStartLocal);
+    const heartbeats = allHeartbeats.filter(h => new TZDate(h.timestamp, timezone) >= currentWeekStartLocal);
     const prevWeekHeartbeats = allHeartbeats.filter(h => {
-        const zoned = toZonedTime(h.timestamp, timezone);
+        const zoned = new TZDate(h.timestamp, timezone);
         return zoned >= subDays(currentWeekStartLocal, 7) && zoned < currentWeekStartLocal;
     });
 
@@ -107,7 +112,7 @@ export async function calculateUserStats(userId: string, range?: "today" | "all"
         const dayEnd = new Date(dayStart.getTime() + 86400000);
 
         const dayHeartbeats = heartbeats.filter(h => {
-            const zoned = toZonedTime(h.timestamp, timezone);
+            const zoned = new TZDate(h.timestamp, timezone);
             return zoned >= dayStart && zoned < dayEnd;
         });
 
@@ -185,7 +190,7 @@ export async function calculateUserStats(userId: string, range?: "today" | "all"
 
     // 5. 24-Hour Specific Stats (Previous 24h from now in user's context)
     const dayAgoZoned = subDays(zonedNow, 1);
-    const last24hHeartbeats = heartbeats.filter(h => toZonedTime(h.timestamp, timezone) >= dayAgoZoned);
+    const last24hHeartbeats = heartbeats.filter(h => new TZDate(h.timestamp, timezone) >= dayAgoZoned);
 
     const totalDuration24h = calculateDuration(last24hHeartbeats);
     const totalHours24h = Math.floor(totalDuration24h);
@@ -232,14 +237,14 @@ export async function calculateUserStats(userId: string, range?: "today" | "all"
         orderBy: { timestamp: 'desc' }
     });
 
-    const activeDays = new Set(streakHeartbeats.map(h => formatInTimeZone(h.timestamp, timezone, "yyyy-MM-dd")));
+    const activeDays = new Set(streakHeartbeats.map(h => format(new TZDate(h.timestamp, timezone), "yyyy-MM-dd")));
     let currentStreak = 0;
-    const todayStr = formatInTimeZone(now, timezone, "yyyy-MM-dd");
-    const yesterdayStr = formatInTimeZone(subDays(now, 1), timezone, "yyyy-MM-dd");
+    const todayStr = format(new TZDate(now, timezone), "yyyy-MM-dd");
+    const yesterdayStr = format(new TZDate(subDays(now, 1), timezone), "yyyy-MM-dd");
 
     if (activeDays.has(todayStr) || activeDays.has(yesterdayStr)) {
         let checkDate = activeDays.has(todayStr) ? now : subDays(now, 1);
-        while (activeDays.has(formatInTimeZone(checkDate, timezone, "yyyy-MM-dd"))) {
+        while (activeDays.has(format(new TZDate(checkDate, timezone), "yyyy-MM-dd"))) {
             currentStreak++;
             checkDate = subDays(checkDate, 1);
         }
