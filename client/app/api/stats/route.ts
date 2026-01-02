@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { startOfDay, subDays, format } from "date-fns";
+import { calculateUserStats } from "@/lib/stats-service";
 
 // SECURITY: Never use wildcard ("*") for authenticated endpoints. 
 // Only allow explicit origins defined in ALLOWED_ORIGINS environment variable.
@@ -40,8 +40,6 @@ export async function OPTIONS(req: NextRequest) {
     return new NextResponse(null, { status: 204, headers: getCorsHeaders(origin) });
 }
 
-import { calculateUserStats } from "@/lib/stats-service";
-
 export async function GET(req: NextRequest) {
     const session = await auth.api.getSession({
         headers: await headers(),
@@ -74,13 +72,19 @@ export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
     const range = searchParams.get("range") as "today" | "all" | null;
 
+    // Fetch user and timezone
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { timezone: true },
+    });
+
+    const timezone = user?.timezone || "UTC";
+
     try {
-        const stats = await calculateUserStats(userId, range || undefined);
+        const stats = await calculateUserStats(userId, range || undefined, timezone);
         return NextResponse.json(stats, { headers: getCorsHeaders(req.headers.get("origin")) });
     } catch (error) {
         console.error("Stats API error:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500, headers: getCorsHeaders(req.headers.get("origin")) });
     }
 }
-
-// Language helpers moved to @/lib/stats-service

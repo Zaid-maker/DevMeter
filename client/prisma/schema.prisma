@@ -15,6 +15,7 @@ model User {
   name          String?
   emailVerified Boolean     @default(false)
   image         String?
+  timezone      String?     @default("UTC")
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
   sessions      Session[]

@@ -3,6 +3,7 @@ import { resend } from "@/lib/auth";
 import { calculateUserStats } from "@/lib/stats-service";
 import { NextRequest, NextResponse } from "next/server";
 import { subDays, format } from "date-fns";
+import { toZonedTime, formatInTimeZone } from "date-fns-tz";
 
 export async function GET(req: NextRequest) {
     const authHeader = req.headers.get("x-cron-secret");
@@ -16,8 +17,7 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "Resend not configured" }, { status: 500 });
     }
 
-    const yesterday = subDays(new Date(), 1);
-    const yesterdayStr = format(yesterday, "MMMM do, yyyy");
+    const now = new Date();
 
     try {
         const users = await prisma.user.findMany({
@@ -30,10 +30,23 @@ export async function GET(req: NextRequest) {
 
         for (const user of users) {
             try {
-                const stats = await calculateUserStats(user.id, "today");
+                const timezone = user.timezone || "UTC";
+                const zonedNow = toZonedTime(now, timezone);
+                const currentHour = zonedNow.getHours();
+
+                // Send at 8 AM local time (each hourly cron job checks this)
+                // If it's 8:00-8:59 in the user's timezone, we send the report
+                if (currentHour !== 8) {
+                    continue;
+                }
+
+                // Yesterday string in user's timezone
+                const yesterday = subDays(zonedNow, 1);
+                const yesterdayStr = format(yesterday, "MMMM do, yyyy");
+
+                const stats = await calculateUserStats(user.id, "today", timezone);
 
                 // Only send if there was some activity yesterday
-                // We check if totalTime24h is not "0h 0m"
                 if (stats.summary.totalTime24h === "0h 0m") {
                     continue;
                 }

@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { startOfDay, subDays, format } from "date-fns";
+import { toZonedTime, formatInTimeZone } from "date-fns-tz";
 
 export interface Stats {
     activityByDay: { name: string; total: number }[];
@@ -31,14 +32,23 @@ export interface Stats {
     };
 }
 
-export async function calculateUserStats(userId: string, range?: "today" | "all"): Promise<Stats> {
+export async function calculateUserStats(userId: string, range?: "today" | "all", timezone: string = "UTC"): Promise<Stats> {
     const now = new Date();
-    let startDate = subDays(now, 14); // Fetch last 14 days for growth comparison
+    // Get the current time in the user's timezone
+    const zonedNow = toZonedTime(now, timezone);
+
+    // Calculate the start of "today" in the user's timezone
+    const zonedTodayStart = startOfDay(zonedNow);
+
+    let startDate: Date;
     if (range === "today") {
-        startDate = startOfDay(now);
+        startDate = zonedTodayStart;
+    } else {
+        startDate = subDays(zonedTodayStart, 14); // Fetch 14 days for growth comparison
     }
 
     // Fetch heartbeats
+    // Note: We still fetch based on UTC timestamps in the DB, but the range is defined by user's local day boundaries
     const allHeartbeats = await prisma.heartbeat.findMany({
         where: {
             userId,
@@ -48,10 +58,17 @@ export async function calculateUserStats(userId: string, range?: "today" | "all"
         },
     });
 
-    // Split heartbeats into current week and previous week
-    const currentWeekStart = subDays(now, 7);
-    const heartbeats = allHeartbeats.filter(h => new Date(h.timestamp) >= currentWeekStart);
-    const prevWeekHeartbeats = allHeartbeats.filter(h => new Date(h.timestamp) < currentWeekStart);
+    // We need to compare heartbeats against the user's local days
+    // Helper to get local date string (YYYY-MM-DD) for a heartbeat in user's timezone
+    const getLocalDateStr = (date: Date) => formatInTimeZone(date, timezone, "yyyy-MM-dd");
+
+    // Split heartbeats into current week and previous week (local time)
+    const currentWeekStartLocal = subDays(zonedTodayStart, 6); // Last 7 days including today
+    const heartbeats = allHeartbeats.filter(h => toZonedTime(h.timestamp, timezone) >= currentWeekStartLocal);
+    const prevWeekHeartbeats = allHeartbeats.filter(h => {
+        const zoned = toZonedTime(h.timestamp, timezone);
+        return zoned >= subDays(currentWeekStartLocal, 7) && zoned < currentWeekStartLocal;
+    });
 
     // Helper function to calculate duration in hours from heartbeats
     const calculateDuration = (hList: typeof heartbeats) => {
@@ -82,20 +99,20 @@ export async function calculateUserStats(userId: string, range?: "today" | "all"
         return totalSeconds / 3600;
     };
 
-    // 1. Activity by Day
+    // 1. Activity by Day (Localized)
     const activityByDay = Array.from({ length: 7 }).map((_, i) => {
-        const date = subDays(now, 6 - i);
-        const dateStr = format(date, "EEE");
-        const dayStart = startOfDay(date);
+        const localDayDate = subDays(zonedTodayStart, 6 - i);
+        const dayStr = format(localDayDate, "EEE");
+        const dayStart = startOfDay(localDayDate);
         const dayEnd = new Date(dayStart.getTime() + 86400000);
 
-        const dayHeartbeats = heartbeats.filter(h =>
-            new Date(h.timestamp) >= dayStart && new Date(h.timestamp) < dayEnd
-        );
+        const dayHeartbeats = heartbeats.filter(h => {
+            const zoned = toZonedTime(h.timestamp, timezone);
+            return zoned >= dayStart && zoned < dayEnd;
+        });
 
         const hours = calculateDuration(dayHeartbeats);
-
-        return { name: dateStr, total: parseFloat(hours.toFixed(1)) };
+        return { name: dayStr, total: parseFloat(hours.toFixed(1)) };
     });
 
     // 2. Language Breakdown
@@ -144,7 +161,6 @@ export async function calculateUserStats(userId: string, range?: "today" | "all"
         .slice(0, 5);
 
     const topProject = projects[0]?.name || "None";
-
     const totalHoursVal = Math.floor(totalDuration);
     const remainingMinutes = Math.round((totalDuration - totalHoursVal) * 60);
 
@@ -167,9 +183,9 @@ export async function calculateUserStats(userId: string, range?: "today" | "all"
         ? (now.getTime() - new Date(lastHeartbeat.timestamp).getTime()) < 15 * 60 * 1000
         : false;
 
-    // 5. 24-Hour Specific Stats
-    const dayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-    const last24hHeartbeats = heartbeats.filter(h => new Date(h.timestamp) >= dayAgo);
+    // 5. 24-Hour Specific Stats (Previous 24h from now in user's context)
+    const dayAgoZoned = subDays(zonedNow, 1);
+    const last24hHeartbeats = heartbeats.filter(h => toZonedTime(h.timestamp, timezone) >= dayAgoZoned);
 
     const totalDuration24h = calculateDuration(last24hHeartbeats);
     const totalHours24h = Math.floor(totalDuration24h);
@@ -209,21 +225,21 @@ export async function calculateUserStats(userId: string, range?: "today" | "all"
         percentGrowth = 100;
     }
 
-    // Calculate Current Streak
+    // Calculate Current Streak (Localized)
     const streakHeartbeats = await prisma.heartbeat.findMany({
         where: { userId },
         select: { timestamp: true },
         orderBy: { timestamp: 'desc' }
     });
 
-    const activeDays = new Set(streakHeartbeats.map(h => format(new Date(h.timestamp), "yyyy-MM-dd")));
+    const activeDays = new Set(streakHeartbeats.map(h => formatInTimeZone(h.timestamp, timezone, "yyyy-MM-dd")));
     let currentStreak = 0;
-    const todayStr = format(now, "yyyy-MM-dd");
-    const yesterdayStr = format(subDays(now, 1), "yyyy-MM-dd");
+    const todayStr = formatInTimeZone(now, timezone, "yyyy-MM-dd");
+    const yesterdayStr = formatInTimeZone(subDays(now, 1), timezone, "yyyy-MM-dd");
 
     if (activeDays.has(todayStr) || activeDays.has(yesterdayStr)) {
         let checkDate = activeDays.has(todayStr) ? now : subDays(now, 1);
-        while (activeDays.has(format(checkDate, "yyyy-MM-dd"))) {
+        while (activeDays.has(formatInTimeZone(checkDate, timezone, "yyyy-MM-dd"))) {
             currentStreak++;
             checkDate = subDays(checkDate, 1);
         }

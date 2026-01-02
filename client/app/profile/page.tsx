@@ -27,8 +27,15 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
@@ -55,6 +62,47 @@ export default function ProfilePage() {
     );
 
     const [isSharing, setIsSharing] = useState(false);
+    const [currentTimezone, setCurrentTimezone] = useState<string>("UTC");
+    const [isUpdatingTz, setIsUpdatingTz] = useState(false);
+
+    const timezones = Intl.supportedValuesOf('timeZone');
+
+    useEffect(() => {
+        const user = session?.user as any;
+        if (user?.timezone) {
+            setCurrentTimezone(user.timezone);
+        } else {
+            setCurrentTimezone(Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC");
+        }
+    }, [session?.user]);
+
+    const handleTimezoneChange = async (tz: string) => {
+        setIsUpdatingTz(true);
+        setCurrentTimezone(tz);
+        try {
+            const res = await fetch("/api/user/timezone", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ timezone: tz }),
+            });
+
+            if (!res.ok) throw new Error("Failed to update timezone");
+
+            toast.success("Timezone updated", {
+                description: `Successfully set to ${tz}`
+            });
+        } catch (error) {
+            console.error(error);
+            toast.error("Update failed", {
+                description: "Could not save your timezone preference."
+            });
+            // Revert on error
+            const user = session?.user as any;
+            if (user?.timezone) setCurrentTimezone(user.timezone);
+        } finally {
+            setIsUpdatingTz(false);
+        }
+    };
 
     if (isAuthPending) {
         return (
@@ -120,8 +168,34 @@ export default function ProfilePage() {
                                 <span>Joined {format(new Date(user.createdAt), "MMMM yyyy")}</span>
                             </div>
                             <div className="flex items-center gap-1.5 text-sm font-medium">
-                                <Globe className="h-4 w-4 text-primary" />
-                                <span>UTC{format(new Date(), " xxx")}</span>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="sm" className="h-auto p-0 font-medium hover:bg-transparent group/tz">
+                                            <Globe className="h-4 w-4 text-primary group-hover/tz:rotate-12 transition-transform" />
+                                            <span className="ml-1.5 border-b border-dashed border-primary/30 group-hover/tz:border-primary transition-colors">
+                                                {currentTimezone}
+                                            </span>
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="start" className="w-[240px] border-white/10 bg-black/90 backdrop-blur-xl p-0 shadow-2xl overflow-hidden rounded-xl">
+                                        <div className="p-2 border-b border-white/5 bg-white/5">
+                                            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-2 py-1">Select Timezone</p>
+                                        </div>
+                                        <ScrollArea className="h-[300px]">
+                                            <div className="p-1">
+                                                {timezones.map(tz => (
+                                                    <DropdownMenuItem
+                                                        key={tz}
+                                                        onClick={() => handleTimezoneChange(tz)}
+                                                        className={`rounded-lg cursor-pointer ${tz === currentTimezone ? 'bg-primary/20 text-primary' : 'hover:bg-white/5'}`}
+                                                    >
+                                                        {tz}
+                                                    </DropdownMenuItem>
+                                                ))}
+                                            </div>
+                                        </ScrollArea>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </div>
                         </div>
 

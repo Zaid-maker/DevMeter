@@ -79,12 +79,28 @@ export default function DashboardPage() {
     const [showVerificationDialog, setShowVerificationDialog] = useState(false);
     const [hasDismissed, setHasDismissed] = useState(false);
 
+    // Timezone synchronization
     useEffect(() => {
-        const isEmailVerified = session?.user.emailVerified;
+        if (session?.user) {
+            const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const storedTimezone = (session.user as any).timezone;
+
+            if (browserTimezone && browserTimezone !== storedTimezone) {
+                fetch("/api/user/timezone", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ timezone: browserTimezone }),
+                }).catch(err => console.error("Failed to sync timezone:", err));
+            }
+        }
+    }, [session?.user]);
+
+    useEffect(() => {
+        const isEmailVerified = session?.user?.emailVerified;
         if (session && isEmailVerified === false && !hasDismissed) {
             setShowVerificationDialog(true);
         }
-    }, [session?.user.emailVerified, hasDismissed, session]);
+    }, [session?.user?.emailVerified, hasDismissed, session]);
 
     const handleSendVerification = async () => {
         if (!session?.user.email) return;
@@ -362,8 +378,8 @@ export default function DashboardPage() {
                 </TabsContent>
             </Tabs>
 
-            <Dialog 
-                open={showVerificationDialog} 
+            <Dialog
+                open={showVerificationDialog}
                 onOpenChange={(open) => {
                     setShowVerificationDialog(open);
                     if (!open) setHasDismissed(true);
@@ -376,13 +392,13 @@ export default function DashboardPage() {
                         </div>
                         <DialogTitle className="text-2xl font-bold text-center">Verify your email</DialogTitle>
                         <DialogDescription className="text-center text-muted-foreground pt-2">
-                            To protect your account and access all features, please verify your email address. 
+                            To protect your account and access all features, please verify your email address.
                             If you haven't received the link, we can send it again.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter className="sm:justify-center gap-2 pt-4">
-                        <Button 
-                            variant="outline" 
+                        <Button
+                            variant="outline"
                             onClick={() => {
                                 setShowVerificationDialog(false);
                                 setHasDismissed(true);
