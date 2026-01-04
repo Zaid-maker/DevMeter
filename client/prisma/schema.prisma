@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -15,13 +12,13 @@ model User {
   name          String?
   emailVerified Boolean     @default(false)
   image         String?
-  timezone      String?     @default("UTC")
   createdAt     DateTime    @default(now())
   updatedAt     DateTime    @updatedAt
-  sessions      Session[]
+  timezone      String?     @default("UTC")
   accounts      Account[]
   apiKeys       ApiKey[]
   heartbeats    Heartbeat[]
+  sessions      Session[]
 }
 
 model Session {
@@ -79,7 +76,7 @@ model Heartbeat {
   project   String
   language  String
   file      String
-  type      String // 'file', 'app', etc.
+  type      String
   isSave    Boolean  @default(false)
   timestamp DateTime
   createdAt DateTime @default(now())

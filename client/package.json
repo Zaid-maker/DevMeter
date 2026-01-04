@@ -10,7 +10,9 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@arcjet/next": "^1.0.0-beta.15",
     "@better-auth/utils": "^0.3.0",
+    "@date-fns/tz": "^1.2.0",
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.2.0",
     "@radix-ui/react-avatar": "^1.1.11",
@@ -29,7 +31,6 @@
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.1.0",
-    "@date-fns/tz": "^1.2.0",
     "lucide-react": "^0.562.0",
     "next": "16.1.1",
     "pg": "^8.16.3",
