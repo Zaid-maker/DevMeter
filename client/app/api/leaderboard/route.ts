@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { startOfDay, subDays } from "date-fns";
+import { getLanguageIcon } from "@/lib/stats-service";
 
 // Helper function to calculate duration in hours from heartbeats
 // This matches the logic in stats/route.ts
@@ -30,45 +31,6 @@ const calculateDuration = (hList: any[]) => {
     return totalSeconds / 3600;
 };
 
-function getLanguageIcon(lang: string): string {
-    const langMap: Record<string, string> = {
-        typescript: "typescript",
-        javascript: "javascript",
-        rust: "rust",
-        python: "python",
-        html: "html5",
-        css: "css3",
-        go: "go",
-        java: "java",
-        cpp: "cplusplus",
-        c: "c",
-        csharp: "csharp",
-        php: "php",
-        ruby: "ruby",
-        swift: "swift",
-        kotlin: "kotlin",
-        dart: "dart",
-        elixir: "elixir",
-        haskell: "haskell",
-        lua: "lua",
-        matlab: "matlab",
-        r: "r",
-        scala: "scala",
-        shell: "bash",
-        sql: "mysql",
-        zig: "zig",
-        vue: "vuejs",
-        react: "react",
-        svelte: "svelte",
-        nextjs: "nextjs",
-        docker: "docker",
-        kubernetes: "kubernetes",
-        markdown: "markdown",
-    };
-
-    const name = langMap[lang.toLowerCase()] || lang.toLowerCase();
-    return `https://cdn.jsdelivr.net/gh/devicons/devicon/icons/${name}/${name}-original.svg`;
-}
 
 export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;

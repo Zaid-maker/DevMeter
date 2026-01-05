@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
         }
 
         const body = await req.json();
-        const { project, language, file, type, is_save, timestamp } = body;
+        const { project, language, file, type, is_save, timestamp, editor, platform } = body;
 
         // Record the heartbeat
         await prisma.heartbeat.create({
@@ -32,6 +32,8 @@ export async function POST(req: NextRequest) {
                 file: file || "unknown",
                 type: type || "file",
                 isSave: is_save || false,
+                editor: editor || "unknown",
+                platform: platform || "unknown",
                 timestamp: new Date(timestamp || Date.now()),
             }
         });
