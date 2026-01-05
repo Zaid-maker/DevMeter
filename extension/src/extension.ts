@@ -198,7 +198,9 @@ async function sendHeartbeat(document: vscode.TextDocument, isSave: boolean) {
         timestamp: now,
         is_save: isSave,
         entity: file,
-        type: 'file'
+        type: 'file',
+        editor: 'vscode',
+        platform: process.platform
     };
 
     try {
