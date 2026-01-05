@@ -432,7 +432,7 @@ export function getEditorIcon(editor: string): string {
         sublime: "sublimetext",
         vim: "vim",
         neovim: "neovim",
-        emacs: "gnuemacs",
+        emacs: "gnu-emacs",
     };
     const name = editorMap[editor.toLowerCase()] || "code-square"; // fallback to generic if unknown
     if (name === "code-square") return ""; // UI should handle fallback
