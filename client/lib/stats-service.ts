@@ -30,6 +30,8 @@ export interface Stats {
         percentGrowth?: number;
         currentStreak: number;
     };
+    editors: { name: string; value: number; color: string; icon: string }[];
+    platforms: { name: string; value: number; color: string; icon: string }[];
 }
 
 export async function calculateUserStats(userId: string, range?: "today" | "all" | "yesterday", timezone: string = "UTC"): Promise<Stats> {
@@ -250,11 +252,57 @@ export async function calculateUserStats(userId: string, range?: "today" | "all"
         }
     }
 
+    // 6. Editor Distribution
+    const editorGroups = new Map<string, typeof heartbeats>();
+    heartbeats.forEach(h => {
+        const editor = h.editor || "unknown";
+        if (!editorGroups.has(editor)) editorGroups.set(editor, []);
+        editorGroups.get(editor)!.push(h);
+    });
+
+    const editorDurations = Array.from(editorGroups.entries()).map(([name, hList]) => ({
+        name,
+        duration: calculateDuration(hList)
+    }));
+
+    const editors = editorDurations
+        .map(ed => ({
+            name: ed.name,
+            value: totalDuration > 0 ? Math.round((ed.duration / totalDuration) * 100) : 0,
+            color: getEditorColor(ed.name),
+            icon: getEditorIcon(ed.name)
+        }))
+        .sort((a, b) => b.value - a.value);
+
+    // 7. Platform Distribution
+    const platformGroups = new Map<string, typeof heartbeats>();
+    heartbeats.forEach(h => {
+        const platform = h.platform || "unknown";
+        if (!platformGroups.has(platform)) platformGroups.set(platform, []);
+        platformGroups.get(platform)!.push(h);
+    });
+
+    const platformDurations = Array.from(platformGroups.entries()).map(([name, hList]) => ({
+        name,
+        duration: calculateDuration(hList)
+    }));
+
+    const platforms = platformDurations
+        .map(pd => ({
+            name: pd.name,
+            value: totalDuration > 0 ? Math.round((pd.duration / totalDuration) * 100) : 0,
+            color: getPlatformColor(pd.name),
+            icon: getPlatformIcon(pd.name)
+        }))
+        .sort((a, b) => b.value - a.value);
+
     return {
         activityByDay,
         languages,
         projects,
         recentActivity,
+        editors,
+        platforms,
         summary: {
             totalTime: `${totalHoursVal}h ${remainingMinutes}m`,
             totalTime24h: `${totalHours24h}h ${remainingMinutes24h}m`,
@@ -309,6 +357,12 @@ export function getLanguageColor(lang: string): string {
         markdown: "#083fa1",
         json: "#292929",
         yaml: "#cb171e",
+        javascriptreact: "#61dafb",
+        typescriptreact: "#61dafb",
+        dotenv: "#ffd33d",
+        xml: "#0060ac",
+        jsonc: "#292929",
+        json5: "#292929",
     };
     return colors[lang.toLowerCase()] || "#888888";
 }
@@ -347,8 +401,61 @@ export function getLanguageIcon(lang: string): string {
         docker: "docker",
         kubernetes: "kubernetes",
         markdown: "markdown",
+        javascriptreact: "react",
+        typescriptreact: "react",
+        dotenv: "nodejs",
+        xml: "html5",
+        jsonc: "json",
     };
 
     const name = langMap[lang.toLowerCase()] || lang.toLowerCase();
     return `https://cdn.jsdelivr.net/gh/devicons/devicon/icons/${name}/${name}-original.svg`;
+}
+
+export function getEditorColor(editor: string): string {
+    const colors: Record<string, string> = {
+        vscode: "#007ACC",
+        intellij: "#000000",
+        sublime: "#FF9800",
+        vim: "#019733",
+        neovim: "#57A143",
+        emacs: "#7B529E",
+        unknown: "#888888",
+    };
+    return colors[editor.toLowerCase()] || "#888888";
+}
+
+export function getEditorIcon(editor: string): string {
+    const editorMap: Record<string, string> = {
+        vscode: "visualstudiocode",
+        intellij: "intellijidea",
+        sublime: "sublimetext",
+        vim: "vim",
+        neovim: "neovim",
+        emacs: "gnu-emacs",
+    };
+    const name = editorMap[editor.toLowerCase()] || "code-square"; // fallback to generic if unknown
+    if (name === "code-square") return ""; // UI should handle fallback
+    return `https://cdn.simpleicons.org/${name}`;
+}
+
+export function getPlatformColor(platform: string): string {
+    const colors: Record<string, string> = {
+        win32: "#0078D6",
+        darwin: "#000000",
+        linux: "#FCC624",
+        unknown: "#888888",
+    };
+    return colors[platform.toLowerCase()] || "#888888";
+}
+
+export function getPlatformIcon(platform: string): string {
+    const platformMap: Record<string, string> = {
+        win32: "windows",
+        darwin: "apple",
+        linux: "linux",
+    };
+    const name = platformMap[platform.toLowerCase()] || "monitor";
+    if (name === "monitor") return "";
+    return `https://cdn.simpleicons.org/${name}`;
 }

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { startOfDay, subDays, format } from "date-fns";
+import { getLanguageColor } from "@/lib/stats-service";
 
 const ADMIN_SECRET = process.env.DEV_ADMIN_SECRET;
 
@@ -140,11 +141,3 @@ export async function GET(req: NextRequest) {
     }
 }
 
-function getLanguageColor(lang: string): string {
-    const colors: Record<string, string> = {
-        typescript: "#3178c6", javascript: "#f1e05a", rust: "#dea584", python: "#3572A5",
-        html: "#e34c26", css: "#563d7c", go: "#00ADD8", java: "#b07219",
-        react: "#61dafb", nextjs: "#000000", docker: "#2496ed"
-    };
-    return colors[lang.toLowerCase()] || "#888888";
-}

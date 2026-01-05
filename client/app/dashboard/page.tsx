@@ -48,10 +48,11 @@ interface Stats {
         topLanguage24h: string;
         topLanguageIcon?: string;
         topLanguageIcon24h?: string;
-        isLive?: boolean;
-        lastHeartbeatAt?: string;
         percentGrowth?: number;
+        currentStreak: number;
     };
+    editors: { name: string; value: number; color: string; icon: string }[];
+    platforms: { name: string; value: number; color: string; icon: string }[];
 }
 
 const fetcher = async (url: string) => {
@@ -200,6 +201,7 @@ export default function DashboardPage() {
                         <TabsTrigger value="overview" className="flex-1 sm:flex-none px-4 md:px-6">Overview</TabsTrigger>
                         <TabsTrigger value="projects" className="flex-1 sm:flex-none px-4 md:px-6">Projects</TabsTrigger>
                         <TabsTrigger value="languages" className="flex-1 sm:flex-none px-4 md:px-6">Languages</TabsTrigger>
+                        <TabsTrigger value="environment" className="flex-1 sm:flex-none px-4 md:px-6">Environment</TabsTrigger>
                     </TabsList>
                 </div>
 
@@ -375,6 +377,68 @@ export default function DashboardPage() {
                             </div>
                         </CardContent>
                     </Card>
+                </TabsContent>
+
+                <TabsContent value="environment" className="space-y-8">
+                    <div className="grid gap-6 md:grid-cols-2">
+                        <Card className="shadow-sm">
+                            <CardHeader>
+                                <CardTitle>Editors</CardTitle>
+                                <CardDescription>Your favorite coding environments.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-6">
+                                    {stats?.editors.map(editor => (
+                                        <div key={editor.name} className="space-y-2">
+                                            <div className="flex items-center justify-between text-sm">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted/40 p-1.5 border border-muted/50">
+                                                        {editor.icon ? (
+                                                            <img src={editor.icon} alt={editor.name} className="h-full w-full object-contain" />
+                                                        ) : (
+                                                            <Code className="h-4 w-4 text-muted-foreground" />
+                                                        )}
+                                                    </div>
+                                                    <span className="font-bold text-base capitalize">{editor.name}</span>
+                                                </div>
+                                                <span className="text-muted-foreground font-medium">{editor.value}%</span>
+                                            </div>
+                                            <Progress value={editor.value} className="h-2" />
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="shadow-sm">
+                            <CardHeader>
+                                <CardTitle>Platforms</CardTitle>
+                                <CardDescription>Deployment and development operating systems.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-6">
+                                    {stats?.platforms.map(platform => (
+                                        <div key={platform.name} className="space-y-2">
+                                            <div className="flex items-center justify-between text-sm">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted/40 p-1.5 border border-muted/50">
+                                                        {platform.icon ? (
+                                                            <img src={platform.icon} alt={platform.name} className="h-full w-full object-contain" />
+                                                        ) : (
+                                                            <Activity className="h-4 w-4 text-muted-foreground" />
+                                                        )}
+                                                    </div>
+                                                    <span className="font-bold text-base uppercase">{platform.name === 'win32' ? 'Windows' : platform.name === 'darwin' ? 'macOS' : platform.name}</span>
+                                                </div>
+                                                <span className="text-muted-foreground font-medium">{platform.value}%</span>
+                                            </div>
+                                            <Progress value={platform.value} className="h-2" />
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
                 </TabsContent>
             </Tabs>
 
