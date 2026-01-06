@@ -78,8 +78,8 @@ model Heartbeat {
   file      String
   type      String
   isSave    Boolean  @default(false)
-  editor    String?  @default("unknown")
-  platform  String?  @default("unknown")
+  editor    String?
+  platform  String?
   timestamp DateTime
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
