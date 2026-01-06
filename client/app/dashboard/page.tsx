@@ -125,6 +125,62 @@ export default function DashboardPage() {
         }
     };
 
+    const getIconComponent = (name: string, type: 'editor' | 'platform') => {
+        const lowerName = name.toLowerCase();
+
+        if (type === 'editor') {
+            if (lowerName.includes('vscode')) {
+                return (
+                    <img
+                        src="/icons/vscode_nano.png"
+                        alt="VS Code"
+                        className="h-full w-full object-contain"
+                        style={{ filter: "brightness(1.1) saturate(1.2)" }}
+                    />
+                );
+            }
+            if (lowerName.includes('intellij')) {
+                return (
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full p-0.5">
+                        <rect width="24" height="24" rx="4" fill="#000000" />
+                        <path d="M18.8 19.2H5.2V16.4L10.8 4.8H18.8V19.2Z" fill="#FE2857" />
+                        <path d="M18.8 4.8H5.2V13.2L13.2 19.2H18.8V4.8Z" fill="#3DDB85" />
+                        <path d="M12 12H18.8V19.2H12V12Z" fill="#007ACC" />
+                        <path d="M5.2 6.4H13.2V14.4H5.2V6.4Z" fill="#6B2CF5" />
+                        <path d="M7 10H17V14H7V10Z" fill="white" opacity="0.9" />
+                        <path d="M8 11.5H10V12.5H8V11.5ZM11 11.5H16V12.5H11V11.5Z" fill="black" />
+                    </svg>
+                );
+            }
+            return <Code className="h-4 w-4 text-primary" />;
+        } else {
+            if (lowerName.includes('win')) {
+                return (
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
+                        <path d="M3 5.47917L11.1714 4.34375V11.6042H3V5.47917ZM3 12.3958H11.1714V19.6562L3 18.5208V12.3958ZM12.1143 4.21146L21 3V11.6042H12.1143V4.21146ZM21 12.3958L12.1143 12.3958V19.7823L21 21V12.3958Z" fill="#00A4EF" />
+                    </svg>
+                );
+            }
+            if (lowerName.includes('darwin') || lowerName.includes('macos') || lowerName.includes('apple')) {
+                return (
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
+                        <path d="M17.05 20.28c-.96.7-1.84.91-2.61.91-.97 0-1.63-.26-2.18-.55-.55-.3-1.12-.59-2.07-.59-.95 0-1.55.3-2.1.59-.55.29-1.2.55-2.17.55-.77 0-1.65-.21-2.61-.91C2.17 17.53 1.05 12.28 3.55 8.35c.92-1.45 2.1-2.11 3.25-2.11.83 0 1.45.21 2 .46.56.25 1.14.51 1.95.51.81 0 1.39-.26 1.94-.51.55-.25 1.17-.46 2-.46 1.15 0 2.33.66 3.25 2.11 2.5 3.93 1.38 9.18-1.55 11.93l.06-.02zM14.63 2.18c.95.12 1.83.66 2.33 1.48.5 1.06.33 2.3-.39 3.09-.54.51-1.32.96-2.22.96-.9 0-1.58-.59-2.08-1.13-.5-.54-.92-1.3-.92-2.16 0-.86.6-1.74 1.48-2.11.23-.09.7-.13 1.8.13v-.26z" fill="currentColor" />
+                    </svg>
+                );
+            }
+            if (lowerName.includes('linux')) {
+                return (
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
+                        <path d="M12 2C9.5 2 7.5 4 7.5 6.5C7.5 7.8 8.1 9 9.1 9.8C7.3 10.8 6 12.8 6 15V18H18V15C18 12.8 16.7 10.8 14.9 9.8C15.9 9 16.5 7.8 16.5 6.5C16.5 4 14.5 2 12 2Z" fill="#FCC624" />
+                        <path d="M11 15H13V16H11V15Z" fill="#333" />
+                        <path d="M8 18C7 18 6 19 6 20V21H18V20C18 19 17 18 16 18H8Z" fill="#E95420" />
+                    </svg>
+                );
+            }
+            return <Activity className="h-4 w-4 text-primary" />;
+        }
+    };
+
     if (isAuthPending) {
         return (
             <div className="flex items-center justify-center min-h-[600px]">
@@ -392,12 +448,8 @@ export default function DashboardPage() {
                                         <div key={editor.name} className="space-y-2">
                                             <div className="flex items-center justify-between text-sm">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted/40 p-1.5 border border-muted/50">
-                                                        {editor.icon ? (
-                                                            <img src={editor.icon} alt={editor.name} className="h-full w-full object-contain" />
-                                                        ) : (
-                                                            <Code className="h-4 w-4 text-muted-foreground" />
-                                                        )}
+                                                    <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted/40 p-1.5 border border-muted/50 overflow-hidden">
+                                                        {getIconComponent(editor.name, 'editor')}
                                                     </div>
                                                     <span className="font-bold text-base capitalize">{editor.name}</span>
                                                 </div>
@@ -421,12 +473,8 @@ export default function DashboardPage() {
                                         <div key={platform.name} className="space-y-2">
                                             <div className="flex items-center justify-between text-sm">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted/40 p-1.5 border border-muted/50">
-                                                        {platform.icon ? (
-                                                            <img src={platform.icon} alt={platform.name} className="h-full w-full object-contain" />
-                                                        ) : (
-                                                            <Activity className="h-4 w-4 text-muted-foreground" />
-                                                        )}
+                                                    <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted/40 p-1.5 border border-muted/50 overflow-hidden">
+                                                        {getIconComponent(platform.name, 'platform')}
                                                     </div>
                                                     <span className="font-bold text-base uppercase">{platform.name === 'win32' ? 'Windows' : platform.name === 'darwin' ? 'macOS' : platform.name}</span>
                                                 </div>

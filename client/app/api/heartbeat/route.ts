@@ -32,8 +32,8 @@ export async function POST(req: NextRequest) {
                 file: file || "unknown",
                 type: type || "file",
                 isSave: is_save || false,
-                editor: editor || "unknown",
-                platform: platform || "unknown",
+                editor: editor || null,
+                platform: platform || null,
                 timestamp: new Date(timestamp || Date.now()),
             }
         });

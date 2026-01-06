@@ -255,7 +255,8 @@ export async function calculateUserStats(userId: string, range?: "today" | "all"
     // 6. Editor Distribution
     const editorGroups = new Map<string, typeof heartbeats>();
     heartbeats.forEach(h => {
-        const editor = h.editor || "unknown";
+        const editor = h.editor;
+        if (!editor || editor.toLowerCase() === "unknown") return;
         if (!editorGroups.has(editor)) editorGroups.set(editor, []);
         editorGroups.get(editor)!.push(h);
     });
@@ -277,7 +278,8 @@ export async function calculateUserStats(userId: string, range?: "today" | "all"
     // 7. Platform Distribution
     const platformGroups = new Map<string, typeof heartbeats>();
     heartbeats.forEach(h => {
-        const platform = h.platform || "unknown";
+        const platform = h.platform;
+        if (!platform || platform.toLowerCase() === "unknown") return;
         if (!platformGroups.has(platform)) platformGroups.set(platform, []);
         platformGroups.get(platform)!.push(h);
     });
@@ -426,17 +428,7 @@ export function getEditorColor(editor: string): string {
 }
 
 export function getEditorIcon(editor: string): string {
-    const editorMap: Record<string, string> = {
-        vscode: "visualstudiocode",
-        intellij: "intellijidea",
-        sublime: "sublimetext",
-        vim: "vim",
-        neovim: "neovim",
-        emacs: "gnu-emacs",
-    };
-    const name = editorMap[editor.toLowerCase()] || "code-square"; // fallback to generic if unknown
-    if (name === "code-square") return ""; // UI should handle fallback
-    return `https://cdn.simpleicons.org/${name}`;
+    return ""; // Frontend handles icons locally
 }
 
 export function getPlatformColor(platform: string): string {
@@ -450,12 +442,5 @@ export function getPlatformColor(platform: string): string {
 }
 
 export function getPlatformIcon(platform: string): string {
-    const platformMap: Record<string, string> = {
-        win32: "windows",
-        darwin: "apple",
-        linux: "linux",
-    };
-    const name = platformMap[platform.toLowerCase()] || "monitor";
-    if (name === "monitor") return "";
-    return `https://cdn.simpleicons.org/${name}`;
+    return ""; // Frontend handles icons locally
 }
