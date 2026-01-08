@@ -20,6 +20,8 @@ model User {
   heartbeats    Heartbeat[]
   sessions      Session[]
   deletedAt     DateTime?
+
+  @@index([deletedAt])
 }
 
 model Session {

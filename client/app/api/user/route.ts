@@ -16,23 +16,27 @@ export async function DELETE(req: NextRequest) {
     const userEmail = session.user.email;
 
     try {
-        // Soft delete user and anonymize email to allow re-registration
-        await prisma.user.update({
-            where: { id: userId },
-            data: {
-                deletedAt: new Date(),
-                email: `deleted-${Date.now()}-${userEmail}`,
-            },
-        });
 
+        // Perform soft delete and revocation in a transaction
+        await prisma.$transaction(async (tx) => {
+            // 1. Soft delete user
+            await tx.user.update({
+                where: { id: userId },
+                data: {
+                    deletedAt: new Date(),
+                    email: `deleted-${Date.now()}-${userEmail}`,
+                },
+            });
 
-        // Revoke all sessions and API keys
-        await prisma.session.deleteMany({
-            where: { userId: userId },
-        });
+            // 2. Revoke all sessions
+            await tx.session.deleteMany({
+                where: { userId: userId },
+            });
 
-        await prisma.apiKey.deleteMany({
-            where: { userId: userId },
+            // 3. Revoke all API keys
+            await tx.apiKey.deleteMany({
+                where: { userId: userId },
+            });
         });
 
         return NextResponse.json({ success: true });
