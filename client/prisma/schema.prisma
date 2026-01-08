@@ -19,6 +19,7 @@ model User {
   apiKeys       ApiKey[]
   heartbeats    Heartbeat[]
   sessions      Session[]
+  deletedAt     DateTime?
 }
 
 model Session {

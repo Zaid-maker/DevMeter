@@ -267,7 +267,23 @@ export default function SettingsPage() {
                                 Once you delete your account, there is no going back. This will permanently remove your coding history,
                                 API keys, and all tracked metrics.
                             </p>
-                            <Button variant="destructive" size="sm">Delete Account</Button>
+                            <Button variant="destructive" size="sm" onClick={() => {
+                                if (confirm("Are you sure you want to delete your account? This action cannot be undone.")) {
+                                    fetch("/api/user", { method: "DELETE" })
+                                        .then(async (res) => {
+                                            if (res.ok) {
+                                                await authClient.signOut();
+                                                window.location.href = "/";
+                                            } else {
+                                                alert("Failed to delete account. Please try again.");
+                                            }
+                                        })
+                                        .catch((err) => {
+                                            console.error(err);
+                                            alert("An error occurred. Please try again.");
+                                        });
+                                }
+                            }}>Delete Account</Button>
                         </CardContent>
                     </Card>
                 </TabsContent>
