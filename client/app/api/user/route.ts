@@ -25,8 +25,13 @@ export async function DELETE(req: NextRequest) {
             },
         });
 
-        // Revoke all sessions
+
+        // Revoke all sessions and API keys
         await prisma.session.deleteMany({
+            where: { userId: userId },
+        });
+
+        await prisma.apiKey.deleteMany({
             where: { userId: userId },
         });
 
