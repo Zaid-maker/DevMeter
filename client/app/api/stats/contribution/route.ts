@@ -22,21 +22,16 @@ export async function GET(req: NextRequest) {
         const apiKeyStr = authHeader.split(" ")[1];
         const apiKey = await prisma.apiKey.findUnique({
             where: { key: apiKeyStr },
-            include: { user: true }
         });
 
         if (!apiKey) {
             return NextResponse.json({ error: "Invalid API Key" }, { status: 401 });
         }
 
-        if (apiKey.user.deletedAt) {
-            return NextResponse.json({ error: "User account is deleted" }, { status: 401 });
-        }
-
         userId = apiKey.userId;
     }
 
-    // Defense in depth: Check user existence and deletedAt for session path as well
+    // Unified validation for both auth paths
     const userItem = await prisma.user.findUnique({
         where: { id: userId },
         select: { deletedAt: true }
