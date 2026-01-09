@@ -31,6 +31,16 @@ export async function GET(req: NextRequest) {
         userId = apiKey.userId;
     }
 
+    // Unified validation for both auth paths
+    const userItem = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { deletedAt: true }
+    });
+
+    if (!userItem || userItem.deletedAt) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
     const now = new Date();
     const startDate = subDays(startOfDay(now), 365);
 

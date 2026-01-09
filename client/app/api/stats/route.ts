@@ -73,12 +73,21 @@ export async function GET(req: NextRequest) {
     const range = searchParams.get("range") as "today" | "all" | null;
 
     // Fetch user and timezone
+    // Fetch user and timezone
     const user = await prisma.user.findUnique({
         where: { id: userId },
-        select: { timezone: true },
+        select: { timezone: true, deletedAt: true },
     });
 
-    const timezone = user?.timezone || "UTC";
+    if (!user) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    if (user.deletedAt) {
+        return NextResponse.json({ error: "User account is deleted" }, { status: 401 });
+    }
+
+    const timezone = user.timezone || "UTC";
 
     try {
         const stats = await calculateUserStats(userId, range || undefined, timezone);

@@ -20,6 +20,11 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Invalid API Key" }, { status: 401 });
         }
 
+        // Check if user is soft deleted
+        if (apiKey.user.deletedAt) {
+            return NextResponse.json({ error: "User account is deleted" }, { status: 401 });
+        }
+
         const body = await req.json();
         const { project, language, file, type, is_save, timestamp, editor, platform } = body;
 

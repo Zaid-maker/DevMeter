@@ -141,6 +141,16 @@ async function updateStatusBar() {
 
     } catch (error: any) {
         log(`Error fetching stats: ${error.message}`);
+        if (error.response?.status === 401 && error.response.data?.error === "User account is deleted") {
+            statusBarItem.text = '$(error) DevMeter: Account Deleted';
+            statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.errorBackground');
+            statusBarItem.tooltip = 'Your DevMeter account has been deleted. Please create a new one or restore it.';
+        } else if (error.response?.status === 401) {
+            statusBarItem.text = '$(key) DevMeter: Invalid API Key';
+            statusBarItem.backgroundColor = undefined;
+        } else {
+            statusBarItem.backgroundColor = undefined;
+        }
     }
 }
 
@@ -219,6 +229,9 @@ async function sendHeartbeat(document: vscode.TextDocument, isSave: boolean) {
         log(`Failed to send heartbeat: ${error.message}`);
         if (error.response) {
             log(`Response error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+            if (error.response.status === 401 && error.response.data?.error === "User account is deleted") {
+                vscode.window.showErrorMessage("DevMeter: Your account has been deleted. Please check your settings.");
+            }
         }
         // Don't update lastHeartbeat so we can retry on next change if it's been long enough
     } finally {
