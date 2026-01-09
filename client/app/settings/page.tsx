@@ -1,30 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { authClient } from "@/lib/auth-client";
-import {
-    Key,
-    Plus,
-    Copy,
-    RefreshCw,
-    User,
-    Mail,
-    ShieldCheck,
-    Settings,
-    Bell,
-    Lock,
-    Trash2,
-    Eye,
-    EyeOff
-} from "lucide-react";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { authClient } from "@/lib/auth-client";
+import {
+    Copy,
+    Eye,
+    EyeOff,
+    Key,
+    Plus,
+    RefreshCw,
+    ShieldCheck,
+    Trash2
+} from "lucide-react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useState } from "react";
 import useSWR, { mutate } from "swr";
 
 interface ApiKey {
@@ -36,7 +32,19 @@ interface ApiKey {
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json());
 
-export default function SettingsPage() {
+function SettingsContent() {
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const pathname = usePathname();
+
+    const activeTab = searchParams.get("tab") || "profile";
+
+    const handleTabChange = (value: string) => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("tab", value);
+        router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    };
+
     const { data: session } = authClient.useSession();
     const { data: keys, isLoading, error } = useSWR<ApiKey[]>(
         session ? "/api/keys" : null,
@@ -89,7 +97,7 @@ export default function SettingsPage() {
                 </div>
             </div>
 
-            <Tabs defaultValue="profile" className="space-y-6">
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
                 <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
                     <TabsTrigger value="profile">Profile</TabsTrigger>
                     <TabsTrigger value="keys">API Keys</TabsTrigger>
@@ -307,5 +315,17 @@ export default function SettingsPage() {
                 </TabsContent>
             </Tabs>
         </div>
+    );
+}
+
+export default function SettingsPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center min-h-[400px]">
+                <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+        }>
+            <SettingsContent />
+        </Suspense>
     );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from "recharts";
@@ -13,7 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatDistanceToNow } from "date-fns";
 import useSWR from "swr";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { toast } from "sonner";
 import {
     Dialog,
@@ -68,7 +68,7 @@ const fetcher = async (url: string) => {
     return res.json();
 };
 
-export default function DashboardPage() {
+function DashboardContent() {
     const { data: session, isPending: isAuthPending } = authClient.useSession();
     const { data: stats, isLoading } = useSWR<Stats>(
         session ? "/api/stats" : null,
@@ -76,6 +76,17 @@ export default function DashboardPage() {
         { refreshInterval: 60000 } // Refresh every minute
     );
     const router = useRouter()
+    const searchParams = useSearchParams();
+    const pathname = usePathname();
+
+    const activeTab = searchParams.get("tab") || "overview";
+
+    const handleTabChange = (value: string) => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("tab", value);
+        router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    };
+
     const [sendingEmail, setSendingEmail] = useState(false);
     const [showVerificationDialog, setShowVerificationDialog] = useState(false);
     const [hasDismissed, setHasDismissed] = useState(false);
@@ -251,7 +262,7 @@ export default function DashboardPage() {
                 </div>
             </div>
 
-            <Tabs defaultValue="overview" className="space-y-6 md:space-y-8">
+            <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6 md:space-y-8">
                 <div className="w-full overflow-x-auto pb-1 no-scrollbar">
                     <TabsList className="bg-muted/50 p-1 w-full sm:w-auto flex">
                         <TabsTrigger value="overview" className="flex-1 sm:flex-none px-4 md:px-6">Overview</TabsTrigger>
@@ -537,6 +548,21 @@ export default function DashboardPage() {
                 </DialogContent>
             </Dialog>
         </div>
+    );
+}
+
+export default function DashboardPage() {
+    return (
+        <Suspense fallback={
+            <div className="flex items-center justify-center min-h-[600px]">
+                <div className="flex flex-col items-center space-y-4">
+                    <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                    <p className="text-muted-foreground animate-pulse text-sm">Synchronizing your statistics...</p>
+                </div>
+            </div>
+        }>
+            <DashboardContent />
+        </Suspense>
     );
 }
 
