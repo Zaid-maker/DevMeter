@@ -1,0 +1,67 @@
+version: 2
+updates:
+  # Client - Next.js Web App
+  - package-ecosystem: "bun"
+    directory: "/client"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "client"
+    commit-message:
+      prefix: "chore(client):"
+    groups:
+      react-next-stack:
+        patterns:
+          - "react*"
+          - "next*"
+      tooling:
+        patterns:
+          - "eslint*"
+          - "prettier*"
+          - "typescript*"
+          - "@types/*"
+      minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Extension - VS Code Plugin
+  - package-ecosystem: "bun"
+    directory: "/extension"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "extension"
+    commit-message:
+      prefix: "chore(ext):"
+    groups:
+      minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+      tooling:
+        patterns:
+          - "eslint*"
+          - "typescript*"
+          - "@types/*"
+
+  # Analytics - Backend/Internal Tools
+  - package-ecosystem: "bun"
+    directory: "/analytics"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "analytics"
+    commit-message:
+      prefix: "chore(analytics):"
+    groups:
+      minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
