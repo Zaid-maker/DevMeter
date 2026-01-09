@@ -79,8 +79,12 @@ export async function GET(req: NextRequest) {
         select: { timezone: true, deletedAt: true },
     });
 
-    if (!user || user.deletedAt) {
+    if (!user) {
         return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    if (user.deletedAt) {
+        return NextResponse.json({ error: "User account is deleted" }, { status: 401 });
     }
 
     const timezone = user.timezone || "UTC";
