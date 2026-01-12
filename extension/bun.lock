@@ -8,7 +8,7 @@
         "axios": "^1.7.9",
       },
       "devDependencies": {
-        "@types/vscode": "^1.108.0",
+        "@types/vscode": "^1.108.1",
         "@vscode/vsce": "^3.7.1",
         "esbuild": "^0.27.2",
         "typescript": "^5.0.0",
@@ -150,7 +150,7 @@
 
     "@types/sarif": ["@types/sarif@2.1.7", "", {}, "sha512-kRz0VEkJqWLf1LLVN4pT1cg1Z9wAuvI6L97V3m2f5B76Tg8d413ddvLBPTEHAZJlnn4XSvu0FkZtViCQGVyrXQ=="],
 
-    "@types/vscode": ["@types/vscode@1.108.0", "", {}, "sha512-WXEz8iCGrraEf+NB8gvC9ONakihpRYsnw2n8oq2/qAQGB5MrQERlkd2KxjpvlLHPjyu3uBynDZ+DRUe5vsw94g=="],
+    "@types/vscode": ["@types/vscode@1.108.1", "", {}, "sha512-DerV0BbSzt87TbrqmZ7lRDIYaMiqvP8tmJTzW2p49ZBVtGUnGAu2RGQd1Wv4XMzEVUpaHbsemVM5nfuQJj7H6w=="],
 
     "@typespec/ts-http-runtime": ["@typespec/ts-http-runtime@0.3.2", "", { "dependencies": { "http-proxy-agent": "^7.0.0", "https-proxy-agent": "^7.0.0", "tslib": "^2.6.2" } }, "sha512-IlqQ/Gv22xUC1r/WQm4StLkYQmaaTsXAhUVsNE0+xiyf0yRFiH5++q78U3bw6bLKDCTmh0uqKB9eG9+Bt75Dkg=="],
 
