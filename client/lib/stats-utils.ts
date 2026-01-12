@@ -55,6 +55,12 @@ export function calculateStreaks(activeDaysSet: Set<string>, timezone: string = 
         return { current: 0, longest: 0 };
     }
 
+    const dayToUtcDayNumber = (day: string) => {
+        // day is "yyyy-MM-dd"
+        const [y, m, d] = day.split("-").map(Number);
+        return Math.floor(Date.UTC(y, m - 1, d) / 86400000);
+    };
+
     let longest = 0;
     let temp = 0;
 
@@ -63,10 +69,9 @@ export function calculateStreaks(activeDaysSet: Set<string>, timezone: string = 
         if (i === 0) {
             temp = 1;
         } else {
-            const prevDate = new Date(sortedDays[i - 1]);
-            const currDate = new Date(sortedDays[i]);
-            // Use differenceInDays for more robust day-diff check
-            if (differenceInDays(currDate, prevDate) === 1) {
+            const prev = dayToUtcDayNumber(sortedDays[i - 1]);
+            const curr = dayToUtcDayNumber(sortedDays[i]);
+            if (curr - prev === 1) {
                 temp++;
             } else {
                 temp = 1;
@@ -77,13 +82,12 @@ export function calculateStreaks(activeDaysSet: Set<string>, timezone: string = 
 
     // Calculate Current Streak
     let current = 0;
-    const now = new Date();
-    const todayStr = format(new TZDate(now, timezone), "yyyy-MM-dd");
-    const yesterdayStr = format(new TZDate(subDays(now, 1), timezone), "yyyy-MM-dd");
+    const zonedNow = new TZDate(new Date(), timezone);
+    const todayStr = format(zonedNow, "yyyy-MM-dd");
+    const yesterdayStr = format(subDays(zonedNow, 1), "yyyy-MM-dd");
 
     if (activeDaysSet.has(todayStr) || activeDaysSet.has(yesterdayStr)) {
-        let checkDate = activeDaysSet.has(todayStr) ? now : subDays(now, 1);
-        let checkDateZoned = new TZDate(checkDate, timezone);
+        let checkDateZoned = activeDaysSet.has(todayStr) ? zonedNow : subDays(zonedNow, 1);
 
         while (activeDaysSet.has(format(checkDateZoned, "yyyy-MM-dd"))) {
             current++;
