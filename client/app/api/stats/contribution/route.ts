@@ -2,8 +2,17 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
-import { startOfDay, subDays, format, differenceInDays, isSameDay } from "date-fns";
+import { startOfDay, subDays, format } from "date-fns";
+import { calculateDuration, calculateStreaks } from "@/lib/stats-utils";
+import { TZDate } from "@date-fns/tz";
 
+/**
+ * Handle GET requests to return a user's daily contribution data, streaks, and summary for the past year.
+ *
+ * @returns A NextResponse with JSON containing either:
+ * - a contributions payload: `{ contributions: { date: string, count: number }[], streaks: { current: number, longest: number }, summary: { totalHours: number, daysActive: number, averagePerDay: number } }`, or
+ * - an error object `{ error: string }` with an appropriate HTTP status (401 for unauthorized/invalid API key, 404 for missing user, 500 for internal errors).
+ */
 export async function GET(req: NextRequest) {
     const session = await auth.api.getSession({
         headers: await headers(),
@@ -34,13 +43,14 @@ export async function GET(req: NextRequest) {
     // Unified validation for both auth paths
     const userItem = await prisma.user.findUnique({
         where: { id: userId },
-        select: { deletedAt: true }
+        select: { deletedAt: true, timezone: true }
     });
 
     if (!userItem || userItem.deletedAt) {
         return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    const timezone = userItem.timezone || "UTC";
     const now = new Date();
     const startDate = subDays(startOfDay(now), 365);
 
@@ -57,84 +67,22 @@ export async function GET(req: NextRequest) {
             },
         });
 
-        const contributions: Record<string, number> = {};
-
-        // Helper function to calculate duration (reused logic)
-        const calculateDuration = (hList: typeof heartbeats) => {
-            if (hList.length === 0) return 0;
-
-            let totalSeconds = 0;
-            const SESSION_GAP = 15 * 60 * 1000;
-            const HEARTBEAT_VAL = 2 * 60 * 1000;
-
-            let lastTime = new Date(hList[0].timestamp).getTime();
-            totalSeconds += HEARTBEAT_VAL / 1000;
-
-            for (let i = 1; i < hList.length; i++) {
-                const currentTime = new Date(hList[i].timestamp).getTime();
-                const diff = currentTime - lastTime;
-
-                if (diff < SESSION_GAP) {
-                    totalSeconds += diff / 1000;
-                } else {
-                    totalSeconds += HEARTBEAT_VAL / 1000;
-                }
-                lastTime = currentTime;
-            }
-
-            return totalSeconds / 3600;
-        };
-
         // Group by day
         const dailyHeartbeats: Record<string, typeof heartbeats> = {};
         heartbeats.forEach(h => {
-            const dayStr = format(new Date(h.timestamp), "yyyy-MM-dd");
+            const dayStr = format(new TZDate(h.timestamp, timezone), "yyyy-MM-dd");
             if (!dailyHeartbeats[dayStr]) dailyHeartbeats[dayStr] = [];
             dailyHeartbeats[dayStr].push(h);
         });
 
         const contributionData = Object.entries(dailyHeartbeats).map(([date, hList]) => ({
             date,
-            count: parseFloat(calculateDuration(hList).toFixed(2)) // We use hours as "count" for the heatmap
+            count: parseFloat(calculateDuration(hList).toFixed(2))
         }));
 
-        // Streak calculation
-        const activeDays = new Set(Object.keys(dailyHeartbeats).sort());
-        const sortedDays = Array.from(activeDays).sort();
-
-        let currentStreak = 0;
-        let longestStreak = 0;
-        let tempStreak = 0;
-
-        if (sortedDays.length > 0) {
-            // Longest streak
-            for (let i = 0; i < sortedDays.length; i++) {
-                if (i === 0) {
-                    tempStreak = 1;
-                } else {
-                    const prevDate = new Date(sortedDays[i - 1]);
-                    const currDate = new Date(sortedDays[i]);
-                    if (differenceInDays(currDate, prevDate) === 1) {
-                        tempStreak++;
-                    } else {
-                        tempStreak = 1;
-                    }
-                }
-                longestStreak = Math.max(longestStreak, tempStreak);
-            }
-
-            // Current streak
-            const todayStr = format(now, "yyyy-MM-dd");
-            const yesterdayStr = format(subDays(now, 1), "yyyy-MM-dd");
-
-            if (activeDays.has(todayStr) || activeDays.has(yesterdayStr)) {
-                let checkDate = activeDays.has(todayStr) ? now : subDays(now, 1);
-                while (activeDays.has(format(checkDate, "yyyy-MM-dd"))) {
-                    currentStreak++;
-                    checkDate = subDays(checkDate, 1);
-                }
-            }
-        }
+        // Streak calculation using centralized utility
+        const activeDays = new Set(Object.keys(dailyHeartbeats));
+        const { current: currentStreak, longest: longestStreak } = calculateStreaks(activeDays, timezone);
 
         const totalHours = contributionData.reduce((acc, curr) => acc + curr.count, 0);
 
