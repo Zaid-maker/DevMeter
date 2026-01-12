@@ -5,6 +5,13 @@ import { headers } from "next/headers";
 import { startOfDay, subDays, format } from "date-fns";
 import { calculateDuration, calculateStreaks } from "@/lib/stats-utils";
 
+/**
+ * Handle GET requests to return a user's daily contribution data, streaks, and summary for the past year.
+ *
+ * @returns A NextResponse with JSON containing either:
+ * - a contributions payload: `{ contributions: { date: string, count: number }[], streaks: { current: number, longest: number }, summary: { totalHours: number, daysActive: number, averagePerDay: number } }`, or
+ * - an error object `{ error: string }` with an appropriate HTTP status (401 for unauthorized/invalid API key, 404 for missing user, 500 for internal errors).
+ */
 export async function GET(req: NextRequest) {
     const session = await auth.api.getSession({
         headers: await headers(),
