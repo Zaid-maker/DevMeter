@@ -99,7 +99,7 @@ export function calculateStreaks(activeDaysSet: Set<string>, timezone: string = 
 
         while (activeDaysSet.has(format(checkDateZoned, "yyyy-MM-dd"))) {
             current++;
-            checkDateZoned = new TZDate(subDays(checkDateZoned, 1), timezone);
+            checkDateZoned = subDays(checkDateZoned, 1);
         }
     }
 
