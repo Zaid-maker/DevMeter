@@ -1,6 +1,7 @@
 import { prisma } from "./prisma";
 import { startOfDay, subDays, format } from "date-fns";
 import { TZDate } from "@date-fns/tz";
+import { calculateDuration, calculateStreaks } from "./stats-utils";
 
 export interface Stats {
     activityByDay: { name: string; total: number }[];
@@ -65,7 +66,6 @@ export async function calculateUserStats(userId: string, range?: "today" | "all"
         },
     });
 
-    // We need to compare heartbeats against the user's local days
     // Helper to get local date string (YYYY-MM-DD) for a heartbeat in user's timezone
     const getLocalDateStr = (date: Date) => format(new TZDate(date, timezone), "yyyy-MM-dd");
 
@@ -76,35 +76,6 @@ export async function calculateUserStats(userId: string, range?: "today" | "all"
         const zoned = new TZDate(h.timestamp, timezone);
         return zoned >= subDays(currentWeekStartLocal, 7) && zoned < currentWeekStartLocal;
     });
-
-    // Helper function to calculate duration in hours from heartbeats
-    const calculateDuration = (hList: typeof heartbeats) => {
-        if (hList.length === 0) return 0;
-        const sorted = [...hList].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-
-        let totalSeconds = 0;
-        const SESSION_GAP = 15 * 60 * 1000; // 15 minutes session gap
-        const HEARTBEAT_VAL = 2 * 60 * 1000; // Each heartbeat assumes at least 2 mins of work
-
-        let lastTime = new Date(sorted[0].timestamp).getTime();
-        totalSeconds += HEARTBEAT_VAL / 1000;
-
-        for (let i = 1; i < sorted.length; i++) {
-            const currentTime = new Date(sorted[i].timestamp).getTime();
-            const diff = currentTime - lastTime;
-
-            if (diff < SESSION_GAP) {
-                // Part of same session
-                totalSeconds += diff / 1000;
-            } else {
-                // New session starts
-                totalSeconds += HEARTBEAT_VAL / 1000;
-            }
-            lastTime = currentTime;
-        }
-
-        return totalSeconds / 3600;
-    };
 
     // 1. Activity by Day (Localized)
     const activityByDay = Array.from({ length: 7 }).map((_, i) => {
@@ -232,7 +203,7 @@ export async function calculateUserStats(userId: string, range?: "today" | "all"
         percentGrowth = 100;
     }
 
-    // Calculate Current Streak (Localized)
+    // Calculate Current & Longest Streak (Localized)
     const streakHeartbeats = await prisma.heartbeat.findMany({
         where: { userId },
         select: { timestamp: true },
@@ -240,17 +211,7 @@ export async function calculateUserStats(userId: string, range?: "today" | "all"
     });
 
     const activeDays = new Set(streakHeartbeats.map(h => format(new TZDate(h.timestamp, timezone), "yyyy-MM-dd")));
-    let currentStreak = 0;
-    const todayStr = format(new TZDate(now, timezone), "yyyy-MM-dd");
-    const yesterdayStr = format(new TZDate(subDays(now, 1), timezone), "yyyy-MM-dd");
-
-    if (activeDays.has(todayStr) || activeDays.has(yesterdayStr)) {
-        let checkDate = activeDays.has(todayStr) ? now : subDays(now, 1);
-        while (activeDays.has(format(new TZDate(checkDate, timezone), "yyyy-MM-dd"))) {
-            currentStreak++;
-            checkDate = subDays(checkDate, 1);
-        }
-    }
+    const { current: currentStreak, longest: longestStreak } = calculateStreaks(activeDays, timezone);
 
     // 6. Editor Distribution
     const editorGroups = new Map<string, typeof heartbeats>();
