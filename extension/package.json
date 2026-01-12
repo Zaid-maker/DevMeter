@@ -2,7 +2,7 @@
   "name": "devmeter",
   "displayName": "DevMeter",
   "description": "Open-source automated coding time tracker. Master your craft with real-time insights.",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "license": "MIT",
   "publisher": "DevMitrza",
   "repository": {
@@ -10,7 +10,7 @@
     "url": "https://github.com/Zaid-maker/DevMeter"
   },
   "engines": {
-    "vscode": "^1.75.0"
+    "vscode": "^1.108.1"
   },
   "categories": [
     "Visualization",
