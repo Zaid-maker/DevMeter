@@ -30,6 +30,7 @@ export interface Stats {
         lastHeartbeatAt?: Date;
         percentGrowth?: number;
         currentStreak: number;
+        longestStreak: number;
     };
     editors: { name: string; value: number; color: string; icon: string }[];
     platforms: { name: string; value: number; color: string; icon: string }[];
@@ -203,9 +204,13 @@ export async function calculateUserStats(userId: string, range?: "today" | "all"
         percentGrowth = 100;
     }
 
-    // Calculate Current & Longest Streak (Localized)
+    // Calculate Current & Longest Streak (Localized) - Restricted to last 365 days for scalability
+    const streakStartDate = subDays(zonedTodayStart, 365);
     const streakHeartbeats = await prisma.heartbeat.findMany({
-        where: { userId },
+        where: {
+            userId,
+            timestamp: { gte: streakStartDate }
+        },
         select: { timestamp: true },
         orderBy: { timestamp: 'desc' }
     });
@@ -279,7 +284,8 @@ export async function calculateUserStats(userId: string, range?: "today" | "all"
             isLive,
             lastHeartbeatAt: lastHeartbeat?.timestamp,
             percentGrowth,
-            currentStreak
+            currentStreak,
+            longestStreak
         }
     };
 }
