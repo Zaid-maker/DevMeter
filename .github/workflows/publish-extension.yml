@@ -34,6 +34,10 @@ jobs:
         working-directory: ./extension
         run: bun run build
 
-      - name: Publish Extension
+      - name: Publish to VS Marketplace
         working-directory: ./extension
         run: npx -y @vscode/vsce publish -p ${{ secrets.VSCE_PAT }}
+
+      - name: Publish to Open VSX
+        working-directory: ./extension
+        run: npx -y ovsx publish -p ${{ secrets.OVSX_PAT }}
