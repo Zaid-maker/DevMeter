@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { startOfDay, subDays, format } from "date-fns";
 import { calculateDuration, calculateStreaks } from "@/lib/stats-utils";
+import { TZDate } from "@date-fns/tz";
 
 /**
  * Handle GET requests to return a user's daily contribution data, streaks, and summary for the past year.
@@ -69,7 +70,7 @@ export async function GET(req: NextRequest) {
         // Group by day
         const dailyHeartbeats: Record<string, typeof heartbeats> = {};
         heartbeats.forEach(h => {
-            const dayStr = format(new Date(h.timestamp), "yyyy-MM-dd");
+            const dayStr = format(new TZDate(h.timestamp, timezone), "yyyy-MM-dd");
             if (!dailyHeartbeats[dayStr]) dailyHeartbeats[dayStr] = [];
             dailyHeartbeats[dayStr].push(h);
         });
