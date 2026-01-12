@@ -9,8 +9,10 @@ const HEARTBEAT_CREDIT_MS = 2 * 60 * 1000; // 2 minutes credit per session/indiv
 const MAX_HEARTBEAT_DIFF_MS = 5 * 60 * 1000; // Cap consecutive heartbeat differences at 5 mins
 
 /**
- * Calculates total duration in hours from a list of heartbeats.
- * Uses a gap-based algorithm to group heartbeats into sessions.
+ * Compute total active duration in hours from a sequence of heartbeat timestamps.
+ *
+ * @param heartbeats - Array of heartbeat records where each item has a `timestamp` Date
+ * @returns Total duration in hours computed from the provided heartbeats
  */
 export function calculateDuration(heartbeats: { timestamp: Date }[]): number {
     if (heartbeats.length === 0) return 0;
@@ -47,7 +49,13 @@ export function calculateDuration(heartbeats: { timestamp: Date }[]): number {
 }
 
 /**
- * Calculates current and longest streaks from a set of active days.
+ * Compute the current and longest consecutive-day activity streaks from a set of active day strings.
+ *
+ * @param activeDaysSet - Set of dates formatted as "yyyy-MM-dd" representing days with activity.
+ * @param timezone - IANA timezone name used to determine "today" for the current streak calculation (default: "UTC").
+ * @returns An object with `current` and `longest`:
+ *   - `current`: length of the ongoing consecutive-day streak ending on today (or yesterday) in the given timezone.
+ *   - `longest`: length of the longest consecutive-day streak present in `activeDaysSet`.
  */
 export function calculateStreaks(activeDaysSet: Set<string>, timezone: string = "UTC") {
     const sortedDays = Array.from(activeDaysSet).sort();

@@ -36,6 +36,28 @@ export interface Stats {
     platforms: { name: string; value: number; color: string; icon: string }[];
 }
 
+/**
+ * Compute aggregated development activity statistics for a user in a given timezone.
+ *
+ * Produces localized summaries (activity by day, language and project breakdowns, recent activity,
+ * editor/platform distributions, 24-hour and weekly metrics, growth, and streaks) constrained to
+ * the requested date range.
+ *
+ * @param userId - The ID of the user to compute stats for
+ * @param range - Time window to query: `"today"` (local day start → now), `"yesterday"` (local previous day),
+ *   or `"all"`/undefined (last 14 days up to now)
+ * @param timezone - IANA timezone identifier used to localize day boundaries (defaults to `"UTC"`)
+ * @returns An object containing:
+ *   - activityByDay: seven-day localized hour totals
+ *   - languages: top language breakdowns (name, percent value, color, icon)
+ *   - projects: top projects (name, percent value, hours)
+ *   - recentActivity: up to 10 most recent heartbeats with metadata and styling
+ *   - editors: editor distribution (name, percent value, color, icon)
+ *   - platforms: platform distribution (name, percent value, color, icon)
+ *   - summary: aggregated metrics including `totalTime`, `totalTime24h`, `dailyAverage`,
+ *     `topProject`, `topProject24h`, `topLanguage`, `topLanguage24h`, `topLanguageIcon`,
+ *     `topLanguageIcon24h`, `isLive`, `lastHeartbeatAt`, `percentGrowth`, `currentStreak`, and `longestStreak`
+ */
 export async function calculateUserStats(userId: string, range?: "today" | "all" | "yesterday", timezone: string = "UTC"): Promise<Stats> {
     const now = new Date();
     // Get the current time in the user's timezone
