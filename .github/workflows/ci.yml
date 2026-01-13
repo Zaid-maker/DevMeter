@@ -1,0 +1,77 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  client:
+    name: Client CI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install Dependencies
+        working-directory: ./client
+        run: bun install
+
+      - name: Prisma Generate
+        working-directory: ./client
+        run: bun prisma generate
+
+      - name: Next.js Lint
+        working-directory: ./client
+        run: bun run lint
+
+      - name: Next.js Build
+        working-directory: ./client
+        run: bun run build
+
+  extension:
+    name: Extension CI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install Dependencies
+        working-directory: ./extension
+        run: bun install
+
+      - name: Build Extension
+        working-directory: ./extension
+        run: bun run build
+
+  analytics:
+    name: Analytics CI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install Dependencies
+        working-directory: ./analytics
+        run: bun install
+
+      - name: Lint Analytics
+        working-directory: ./analytics
+        run: bun run lint
+
+      - name: Build Analytics
+        working-directory: ./analytics
+        run: bun run build
