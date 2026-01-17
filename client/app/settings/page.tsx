@@ -273,7 +273,14 @@ function SettingsContent() {
                                             </div>
                                             <div className="flex items-center justify-between pt-1">
                                                 <p className="text-[10px] text-muted-foreground uppercase font-medium tracking-widest opacity-60">
-                                                    Active since {new Date(apiKey.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                    Active since {new Date(apiKey.createdAt).toLocaleString(undefined, {
+                                                        month: 'short',
+                                                        day: 'numeric',
+                                                        year: 'numeric',
+                                                        hour: '2-digit',
+                                                        minute: '2-digit',
+                                                        hour12: true
+                                                    })}
                                                 </p>
                                             </div>
                                         </div>
