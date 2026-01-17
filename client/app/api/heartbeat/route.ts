@@ -17,11 +17,13 @@ export async function POST(req: NextRequest) {
         });
 
         if (!apiKey) {
+            console.error(`Invalid API Key attempt: ${apiKeyStr.substring(0, 8)}...`);
             return NextResponse.json({ error: "Invalid API Key" }, { status: 401 });
         }
 
         // Check if user is soft deleted
         if (apiKey.user.deletedAt) {
+            console.warn(`Heartbeat rejected for deleted user: ${apiKey.userId}`);
             return NextResponse.json({ error: "User account is deleted" }, { status: 401 });
         }
 
@@ -29,6 +31,7 @@ export async function POST(req: NextRequest) {
         const { project, language, file, type, is_save, timestamp, editor, platform } = body;
 
         // Record the heartbeat
+        console.log(`Recording heartbeat for user ${apiKey.userId}, project: ${project}, file: ${file}`);
         await prisma.heartbeat.create({
             data: {
                 userId: apiKey.userId,
@@ -48,4 +51,11 @@ export async function POST(req: NextRequest) {
         console.error("Heartbeat error:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
+}
+
+export async function GET() {
+    return NextResponse.json({
+        status: "alive",
+        message: "DevMeter Heartbeat API is reachable. Use POST to record activity."
+    });
 }
