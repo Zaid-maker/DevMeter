@@ -102,11 +102,17 @@ function SettingsContent() {
         }
     }
 
-    const copyToClipboard = (text: string) => {
-        navigator.clipboard.writeText(text);
-        toast.success("Copied to clipboard", {
-            description: "You can now paste this into your extension settings."
-        });
+    const copyToClipboard = async (text: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+            toast.success("Copied to clipboard", {
+                description: "You can now paste this into your extension settings."
+            });
+        } catch (error) {
+            toast.error("Failed to copy to clipboard", {
+                description: error instanceof Error ? error.message : "Please check your browser permissions or ensure you are in a secure context (HTTPS)."
+            });
+        }
     };
 
     if (!session) return null;
