@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { authClient } from "@/lib/auth-client";
+import { toast } from "sonner";
 import {
     Copy,
     Eye,
@@ -17,7 +18,8 @@ import {
     Plus,
     RefreshCw,
     ShieldCheck,
-    Trash2
+    Trash2,
+    Lock
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
@@ -30,7 +32,11 @@ interface ApiKey {
     createdAt: string;
 }
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json());
+const fetcher = (url: string) => fetch(url).then(async (res) => {
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Failed to fetch");
+    return data;
+});
 
 function SettingsContent() {
     const searchParams = useSearchParams();
@@ -51,8 +57,9 @@ function SettingsContent() {
         fetcher
     );
     const [generating, setGenerating] = useState(false);
-    const [isDeleting, setIsDeleting] = useState(false);
+    const [revokingId, setRevokingId] = useState<string | null>(null);
     const [showKeyId, setShowKeyId] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     async function generateKey() {
         setGenerating(true);
@@ -61,32 +68,50 @@ function SettingsContent() {
                 method: "POST",
                 body: JSON.stringify({ name: `Key ${new Date().toLocaleDateString()}` }),
             });
+            const data = await res.json();
+
             if (res.ok) {
                 mutate("/api/keys");
+                toast.success("API Key generated successfully");
+            } else {
+                toast.error(data.error || "Failed to generate key");
             }
+        } catch (err) {
+            toast.error("An unexpected error occurred");
         } finally {
             setGenerating(false);
         }
     }
 
     async function revokeKey(id: string) {
-        if (!confirm("Are you sure you want to revoke this API key?")) return;
+        if (!confirm("Are you sure you want to revoke this API key? This cannot be undone.")) return;
+        setRevokingId(id);
         try {
             const res = await fetch(`/api/keys?id=${id}`, { method: "DELETE" });
             if (res.ok) {
                 mutate("/api/keys");
+                toast.success("API Key revoked");
+            } else {
+                const data = await res.json();
+                toast.error(data.error || "Failed to revoke key");
             }
         } catch (error) {
-            console.error("Failed to revoke key:", error);
+            toast.error("Failed to revoke key due to a network error");
+        } finally {
+            setRevokingId(null);
         }
     }
 
     const copyToClipboard = (text: string) => {
         navigator.clipboard.writeText(text);
-        alert("API Key copied to clipboard!");
+        toast.success("Copied to clipboard", {
+            description: "You can now paste this into your extension settings."
+        });
     };
 
     if (!session) return null;
+
+    const hasKey = keys && keys.length > 0;
 
     return (
         <div className="flex-1 space-y-8 p-8 pt-6 max-w-5xl mx-auto">
@@ -165,75 +190,99 @@ function SettingsContent() {
                 <TabsContent value="keys" className="space-y-6">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
-                            <div>
-                                <CardTitle>API Keys</CardTitle>
-                                <CardDescription>Use these keys to authenticate the DevMeter VS Code extension.</CardDescription>
+                            <div className="space-y-1">
+                                <CardTitle>API Key</CardTitle>
+                                <CardDescription>Your personal access token for IDE extensions.</CardDescription>
                             </div>
-                            <Button onClick={generateKey} disabled={generating} size="sm">
+                            <Button
+                                onClick={generateKey}
+                                disabled={generating || hasKey}
+                                size="sm"
+                                className={hasKey ? "bg-muted text-muted-foreground border-white/5 cursor-not-allowed" : ""}
+                            >
                                 {generating ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
-                                Generate Key
+                                {hasKey ? "Key Active" : "Generate Key"}
                             </Button>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {isLoading ? (
                                 <div className="space-y-3">
-                                    {[1, 2].map(i => <div key={i} className="h-20 bg-muted animate-pulse rounded-lg" />)}
+                                    <div className="h-24 bg-muted animate-pulse rounded-xl" />
                                 </div>
                             ) : !keys || keys.length === 0 ? (
                                 <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-xl">
                                     <div className="h-12 w-12 rounded-full bg-primary/5 flex items-center justify-center mx-auto mb-4">
                                         <Key className="h-6 w-6 opacity-50" />
                                     </div>
-                                    <h3 className="text-lg font-medium">No API keys yet</h3>
-                                    <p className="text-sm mb-4">Generate a key to start tracking your coding time.</p>
-                                    <Button onClick={generateKey} variant="outline" size="sm">Create your first key</Button>
+                                    <h3 className="text-lg font-medium">No active API key</h3>
+                                    <p className="text-sm mb-4">Generate a key to start tracking your coding metrics.</p>
+                                    <Button onClick={generateKey} variant="outline" size="sm">Generate your first key</Button>
                                 </div>
                             ) : (
                                 <div className="grid gap-4">
+                                    {hasKey && (
+                                        <div className="bg-yellow-500/5 border border-yellow-500/20 px-4 py-3 rounded-xl flex items-start gap-3 mb-2">
+                                            <Lock className="h-4 w-4 text-yellow-500 mt-0.5 shrink-0" />
+                                            <p className="text-xs text-yellow-500/80 leading-relaxed">
+                                                To ensure maximum account stability, we currently limit each account to one active API key.
+                                                If you need to rotate your key, please revoke the current one first.
+                                            </p>
+                                        </div>
+                                    )}
                                     {keys?.map(apiKey => (
-                                        <div key={apiKey.id} className="group relative flex flex-col space-y-2 p-4 border rounded-xl bg-card hover:border-primary/50 transition-colors">
+                                        <div key={apiKey.id} className="group relative flex flex-col space-y-3 p-5 border rounded-2xl bg-card hover:border-primary/30 transition-all shadow-sm">
                                             <div className="flex items-center justify-between">
                                                 <div className="flex items-center space-x-2">
-                                                    <span className="font-semibold">{apiKey.name}</span>
-                                                    <Badge variant="secondary" className="bg-green-500/10 text-green-500 hover:bg-green-500/10 border-none">Active</Badge>
+                                                    <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
+                                                    <span className="font-bold text-sm tracking-tight">{apiKey.name}</span>
+                                                    <Badge variant="outline" className="text-[10px] uppercase font-black py-0 px-2 h-5 bg-green-500/10 text-green-500 border-green-500/20">Primary</Badge>
                                                 </div>
-                                                <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => copyToClipboard(apiKey.key)}>
+                                                <div className="flex items-center space-x-1">
+                                                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-lg hover:bg-white/5" onClick={() => copyToClipboard(apiKey.key)}>
                                                         <Copy className="h-4 w-4" />
                                                     </Button>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => revokeKey(apiKey.id)}>
-                                                        <Trash2 className="h-4 w-4" />
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-9 w-9 rounded-lg text-destructive hover:bg-destructive/10"
+                                                        onClick={() => revokeKey(apiKey.id)}
+                                                        disabled={revokingId === apiKey.id}
+                                                    >
+                                                        {revokingId === apiKey.id ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
                                                     </Button>
                                                 </div>
                                             </div>
-                                            <div className="flex items-center space-x-2 bg-muted/50 p-2 rounded-md font-mono text-sm overflow-hidden group/key">
-                                                <span className="flex-1 truncate">
-                                                    {showKeyId === apiKey.id ? apiKey.key : `${apiKey.key.substring(0, 12)}**************************`}
+                                            <div className="flex items-center space-x-3 bg-black border border-white/5 p-3 rounded-xl font-mono text-sm overflow-hidden group/key">
+                                                <span className="flex-1 truncate tracking-wider">
+                                                    {showKeyId === apiKey.id ? apiKey.key : `••••••••••••••••••••••••••••••••••••`}
                                                 </span>
                                                 <Button
                                                     variant="ghost"
                                                     size="icon"
-                                                    className="h-6 w-6"
+                                                    className="h-7 w-7 rounded-md hover:bg-white/10"
                                                     onClick={() => setShowKeyId(showKeyId === apiKey.id ? null : apiKey.id)}
                                                 >
-                                                    {showKeyId === apiKey.id ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                                                    {showKeyId === apiKey.id ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                                 </Button>
                                             </div>
-                                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-                                                Created on {new Date(apiKey.createdAt).toLocaleDateString()}
-                                            </p>
+                                            <div className="flex items-center justify-between pt-1">
+                                                <p className="text-[10px] text-muted-foreground uppercase font-medium tracking-widest opacity-60">
+                                                    Active since {new Date(apiKey.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                                                </p>
+                                            </div>
                                         </div>
                                     ))}
                                 </div>
                             )}
                         </CardContent>
-                        <CardFooter className="bg-muted/30 border-t px-6 py-3 rounded-b-xl">
-                            <div className="flex items-start space-x-2">
-                                <ShieldCheck className="mt-0.5 h-4 w-4 text-green-500" />
+                        <CardFooter className="bg-muted/30 border-t px-6 py-4 rounded-b-xl">
+                            <div className="flex items-start space-x-3">
+                                <ShieldCheck className="mt-0.5 h-5 w-5 text-green-500 shrink-0" />
                                 <div className="space-y-1">
-                                    <p className="text-xs font-medium text-foreground">Security Recommendation</p>
-                                    <p className="text-[11px] text-muted-foreground leading-relaxed">
-                                        Each IDE should have its own unique key. Never share your API keys or commit them to version control.
+                                    <p className="text-xs font-bold text-foreground">Account Protection Active</p>
+                                    <p className="text-[11px] text-muted-foreground leading-relaxed max-w-lg">
+                                        Your API keys are for developer access only. <strong>Never</strong> share your keys or commit them to public repositories.
+                                        If you suspect a key has been compromised, revoke it immediately and generate a new one.
                                     </p>
                                 </div>
                             </div>
