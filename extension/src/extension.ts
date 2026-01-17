@@ -92,7 +92,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 function openInBrowser(page: string) {
     const config = vscode.workspace.getConfiguration('devmeter');
-    const apiUrl = config.get<string>('apiUrl') || 'https://devmeter.zaidcode.me/api';
+    const apiUrl = config.get<string>('apiUrl') || 'https://devmeter-v2.zaidcode.me/api';
     const baseUrl = apiUrl.replace(/\/api$/, '');
     vscode.env.openExternal(vscode.Uri.parse(`${baseUrl}/${page}`));
 }

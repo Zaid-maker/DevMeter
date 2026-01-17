@@ -2,7 +2,7 @@
   "name": "devmeter",
   "displayName": "DevMeter",
   "description": "Open-source automated coding time tracker. Master your craft with real-time insights.",
-  "version": "0.0.12",
+  "version": "0.1.1",
   "license": "MIT",
   "publisher": "DevMitrza",
   "repository": {
@@ -56,7 +56,7 @@
         },
         "devmeter.apiUrl": {
           "type": "string",
-          "default": "https://devmeter.zaidcode.me/api",
+          "default": "https://devmeter-v2.zaidcode.me/api",
           "description": "DevMeter API URL"
         },
         "devmeter.showProject": {
