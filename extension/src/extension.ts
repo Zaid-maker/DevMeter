@@ -218,7 +218,8 @@ async function sendHeartbeat(document: vscode.TextDocument, isSave: boolean) {
         await axios.post(`${apiUrl}/heartbeat`, payload, {
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'User-Agent': 'DevMeter-VSCode-Extension'
             },
             timeout: 5000
         });
