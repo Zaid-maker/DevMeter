@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
         // Fallback to API Key for extension
         const authHeader = req.headers.get("authorization");
         if (!authHeader || !authHeader.startsWith("Bearer ")) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: getCorsHeaders(req.headers.get("origin")) });
         }
 
         const apiKeyStr = authHeader.split(" ")[1];
@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
         });
 
         if (!apiKey) {
-            return NextResponse.json({ error: "Invalid API Key" }, { status: 401 });
+            return NextResponse.json({ error: "Invalid API Key" }, { status: 401, headers: getCorsHeaders(req.headers.get("origin")) });
         }
 
         userId = apiKey.userId;
@@ -84,7 +84,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (user.deletedAt) {
-        return NextResponse.json({ error: "User account is deleted" }, { status: 401 });
+        return NextResponse.json({ error: "User account is deleted" }, { status: 401, headers: getCorsHeaders(req.headers.get("origin")) });
     }
 
     const timezone = user.timezone || "UTC";

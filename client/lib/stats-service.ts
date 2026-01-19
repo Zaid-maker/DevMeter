@@ -31,6 +31,16 @@ export interface Stats {
         percentGrowth?: number;
         currentStreak: number;
         longestStreak: number;
+        xp: number;
+        level: number;
+        achievements: {
+            id: string;
+            slug: string;
+            name: string;
+            description: string;
+            icon: string | null;
+            unlockedAt: Date;
+        }[];
     };
     editors: { name: string; value: number; color: string; icon: string }[];
     platforms: { name: string; value: number; color: string; icon: string }[];
@@ -77,8 +87,24 @@ export async function calculateUserStats(userId: string, range?: "today" | "all"
         startDate = subDays(zonedTodayStart, 14); // Fetch 14 days for growth comparison
     }
 
+    // Fetch user with gamification data
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+            achievements: {
+                include: {
+                    achievement: true
+                },
+                orderBy: { unlockedAt: 'desc' }
+            }
+        }
+    });
+
+    if (!user) {
+        throw new Error("User not found");
+    }
+
     // Fetch heartbeats
-    // Note: We still fetch based on UTC timestamps in the DB, but the range is defined by user's local day boundaries
     const allHeartbeats = await prisma.heartbeat.findMany({
         where: {
             userId,
@@ -307,7 +333,17 @@ export async function calculateUserStats(userId: string, range?: "today" | "all"
             lastHeartbeatAt: lastHeartbeat?.timestamp,
             percentGrowth,
             currentStreak,
-            longestStreak
+            longestStreak,
+            xp: user.xp,
+            level: user.level,
+            achievements: user.achievements.map(ua => ({
+                id: ua.achievement.id,
+                slug: ua.achievement.slug,
+                name: ua.achievement.name,
+                description: ua.achievement.description,
+                icon: ua.achievement.icon,
+                unlockedAt: ua.unlockedAt
+            }))
         }
     };
 }

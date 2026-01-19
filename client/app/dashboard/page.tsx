@@ -23,7 +23,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { Mail } from "lucide-react";
+import { Mail, Star, Trophy, Award } from "lucide-react";
+import { getXPLvlProgress } from "@/lib/gamification";
 
 interface Stats {
     activityByDay: { name: string; total: number }[];
@@ -50,6 +51,16 @@ interface Stats {
         topLanguageIcon24h?: string;
         percentGrowth?: number;
         currentStreak: number;
+        xp: number;
+        level: number;
+        achievements: {
+            id: string;
+            slug: string;
+            name: string;
+            description: string;
+            icon: string | null;
+            unlockedAt: string;
+        }[];
     };
     editors: { name: string; value: number; color: string; icon: string }[];
     platforms: { name: string; value: number; color: string; icon: string }[];
@@ -212,8 +223,28 @@ function DashboardContent() {
         <div className="flex-1 space-y-6 md:space-y-8 p-4 md:p-8 pt-4 md:pt-6 max-w-7xl mx-auto">
             {/* Hero Section */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div className="space-y-1">
-                    <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">Bonjour, {session.user.name?.split(' ')[0]}</h2>
+                <div className="space-y-3">
+                    <div className="flex flex-col md:flex-row md:items-baseline gap-2">
+                        <h2 className="text-3xl md:text-4xl font-extrabold tracking-tight">Bonjour, {session.user.name?.split(' ')[0]}</h2>
+                        <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 px-2 py-0 h-6 flex items-center gap-1 font-bold">
+                                <Trophy className="h-3 w-3" />
+                                Level {stats?.summary.level || 1}
+                            </Badge>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-1 w-full max-w-md">
+                        <div className="flex justify-between text-[10px] md:text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                            <span>XP Progress</span>
+                            <span>{stats ? `${getXPLvlProgress(stats.summary.xp).currentLevelXp} / ${getXPLvlProgress(stats.summary.xp).nextLevelXp} XP` : '0 / 0 XP'}</span>
+                        </div>
+                        <Progress
+                            value={stats ? getXPLvlProgress(stats.summary.xp).progress : 0}
+                            className="h-1.5 md:h-2 bg-muted/30"
+                        />
+                    </div>
+
                     <p className="text-sm md:text-base text-muted-foreground flex items-center">
                         {stats?.summary.percentGrowth !== undefined && (
                             <>
@@ -269,6 +300,7 @@ function DashboardContent() {
                         <TabsTrigger value="projects" className="flex-1 sm:flex-none px-4 md:px-6">Projects</TabsTrigger>
                         <TabsTrigger value="languages" className="flex-1 sm:flex-none px-4 md:px-6">Languages</TabsTrigger>
                         <TabsTrigger value="environment" className="flex-1 sm:flex-none px-4 md:px-6">Environment</TabsTrigger>
+                        <TabsTrigger value="achievements" className="flex-1 sm:flex-none px-4 md:px-6">Achievements</TabsTrigger>
                     </TabsList>
                 </div>
 
@@ -497,6 +529,64 @@ function DashboardContent() {
                                 </div>
                             </CardContent>
                         </Card>
+                    </div>
+                </TabsContent>
+                <TabsContent value="achievements" className="space-y-8">
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        {isLoading ? (
+                            [1, 2, 3].map(i => (
+                                <Card key={i} className="shadow-sm border-muted/60">
+                                    <CardHeader className="pb-2">
+                                        <Skeleton className="h-6 w-3/4 mb-2" />
+                                        <Skeleton className="h-4 w-full" />
+                                    </CardHeader>
+                                    <CardContent>
+                                        <Skeleton className="h-20 w-20 rounded-full mx-auto" />
+                                    </CardContent>
+                                </Card>
+                            ))
+                        ) : (
+                            stats?.summary.achievements.map((achievement) => (
+                                <Card key={achievement.id} className="relative overflow-hidden group border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all duration-300">
+                                    <CardHeader className="pb-2">
+                                        <div className="flex justify-between items-start">
+                                            <CardTitle className="text-lg font-bold flex items-center gap-2">
+                                                {achievement.name}
+                                                <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                                            </CardTitle>
+                                            <Badge variant="secondary" className="bg-primary/20 text-primary-foreground text-[10px]">
+                                                Unlocked
+                                            </Badge>
+                                        </div>
+                                        <CardDescription className="text-xs">
+                                            {achievement.description}
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="flex flex-col items-center justify-center pt-4 pb-6">
+                                        <div className="text-6xl mb-4 group-hover:scale-110 transition-transform duration-500 grayscale-0">
+                                            {achievement.icon || '🏆'}
+                                        </div>
+                                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold flex items-center gap-1">
+                                            <Award className="h-3 w-3" />
+                                            {new Date(achievement.unlockedAt).toLocaleDateString(undefined, {
+                                                month: 'short',
+                                                day: 'numeric',
+                                                year: 'numeric'
+                                            })}
+                                        </p>
+                                    </CardContent>
+                                </Card>
+                            ))
+                        )}
+
+                        {/* Placeholder for locked achievements */}
+                        {!isLoading && stats?.summary.achievements.length === 0 && (
+                            <div className="col-span-full py-12 text-center border-2 border-dashed border-muted rounded-2xl">
+                                <Trophy className="h-12 w-12 text-muted mx-auto mb-4 opacity-20" />
+                                <h3 className="text-lg font-semibold text-muted-foreground">No achievements yet</h3>
+                                <p className="text-sm text-muted-foreground">Keep coding to unlock your first trophy!</p>
+                            </div>
+                        )}
                     </div>
                 </TabsContent>
             </Tabs>

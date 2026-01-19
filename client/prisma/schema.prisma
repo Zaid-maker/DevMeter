@@ -7,21 +7,46 @@ datasource db {
 }
 
 model User {
-  id            String      @id @default(cuid())
-  email         String      @unique
+  id            String            @id @default(cuid())
+  email         String            @unique
   name          String?
-  emailVerified Boolean     @default(false)
+  emailVerified Boolean           @default(false)
   image         String?
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  timezone      String?     @default("UTC")
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  timezone      String?           @default("UTC")
   accounts      Account[]
   apiKeys       ApiKey[]
   heartbeats    Heartbeat[]
   sessions      Session[]
+  xp            Int               @default(0)
+  level         Int               @default(1)
+  achievements  UserAchievement[]
   deletedAt     DateTime?
 
   @@index([deletedAt])
+}
+
+model Achievement {
+  id          String            @id @default(cuid())
+  slug        String            @unique
+  name        String
+  description String
+  xpReward    Int               @default(0)
+  icon        String?
+  createdAt   DateTime          @default(now())
+  users       UserAchievement[]
+}
+
+model UserAchievement {
+  id            String      @id @default(cuid())
+  userId        String
+  achievementId String
+  unlockedAt    DateTime    @default(now())
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  achievement   Achievement @relation(fields: [achievementId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, achievementId])
 }
 
 model Session {
