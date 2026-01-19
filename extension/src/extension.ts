@@ -5,6 +5,9 @@ let statusBarItem: vscode.StatusBarItem;
 let refreshInterval: NodeJS.Timeout | undefined;
 let outputChannel: vscode.OutputChannel;
 
+const IS_MAINTENANCE_MODE = true;
+const MAINTENANCE_MESSAGE = "We're currently performing some scheduled maintenance to improve DevMeter. Coding activity tracking is temporarily paused and will resume shortly. We appreciate your patience!";
+
 function log(message: string) {
     if (outputChannel) {
         outputChannel.appendLine(`[${new Date().toLocaleTimeString()}] ${message}`);
@@ -15,6 +18,10 @@ function log(message: string) {
 export function activate(context: vscode.ExtensionContext) {
     outputChannel = vscode.window.createOutputChannel("DevMeter");
     log('DevMeter is now active!');
+
+    if (IS_MAINTENANCE_MODE) {
+        vscode.window.showWarningMessage(MAINTENANCE_MESSAGE);
+    }
 
     // Status Bar Item
     statusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
@@ -104,6 +111,13 @@ async function updateStatusBar() {
     const showProject = config.get<boolean>('showProject');
     const showStreak = config.get<boolean>('showStreak');
 
+    if (IS_MAINTENANCE_MODE) {
+        statusBarItem.text = '$(tools) DevMeter: Maintenance';
+        statusBarItem.tooltip = MAINTENANCE_MESSAGE;
+        statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
+        return;
+    }
+
     if (!apiKey || !apiUrl) {
         statusBarItem.text = '$(warning) DevMeter: Missing Config';
         return;
@@ -176,6 +190,10 @@ let isProcessing: boolean = false;
 
 async function sendHeartbeat(document: vscode.TextDocument, isSave: boolean) {
     const now = Date.now();
+
+    if (IS_MAINTENANCE_MODE) {
+        return;
+    }
 
     // Check interval
     if (!isSave && now - lastHeartbeat < HEARTBEAT_INTERVAL) {
