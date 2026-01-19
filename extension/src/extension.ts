@@ -5,7 +5,7 @@ let statusBarItem: vscode.StatusBarItem;
 let refreshInterval: NodeJS.Timeout | undefined;
 let outputChannel: vscode.OutputChannel;
 
-const IS_MAINTENANCE_MODE = true;
+const IS_MAINTENANCE_MODE = false;
 const MAINTENANCE_MESSAGE = "We're currently performing some scheduled maintenance to improve DevMeter. Coding activity tracking is temporarily paused and will resume shortly. We appreciate your patience!";
 
 function log(message: string) {
