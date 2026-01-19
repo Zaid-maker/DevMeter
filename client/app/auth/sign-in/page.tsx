@@ -82,7 +82,7 @@ export default function SignInPage() {
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between ml-1">
                                     <Label htmlFor="password" className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Password</Label>
-                                    <Link href="#" onClick={() => toast.info("Coming soon", { description: "Password reset functionality is under development." })} className="text-[10px] font-bold uppercase tracking-widest text-primary hover:underline">Forgot password?</Link>
+                                    <Link href="/auth/forgot-password" className="text-[10px] font-bold uppercase tracking-widest text-primary hover:underline">Forgot password?</Link>
                                 </div>
                                 <Input
                                     id="password"

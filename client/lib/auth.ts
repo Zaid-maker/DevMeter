@@ -28,13 +28,60 @@ export const auth = betterAuth({
                 defaultValue: "UTC",
             },
             deletedAt: {
-                type: "string", // will be Date string
+                type: "date",
                 required: false,
             }
         }
     },
     emailAndPassword: {
-        enabled: true
+        enabled: true,
+        async sendResetPassword({ user, url }) {
+            if (!resend) {
+                console.warn("Resend client not initialized. Skipping reset email.");
+                return;
+            }
+            const { error } = await resend.emails.send({
+                from: emailFrom || "onboarding@resend.dev",
+                to: user.email,
+                subject: "Reset your password",
+                html: `
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <meta name="color-scheme" content="light dark">
+                    <style>
+                        :root { color-scheme: light dark; }
+                        body { background-color: #ffffff; color: #000000; font-family: sans-serif; margin: 0; padding: 0; }
+                        .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
+                        .card { background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 16px; padding: 40px; text-align: center; }
+                        .logo { font-size: 24px; font-weight: 900; margin-bottom: 32px; }
+                        .title { font-size: 24px; font-weight: 800; margin-bottom: 16px; }
+                        .button { background-color: #000000; color: #ffffff !important; padding: 14px 32px; border-radius: 100px; text-decoration: none; font-weight: 700; display: inline-block; }
+                        @media (prefers-color-scheme: dark) {
+                            body { background-color: #000000 !important; color: #ffffff !important; }
+                            .card { background-color: #0a0a0a !important; border-color: #1f2937 !important; }
+                            .button { background-color: #ffffff !important; color: #000000 !important; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    <div class="container">
+                        <div class="card">
+                            <div class="logo">DevMeter</div>
+                            <h1 class="title">Reset your password.</h1>
+                            <p>Click the button below to set a new password for your DevMeter account. This link will expire in 1 hour.</p>
+                            <a href="${url}" class="button">Reset Password</a>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                `,
+            });
+            if (error) {
+                console.error("Failed to send reset email:", error);
+                throw error;
+            }
+        },
     },
     emailVerification: {
         sendOnSignUp: true,
