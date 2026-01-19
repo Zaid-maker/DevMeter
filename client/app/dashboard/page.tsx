@@ -219,6 +219,57 @@ function DashboardContent() {
         return null;
     }
 
+    const isDeleted = (session.user as any).deletedAt;
+
+    if (isDeleted) {
+        return (
+            <div className="flex items-center justify-center min-h-[600px] p-4">
+                <Card className="max-w-md w-full border-primary/20 bg-primary/5 backdrop-blur-sm shadow-2xl">
+                    <CardHeader className="text-center space-y-4">
+                        <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                            <RefreshCw className="h-8 w-8 text-primary animate-spin-slow" />
+                        </div>
+                        <div className="space-y-2">
+                            <CardTitle className="text-3xl font-black tracking-tighter">WELCOME BACK.</CardTitle>
+                            <CardDescription className="text-base">
+                                Your account is currently deactivated. Would you like to restore your progress, XP, and achievements?
+                            </CardDescription>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4 pt-4">
+                        <Button
+                            className="w-full h-12 text-lg font-bold rounded-xl shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)]"
+                            onClick={async () => {
+                                try {
+                                    const res = await fetch("/api/user/reactivate", { method: "POST" });
+                                    if (res.ok) {
+                                        toast.success("Account Reactivated!", {
+                                            description: "Welcome back! Getting your stats ready..."
+                                        });
+                                        window.location.reload();
+                                    } else {
+                                        toast.error("Failed to reactivate account.");
+                                    }
+                                } catch (err) {
+                                    toast.error("An error occurred during reactivation.");
+                                }
+                            }}
+                        >
+                            Reactivate My Account
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            className="w-full text-muted-foreground hover:text-destructive"
+                            onClick={() => authClient.signOut({ fetchOptions: { onSuccess: () => { window.location.href = "/"; } } })}
+                        >
+                            Log Out
+                        </Button>
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }
+
     return (
         <div className="flex-1 space-y-6 md:space-y-8 p-4 md:p-8 pt-4 md:pt-6 max-w-7xl mx-auto">
             {/* Hero Section */}

@@ -19,18 +19,21 @@ export async function DELETE(req: NextRequest) {
 
         // Perform soft delete and revocation in a transaction
         await prisma.$transaction(async (tx) => {
-            // 1. Soft delete user
+            // 1. Soft delete user - Keep email for reactivation flow
             await tx.user.update({
                 where: { id: userId },
                 data: {
                     deletedAt: new Date(),
-                    email: `deleted-${Date.now()}-${userEmail}`,
                 },
             });
 
-            // 2. Revoke all sessions
+            // 2. Revoke all sessions except the current one
+            // This prevents a P2025 error when the client calls signOut() immediately after
             await tx.session.deleteMany({
-                where: { userId: userId },
+                where: {
+                    userId: userId,
+                    NOT: { id: session.session.id }
+                },
             });
 
             // 3. Revoke all API keys

@@ -26,6 +26,10 @@ export const auth = betterAuth({
             timezone: {
                 type: "string",
                 defaultValue: "UTC",
+            },
+            deletedAt: {
+                type: "string", // will be Date string
+                required: false,
             }
         }
     },
