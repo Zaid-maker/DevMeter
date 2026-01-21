@@ -39,7 +39,8 @@ export interface Stats {
             name: string;
             description: string;
             icon: string | null;
-            unlockedAt: Date;
+            unlockedAt?: Date;
+            isUnlocked: boolean;
         }[];
     };
     editors: { name: string; value: number; color: string; icon: string }[];
@@ -312,6 +313,24 @@ export async function calculateUserStats(userId: string, range?: "today" | "all"
         }))
         .sort((a, b) => b.value - a.value);
 
+    // 8. Achievements (Merged Locked + Unlocked)
+    const allAchievements = await prisma.achievement.findMany({
+        orderBy: { createdAt: 'asc' }
+    });
+
+    const userUnlockedSlugs = new Set(user.achievements.map(ua => ua.achievement.slug));
+    const userUnlockedMap = new Map(user.achievements.map(ua => [ua.achievement.slug, ua.unlockedAt]));
+
+    const mergedAchievements = allAchievements.map(a => ({
+        id: a.id,
+        slug: a.slug,
+        name: a.name,
+        description: a.description,
+        icon: a.icon,
+        isUnlocked: userUnlockedSlugs.has(a.slug),
+        unlockedAt: userUnlockedMap.get(a.slug)
+    }));
+
     return {
         activityByDay,
         languages,
@@ -336,14 +355,7 @@ export async function calculateUserStats(userId: string, range?: "today" | "all"
             longestStreak,
             xp: user.xp,
             level: user.level,
-            achievements: user.achievements.map(ua => ({
-                id: ua.achievement.id,
-                slug: ua.achievement.slug,
-                name: ua.achievement.name,
-                description: ua.achievement.description,
-                icon: ua.achievement.icon,
-                unlockedAt: ua.unlockedAt
-            }))
+            achievements: mergedAchievements
         }
     };
 }

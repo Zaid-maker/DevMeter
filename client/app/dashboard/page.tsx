@@ -59,7 +59,8 @@ interface Stats {
             name: string;
             description: string;
             icon: string | null;
-            unlockedAt: string;
+            unlockedAt?: string;
+            isUnlocked: boolean;
         }[];
     };
     editors: { name: string; value: number; color: string; icon: string }[];
@@ -598,15 +599,24 @@ function DashboardContent() {
                             ))
                         ) : (
                             stats?.summary.achievements.map((achievement) => (
-                                <Card key={achievement.id} className="relative overflow-hidden group border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all duration-300">
+                                <Card
+                                    key={achievement.id}
+                                    className={`relative overflow-hidden group transition-all duration-300 ${achievement.isUnlocked
+                                        ? "border-primary/20 bg-primary/5 hover:bg-primary/10"
+                                        : "border-muted/40 bg-muted/5 opacity-80"
+                                        }`}
+                                >
                                     <CardHeader className="pb-2">
                                         <div className="flex justify-between items-start">
-                                            <CardTitle className="text-lg font-bold flex items-center gap-2">
+                                            <CardTitle className={`text-lg font-bold flex items-center gap-2 ${!achievement.isUnlocked && "text-muted-foreground"}`}>
                                                 {achievement.name}
-                                                <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                                                {achievement.isUnlocked && <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />}
                                             </CardTitle>
-                                            <Badge variant="secondary" className="bg-primary/20 text-primary-foreground text-[10px]">
-                                                Unlocked
+                                            <Badge
+                                                variant={achievement.isUnlocked ? "secondary" : "outline"}
+                                                className={`text-[10px] ${achievement.isUnlocked ? "bg-primary/20 text-primary-foreground" : "text-muted-foreground border-muted-foreground/30"}`}
+                                            >
+                                                {achievement.isUnlocked ? "Unlocked" : "Locked"}
                                             </Badge>
                                         </div>
                                         <CardDescription className="text-xs">
@@ -614,28 +624,41 @@ function DashboardContent() {
                                         </CardDescription>
                                     </CardHeader>
                                     <CardContent className="flex flex-col items-center justify-center pt-4 pb-6">
-                                        <div className="text-6xl mb-4 group-hover:scale-110 transition-transform duration-500 grayscale-0">
+                                        <div className={`text-6xl mb-4 transition-transform duration-500 ${achievement.isUnlocked
+                                            ? "group-hover:scale-110 grayscale-0"
+                                            : "grayscale opacity-20"
+                                            }`}>
                                             {achievement.icon || '🏆'}
                                         </div>
-                                        <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold flex items-center gap-1">
-                                            <Award className="h-3 w-3" />
-                                            {new Date(achievement.unlockedAt).toLocaleDateString(undefined, {
-                                                month: 'short',
-                                                day: 'numeric',
-                                                year: 'numeric'
-                                            })}
-                                        </p>
+                                        {achievement.isUnlocked && achievement.unlockedAt ? (
+                                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold flex items-center gap-1">
+                                                <Award className="h-3 w-3" />
+                                                {new Date(achievement.unlockedAt).toLocaleDateString(undefined, {
+                                                    month: 'short',
+                                                    day: 'numeric',
+                                                    year: 'numeric'
+                                                })}
+                                            </p>
+                                        ) : (
+                                            <p className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold flex items-center gap-1 opacity-50">
+                                                <Zap className="h-3 w-3" />
+                                                Keep coding to unlock
+                                            </p>
+                                        )}
                                     </CardContent>
+                                    {!achievement.isUnlocked && (
+                                        <div className="absolute inset-0 bg-transparent pointer-events-none border-t-2 border-transparent group-hover:border-primary/20 transition-colors" />
+                                    )}
                                 </Card>
                             ))
                         )}
 
-                        {/* Placeholder for locked achievements */}
-                        {!isLoading && stats?.summary.achievements.length === 0 && (
+                        {/* Placeholder for no achievements at all (DB error or empty) */}
+                        {!isLoading && (!stats?.summary.achievements || stats.summary.achievements.length === 0) && (
                             <div className="col-span-full py-12 text-center border-2 border-dashed border-muted rounded-2xl">
                                 <Trophy className="h-12 w-12 text-muted mx-auto mb-4 opacity-20" />
-                                <h3 className="text-lg font-semibold text-muted-foreground">No achievements yet</h3>
-                                <p className="text-sm text-muted-foreground">Keep coding to unlock your first trophy!</p>
+                                <h3 className="text-lg font-semibold text-muted-foreground">No achievements found</h3>
+                                <p className="text-sm text-muted-foreground">Connect your extensions to start winning!</p>
                             </div>
                         )}
                     </div>
