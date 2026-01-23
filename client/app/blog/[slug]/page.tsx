@@ -4,8 +4,9 @@ import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, User, Calendar, ArrowLeft, Share2 } from "lucide-react";
+import { Clock, User, Calendar, ArrowLeft, Share2, List } from "lucide-react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 interface BlogArticle {
   id: string;
@@ -246,11 +247,40 @@ These extensions will transform your VS Code experience. Start with the ones tha
   },
 };
 
+interface Heading {
+  id: string;
+  text: string;
+  level: number;
+}
+
 export default function BlogPostPage() {
   const params = useParams();
   const router = useRouter();
   const slug = params.slug as string;
   const post = blogArticles[slug];
+  const [headings, setHeadings] = useState<Heading[]>([]);
+  const [activeHeading, setActiveHeading] = useState("");
+
+  useEffect(() => {
+    if (!post) return;
+
+    // Extract headings from content
+    const headingRegex = /^(#{1,3})\s(.+)$/gm;
+    const extractedHeadings: Heading[] = [];
+    let match;
+
+    while ((match = headingRegex.exec(post.content)) !== null) {
+      const level = match[1].length;
+      const text = match[2];
+      const id = text
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+      extractedHeadings.push({ id, text, level });
+    }
+
+    setHeadings(extractedHeadings);
+  }, [post]);
 
   if (!post) {
     return (
@@ -278,15 +308,14 @@ export default function BlogPostPage() {
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
-      <div className="max-w-3xl mx-auto space-y-8">
-        {/* Back Button */}
-        <Button variant="ghost" onClick={() => router.back()}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Blog
-        </Button>
-
-        {/* Article Header */}
-        <article className="space-y-6">
+      <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-8">
+        {/* Main Content */}
+        <article className="lg:col-span-3 space-y-8">
+          {/* Back Button */}
+          <Button variant="ghost" onClick={() => router.back()}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Blog
+          </Button>
           <div className="space-y-3">
             <Badge className="bg-primary text-black w-fit">{post.category}</Badge>
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight">{post.title}</h1>
@@ -320,23 +349,38 @@ export default function BlogPostPage() {
             <div className="space-y-4">
               {post.content.split("\n").map((paragraph, idx) => {
                 if (paragraph.startsWith("# ")) {
+                  const text = paragraph.replace("# ", "");
+                  const id = text
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, "-")
+                    .replace(/^-|-$/g, "");
                   return (
-                    <h1 key={idx} className="text-3xl font-bold mt-8 mb-4">
-                      {paragraph.replace("# ", "")}
+                    <h1 key={idx} id={id} className="text-3xl font-bold mt-8 mb-4 scroll-mt-20">
+                      {text}
                     </h1>
                   );
                 }
                 if (paragraph.startsWith("## ")) {
+                  const text = paragraph.replace("## ", "");
+                  const id = text
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, "-")
+                    .replace(/^-|-$/g, "");
                   return (
-                    <h2 key={idx} className="text-2xl font-bold mt-6 mb-3">
-                      {paragraph.replace("## ", "")}
+                    <h2 key={idx} id={id} className="text-2xl font-bold mt-6 mb-3 scroll-mt-20">
+                      {text}
                     </h2>
                   );
                 }
                 if (paragraph.startsWith("### ")) {
+                  const text = paragraph.replace("### ", "");
+                  const id = text
+                    .toLowerCase()
+                    .replace(/[^a-z0-9]+/g, "-")
+                    .replace(/^-|-$/g, "");
                   return (
-                    <h3 key={idx} className="text-xl font-semibold mt-4 mb-2">
-                      {paragraph.replace("### ", "")}
+                    <h3 key={idx} id={id} className="text-xl font-semibold mt-4 mb-2 scroll-mt-20">
+                      {text}
                     </h3>
                   );
                 }
@@ -364,31 +408,89 @@ export default function BlogPostPage() {
               Share Article
             </Button>
           </div>
+
+          {/* Related Posts */}
+          <Card className="mt-12">
+            <CardContent className="pt-6">
+              <h3 className="text-lg font-semibold mb-4">More Articles</h3>
+              <div className="space-y-2">
+                {Object.values(blogArticles)
+                  .filter((p) => p.id !== post.id)
+                  .slice(0, 3)
+                  .map((relatedPost) => (
+                    <Link
+                      key={relatedPost.id}
+                      href={`/blog/${relatedPost.id}`}
+                      className="block p-3 rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <p className="font-medium hover:text-primary transition-colors">
+                        {relatedPost.title}
+                      </p>
+                      <p className="text-sm text-muted-foreground">{relatedPost.category}</p>
+                    </Link>
+                  ))}
+              </div>
+            </CardContent>
+          </Card>
         </article>
 
-        {/* Related Posts */}
-        <Card className="mt-12">
-          <CardContent className="pt-6">
-            <h3 className="text-lg font-semibold mb-4">More Articles</h3>
-            <div className="space-y-2">
-              {Object.values(blogArticles)
-                .filter((p) => p.id !== post.id)
-                .slice(0, 3)
-                .map((relatedPost) => (
-                  <Link
-                    key={relatedPost.id}
-                    href={`/blog/${relatedPost.id}`}
-                    className="block p-3 rounded-lg hover:bg-muted/50 transition-colors"
-                  >
-                    <p className="font-medium hover:text-primary transition-colors">
-                      {relatedPost.title}
-                    </p>
-                    <p className="text-sm text-muted-foreground">{relatedPost.category}</p>
-                  </Link>
-                ))}
+        {/* Sidebar - Table of Contents */}
+        {headings.length > 0 && (
+          <aside className="lg:col-span-1 hidden lg:block">
+            <div className="sticky top-8 space-y-4">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center gap-2 mb-4">
+                    <List className="h-4 w-4" />
+                    <h3 className="font-semibold">Table of Contents</h3>
+                  </div>
+                  <nav className="space-y-2 text-sm">
+                    {headings.map((heading) => (
+                      <Link
+                        key={heading.id}
+                        href={`#${heading.id}`}
+                        className={`block hover:text-primary transition-colors $
+                          {heading.level === 2 ? "font-medium" : "text-muted-foreground"}
+                        `}
+                        style={{ paddingLeft: `${(heading.level - 2) * 16}px` }}
+                        onClick={() => setActiveHeading(heading.id)}
+                      >
+                        {heading.text}
+                      </Link>
+                    ))}
+                  </nav>
+                </CardContent>
+              </Card>
+
+              {/* Quick Links */}
+              <Card>
+                <CardContent className="pt-6">
+                  <h4 className="font-semibold mb-3 text-sm">Quick Links</h4>
+                  <div className="space-y-2">
+                    <Link
+                      href="/docs"
+                      className="block text-sm hover:text-primary transition-colors text-muted-foreground"
+                    >
+                      → View Docs
+                    </Link>
+                    <Link
+                      href="/blog"
+                      className="block text-sm hover:text-primary transition-colors text-muted-foreground"
+                    >
+                      → All Articles
+                    </Link>
+                    <Link
+                      href="/dashboard"
+                      className="block text-sm hover:text-primary transition-colors text-muted-foreground"
+                    >
+                      → Get Started
+                    </Link>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
+          </aside>
+        )}
       </div>
     </div>
   );
