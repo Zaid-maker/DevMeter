@@ -171,7 +171,19 @@ export default function DocsPage() {
                         </a>
                       </div>
                       <div>
-                        <p className="text-xs md:text-sm font-medium mb-2">Option 3: Command Line</p>
+                        <p className="text-xs md:text-sm font-medium mb-2">Option 3: Open-VSX Registry</p>
+                        <a 
+                          href="https://open-vsx.org/extension/DevMitrza/devmeter" 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="inline-flex items-center gap-1 text-primary hover:underline text-xs md:text-sm"
+                        >
+                          Visit Open-VSX Registry
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </div>
+                      <div>
+                        <p className="text-xs md:text-sm font-medium mb-2">Option 4: Command Line</p>
                         <div className="p-3 md:p-4 bg-muted/50 rounded-lg border border-white/5 overflow-x-auto relative group">
                           <code className="text-xs md:text-sm whitespace-nowrap">
                             code --install-extension DevMitrza.devmeter@{extensionVersion}
@@ -316,12 +328,29 @@ export default function DocsPage() {
                           rel="noopener noreferrer" 
                           className="inline-flex items-center gap-2 text-xs md:text-sm text-primary hover:underline font-medium"
                         >
-                          Open in Marketplace →
+                          Open in Marketplace
+                          <ExternalLink className="h-3 w-3" />
                         </a>
                       </div>
 
                       <div className="p-3 md:p-4 bg-muted/50 rounded-lg border border-white/5">
-                        <h4 className="text-sm md:text-base font-medium mb-2">Method 3: Command Line</h4>
+                        <h4 className="text-sm md:text-base font-medium mb-2">Method 3: Open-VSX Registry</h4>
+                        <p className="text-xs md:text-sm text-muted-foreground mb-2">
+                          Alternative registry for open-source editors:
+                        </p>
+                        <a 
+                          href="https://open-vsx.org/extension/DevMitrza/devmeter" 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="inline-flex items-center gap-2 text-xs md:text-sm text-primary hover:underline font-medium"
+                        >
+                          Open in Open-VSX
+                          <ExternalLink className="h-3 w-3" />
+                        </a>
+                      </div>
+
+                      <div className="p-3 md:p-4 bg-muted/50 rounded-lg border border-white/5">
+                        <h4 className="text-sm md:text-base font-medium mb-2">Method 4: Command Line</h4>
                         <p className="text-xs md:text-sm text-muted-foreground mb-2">
                           Run this command in your terminal:
                         </p>
