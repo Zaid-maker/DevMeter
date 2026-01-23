@@ -4,15 +4,45 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Code, Terminal, Zap, Key, Activity, Download, Settings, Shield, BookOpen, Rocket } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Code, Terminal, Zap, Key, Activity, Download, Settings, Shield, BookOpen, Rocket, Copy, Check, ExternalLink, ChevronUp, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 export default function DocsPage() {
   const [extensionVersion, setExtensionVersion] = useState<string>("latest");
+  const [isLoadingVersion, setIsLoadingVersion] = useState(true);
+  const [copiedText, setCopiedText] = useState<string>("");
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  const copyToClipboard = async (text: string, label: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedText(label);
+      toast.success("Copied to clipboard!");
+      setTimeout(() => setCopiedText(""), 2000);
+    } catch (err) {
+      toast.error("Failed to copy");
+    }
+  };
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowScrollTop(window.scrollY > 400);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   useEffect(() => {
     // Fetch extension version from VS Code Marketplace API
     const fetchExtensionVersion = async () => {
       try {
+        setIsLoadingVersion(true);
         const response = await fetch(
           "https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery",
           {
@@ -46,6 +76,8 @@ export default function DocsPage() {
         }
       } catch (error) {
         console.error("Failed to fetch extension version:", error);
+      } finally {
+        setIsLoadingVersion(false);
       }
     };
 
@@ -128,16 +160,34 @@ export default function DocsPage() {
                       </div>
                       <div>
                         <p className="text-xs md:text-sm font-medium mb-2">Option 2: Marketplace</p>
-                        <a href="https://marketplace.visualstudio.com/items?itemName=DevMitrza.devmeter" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs md:text-sm block">
-                          Visit VS Code Marketplace →
+                        <a 
+                          href="https://marketplace.visualstudio.com/items?itemName=DevMitrza.devmeter" 
+                          target="_blank" 
+                          rel="noopener noreferrer" 
+                          className="inline-flex items-center gap-1 text-primary hover:underline text-xs md:text-sm"
+                        >
+                          Visit VS Code Marketplace
+                          <ExternalLink className="h-3 w-3" />
                         </a>
-                            code --install-extension DevMitrza.devmeter@{extensionVersion}
-                          
                       </div>
                       <div>
                         <p className="text-xs md:text-sm font-medium mb-2">Option 3: Command Line</p>
-                        <div className="p-3 md:p-4 bg-muted/50 rounded-lg border border-white/5 overflow-x-auto">
-                          <code className="text-xs md:text-sm whitespace-nowrap">code --install-extension DevMitrza.devmeter</code>
+                        <div className="p-3 md:p-4 bg-muted/50 rounded-lg border border-white/5 overflow-x-auto relative group">
+                          <code className="text-xs md:text-sm whitespace-nowrap">
+                            code --install-extension DevMitrza.devmeter@{extensionVersion}
+                          </code>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="absolute right-2 top-2 h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => copyToClipboard(`code --install-extension DevMitrza.devmeter@${extensionVersion}`, "install-cmd-1")}
+                          >
+                            {copiedText === "install-cmd-1" ? (
+                              <Check className="h-3 w-3 text-green-500" />
+                            ) : (
+                              <Copy className="h-3 w-3" />
+                            )}
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -175,36 +225,44 @@ export default function DocsPage() {
               </CardHeader>
               <CardContent>
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Activity className="h-4 w-4 text-primary flex-shrink-0" />
+                  <div className="p-4 rounded-lg border border-white/5 bg-muted/30 hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="p-2 rounded-md bg-primary/10">
+                        <Activity className="h-4 w-4 text-primary flex-shrink-0" />
+                      </div>
                       <span className="font-medium text-sm md:text-base">Active Coding Time</span>
                     </div>
                     <p className="text-xs md:text-sm text-muted-foreground">
                       Track actual time spent writing code
                     </p>
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Code className="h-4 w-4 text-primary flex-shrink-0" />
+                  <div className="p-4 rounded-lg border border-white/5 bg-muted/30 hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="p-2 rounded-md bg-primary/10">
+                        <Code className="h-4 w-4 text-primary flex-shrink-0" />
+                      </div>
                       <span className="font-medium text-sm md:text-base">Languages & Frameworks</span>
                     </div>
                     <p className="text-xs md:text-sm text-muted-foreground">
                       See which languages you use most
                     </p>
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Terminal className="h-4 w-4 text-primary flex-shrink-0" />
+                  <div className="p-4 rounded-lg border border-white/5 bg-muted/30 hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="p-2 rounded-md bg-primary/10">
+                        <Terminal className="h-4 w-4 text-primary flex-shrink-0" />
+                      </div>
                       <span className="font-medium text-sm md:text-base">Projects & Files</span>
                     </div>
                     <p className="text-xs md:text-sm text-muted-foreground">
                       Monitor activity across projects
                     </p>
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Zap className="h-4 w-4 text-primary flex-shrink-0" />
+                  <div className="p-4 rounded-lg border border-white/5 bg-muted/30 hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="p-2 rounded-md bg-primary/10">
+                        <Zap className="h-4 w-4 text-primary flex-shrink-0" />
+                      </div>
                       <span className="font-medium text-sm md:text-base">Daily Statistics</span>
                     </div>
                     <p className="text-xs md:text-sm text-muted-foreground">
@@ -267,10 +325,22 @@ export default function DocsPage() {
                         <p className="text-xs md:text-sm text-muted-foreground mb-2">
                           Run this command in your terminal:
                         </p>
+                        <div className="p-3 bg-background rounded border border-white/5 overflow-x-auto relative group">
+                          <code className="text-xs md:text-sm whitespace-nowrap">
                             code --install-extension DevMitrza.devmeter@{extensionVersion}
-                          
-                        <div className="p-3 bg-background rounded border border-white/5 overflow-x-auto">
-                          <code className="text-xs md:text-sm whitespace-nowrap">code --install-extension DevMitrza.devmeter</code>
+                          </code>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="absolute right-2 top-2 h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => copyToClipboard(`code --install-extension DevMitrza.devmeter@${extensionVersion}`, "install-cmd-ext")}
+                          >
+                            {copiedText === "install-cmd-ext" ? (
+                              <Check className="h-3 w-3 text-green-500" />
+                            ) : (
+                              <Copy className="h-3 w-3" />
+                            )}
+                          </Button>
                         </div>
                       </div>
                     </div>
@@ -292,17 +362,26 @@ export default function DocsPage() {
                   <div>
                     <h3 className="text-base md:text-lg font-semibold mb-2">Extension Settings</h3>
                     <div className="space-y-3">
-                      <div className="p-3 bg-muted/50 rounded border border-white/5 overflow-x-auto">
-                        <code className="text-xs md:text-sm font-mono whitespace-nowrap">devmeter.apiKey</code>
-                        <p className="text-xs md:text-sm text-muted-foreground mt-1">Your DevMeter API key</p>
+                      <div className="p-3 bg-muted/50 rounded border border-white/5 overflow-x-auto hover:border-primary/30 transition-colors">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Key className="h-3 w-3 text-primary" />
+                          <code className="text-xs md:text-sm font-mono whitespace-nowrap font-semibold">devmeter.apiKey</code>
+                        </div>
+                        <p className="text-xs md:text-sm text-muted-foreground">Your DevMeter API key</p>
                       </div>
-                      <div className="p-3 bg-muted/50 rounded border border-white/5 overflow-x-auto">
-                        <code className="text-xs md:text-sm font-mono whitespace-nowrap">devmeter.heartbeatInterval</code>
-                        <p className="text-xs md:text-sm text-muted-foreground mt-1">Time between heartbeats (default: 30s)</p>
+                      <div className="p-3 bg-muted/50 rounded border border-white/5 overflow-x-auto hover:border-primary/30 transition-colors">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Activity className="h-3 w-3 text-primary" />
+                          <code className="text-xs md:text-sm font-mono whitespace-nowrap font-semibold">devmeter.heartbeatInterval</code>
+                        </div>
+                        <p className="text-xs md:text-sm text-muted-foreground">Time between heartbeats (default: 30s)</p>
                       </div>
-                      <div className="p-3 bg-muted/50 rounded border border-white/5 overflow-x-auto">
-                        <code className="text-xs md:text-sm font-mono whitespace-nowrap">devmeter.excludeProjects</code>
-                        <p className="text-xs md:text-sm text-muted-foreground mt-1">Projects to exclude from tracking</p>
+                      <div className="p-3 bg-muted/50 rounded border border-white/5 overflow-x-auto hover:border-primary/30 transition-colors">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Settings className="h-3 w-3 text-primary" />
+                          <code className="text-xs md:text-sm font-mono whitespace-nowrap font-semibold">devmeter.excludeProjects</code>
+                        </div>
+                        <p className="text-xs md:text-sm text-muted-foreground">Projects to exclude from tracking</p>
                       </div>
                     </div>
                   </div>
@@ -427,8 +506,20 @@ export default function DocsPage() {
                   <p className="text-sm md:text-base text-muted-foreground mb-3">
                     All API requests require authentication via API key:
                   </p>
-                  <div className="p-3 md:p-4 bg-muted/50 rounded-lg border border-white/5 overflow-x-auto">
+                  <div className="p-3 md:p-4 bg-muted/50 rounded-lg border border-white/5 overflow-x-auto relative group">
                     <code className="text-xs md:text-sm whitespace-nowrap">Authorization: Bearer YOUR_API_KEY</code>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="absolute right-2 top-2 h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => copyToClipboard("Authorization: Bearer YOUR_API_KEY", "auth-header")}
+                    >
+                      {copiedText === "auth-header" ? (
+                        <Check className="h-3 w-3 text-green-500" />
+                      ) : (
+                        <Copy className="h-3 w-3" />
+                      )}
+                    </Button>
                   </div>
                 </div>
               </CardContent>
@@ -531,6 +622,17 @@ export default function DocsPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Scroll to Top Button */}
+      {showScrollTop && (
+        <Button
+          onClick={scrollToTop}
+          size="icon"
+          className="fixed bottom-8 right-8 rounded-full shadow-lg z-50 animate-in fade-in slide-in-from-bottom-4"
+        >
+          <ChevronUp className="h-4 w-4" />
+        </Button>
+      )}
     </div>
   );
 }
