@@ -46,6 +46,7 @@ export function MainNav() {
         { name: "Projects", href: "/projects" },
         { name: "Goals", href: "/goals" },
         { name: "Leaderboard", href: "/leaderboard" },
+        { name: "Blog", href: "/blog" },
         { name: "Docs", href: "/docs" },
     ];
 
