@@ -39,12 +39,14 @@
 ## ✨ Features
 
 ### 🎯 Automatic Time Tracking
+
 - **Zero Setup Required**: Install the extension and start tracking immediately
 - **Seamless Integration**: Runs silently in the background while you code
 - **Smart Detection**: Automatically detects when you're actively coding
 - **No Manual Logging**: Forget about manually logging your time
 
 ### 📊 Comprehensive Analytics
+
 - **Daily Statistics**: View your coding time breakdown by day
 - **Project Analytics**: Understand time spent on each project
 - **Language Insights**: See which programming languages you use most
@@ -52,6 +54,7 @@
 - **Trends & Patterns**: Discover your coding habits and patterns
 
 ### 💻 Multi-Language Support
+
 - **JavaScript/TypeScript**: Full support
 - **Python**: Complete tracking
 - **Java**: Java file tracking
@@ -61,18 +64,21 @@
 - **And More**: 50+ languages supported
 
 ### 🏆 Gamification Features
+
 - **Leaderboard**: Compete with other developers
 - **Achievements**: Unlock badges and milestones
 - **Streaks**: Maintain coding streaks
 - **Rankings**: See where you rank globally
 
 ### 🔒 Privacy & Security
+
 - **Local Storage**: Your data stays on your machine
 - **Encrypted Sync**: Optional cloud sync with encryption
 - **No Keystroke Logging**: We only track file activity
 - **GDPR Compliant**: Full data control and export
 
 ### 📱 Cross-Platform
+
 - **VS Code**: Native extension
 - **Web Dashboard**: Monitor your stats online
 - **Mobile Ready**: Responsive design for all devices
@@ -84,6 +90,7 @@
 ### Installation
 
 **Option 1: VS Code Marketplace (Recommended)**
+
 ```bash
 # Install via VS Code Extensions
 1. Open VS Code
@@ -93,15 +100,18 @@
 ```
 
 **Option 2: Command Line**
+
 ```bash
 code --install-extension DevMitrza.devmeter
 ```
 
 **Option 3: Direct Download**
+
 - Visit [VS Code Marketplace](https://marketplace.visualstudio.com/items?itemName=DevMitrza.devmeter)
 - Click "Install"
 
 ### First Steps
+
 1. **Install the Extension** → DevMeter automatically starts tracking
 2. **Create Account** → Sign up at [devmeter-v2.zaidcode.me](https://devmeter-v2.zaidcode.me)
 3. **View Dashboard** → Check your stats in real-time
@@ -112,6 +122,7 @@ code --install-extension DevMitrza.devmeter
 ## 📦 Installation
 
 ### Prerequisites
+
 - **VS Code**: Version 1.70.0 or higher
 - **Node.js**: Version 16+ (for development)
 - **Bun**: Package manager (for development)
@@ -119,6 +130,7 @@ code --install-extension DevMitrza.devmeter
 ### Extension Installation
 
 #### From Marketplace
+
 1. Open VS Code
 2. Press `Ctrl+Shift+X` (Windows/Linux) or `Cmd+Shift+X` (Mac)
 3. Search for "DevMeter"
@@ -126,11 +138,13 @@ code --install-extension DevMitrza.devmeter
 5. Reload VS Code when prompted
 
 #### From Command Line
+
 ```bash
 code --install-extension DevMitrza.devmeter
 ```
 
 #### From Source (Development)
+
 ```bash
 # Clone the repository
 git clone https://github.com/devmeter/devmeter.git
@@ -195,24 +209,28 @@ bun start
 ### Dashboard Features
 
 **Dashboard Tab**
+
 - Overview of today's stats
 - Weekly activity chart
 - Current session information
 - Quick access to settings
 
 **Analytics Tab**
+
 - Detailed time tracking by project
 - Language breakdown
 - Daily/weekly/monthly trends
 - Productivity insights
 
 **Leaderboard Tab**
+
 - Global rankings
 - Compare with other developers
 - Category-based rankings
 - Achievement showcase
 
 **Settings Tab**
+
 - Privacy preferences
 - Notification settings
 - Data sync options
@@ -221,10 +239,12 @@ bun start
 ### VS Code Extension
 
 **Status Bar**
+
 - See your current coding time at the bottom of the editor
 - Quick access to pause/resume tracking
 
 **Activity Sidebar**
+
 - Real-time session stats
 - Today's breakdown
 - Project selector
@@ -262,18 +282,21 @@ DevMeter is built as a **full-stack application** with three main components:
 ### Components
 
 **Extension** (`/extension`)
+
 - Monitors editor activity
 - Tracks file changes and focus
 - Syncs data to backend
 - Provides status bar UI
 
 **Backend API** (`/api`)
+
 - RESTful API for data management
 - Authentication & authorization
 - Analytics computation
 - Database operations
 
 **Web Dashboard** (`/client`)
+
 - React-based UI
 - Real-time data visualization
 - User management
@@ -318,6 +341,7 @@ devmeter/
 ## 🛠️ Technology Stack
 
 ### Frontend
+
 - **Framework**: Next.js 14+ (React)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
@@ -326,6 +350,7 @@ devmeter/
 - **HTTP Client**: Fetch API
 
 ### Backend
+
 - **Runtime**: Node.js
 - **Framework**: Express.js
 - **Language**: TypeScript
@@ -335,11 +360,13 @@ devmeter/
 - **Validation**: Zod
 
 ### Extension
+
 - **Language**: TypeScript
 - **Framework**: VS Code Extension API
 - **Package Manager**: npm/bun
 
 ### DevOps & Tools
+
 - **Package Manager**: Bun (client), npm (extension)
 - **Build Tool**: Vite (analytics), Next.js (client)
 - **Version Control**: Git
@@ -388,12 +415,15 @@ In VS Code settings (`settings.json`):
 ## 📡 API Documentation
 
 ### Base URL
+
 ```
 https://devmeter-v2.zaidcode.me/api
 ```
 
 ### Authentication
+
 All requests require a Bearer token:
+
 ```
 Authorization: Bearer <your-jwt-token>
 ```
@@ -401,6 +431,7 @@ Authorization: Bearer <your-jwt-token>
 ### Endpoints
 
 #### User Endpoints
+
 ```
 GET    /api/user              # Get current user
 PATCH  /api/user              # Update profile
@@ -408,6 +439,7 @@ DELETE /api/user              # Delete account
 ```
 
 #### Stats Endpoints
+
 ```
 GET    /api/stats             # Get today's stats
 GET    /api/stats/daily       # Get daily breakdown
@@ -417,6 +449,7 @@ GET    /api/stats/:metric     # Get specific metric
 ```
 
 #### Session Endpoints
+
 ```
 POST   /api/session/start     # Start new session
 POST   /api/session/end       # End current session
@@ -424,6 +457,7 @@ GET    /api/session/current   # Get active session
 ```
 
 #### Leaderboard Endpoints
+
 ```
 GET    /api/leaderboard       # Get global rankings
 GET    /api/leaderboard/:category  # Get category rankings
@@ -437,6 +471,7 @@ See [API Documentation](https://devmeter-v2.zaidcode.me/docs) for detailed endpo
 ## 🔧 Development
 
 ### Prerequisites
+
 - Node.js 16+
 - Bun package manager
 - PostgreSQL (or Docker)
@@ -512,6 +547,7 @@ git push origin feature/your-feature-name
 We love contributions! Here's how you can help:
 
 ### Getting Started
+
 1. Fork the repository
 2. Clone your fork: `git clone https://github.com/your-username/devmeter.git`
 3. Create a feature branch: `git checkout -b feature/amazing-feature`
@@ -541,6 +577,7 @@ We love contributions! Here's how you can help:
    - Be descriptive and concise
 
 ### Areas We Need Help With
+
 - 🐛 Bug fixes
 - ✨ New features
 - 📚 Documentation
@@ -553,24 +590,28 @@ We love contributions! Here's how you can help:
 ## 🗺️ Roadmap
 
 ### Q1 2026
+
 - [ ] Dark mode improvements
 - [ ] Advanced filtering in analytics
 - [ ] Keyboard shortcuts customization
 - [ ] Export data to CSV/JSON
 
 ### Q2 2026
+
 - [ ] Team collaboration features
 - [ ] Custom goals and targets
 - [ ] Integration with project management tools
 - [ ] Mobile app beta
 
 ### Q3 2026
+
 - [ ] AI-powered insights
 - [ ] Automated reports
 - [ ] Slack integration
 - [ ] GitHub integration
 
 ### Future
+
 - [ ] VS Code Web version
 - [ ] JetBrains IDE support
 - [ ] Vim/Neovim integration
@@ -581,28 +622,36 @@ We love contributions! Here's how you can help:
 ## ❓ FAQ
 
 ### How does DevMeter track my coding time?
+
 DevMeter monitors when you're actively editing files in VS Code. It tracks file changes and editor focus to determine when you're coding.
 
 ### Is my code data stored?
+
 No. DevMeter only stores metadata about your coding sessions (time, language, file names). Your actual code is never sent to our servers.
 
 ### Can I use DevMeter offline?
+
 Yes! The extension works offline and syncs your data when you're back online.
 
 ### How is my data protected?
+
 - Data is encrypted in transit (HTTPS)
 - Passwords are hashed with bcrypt
 - Optional end-to-end encryption for sensitive data
 - GDPR compliant data handling
 
 ### Can I delete my data?
+
 Yes. You can delete your account and all associated data anytime from Settings → Account → Delete Account.
 
 ### Is DevMeter free?
+
 Yes, DevMeter is completely free and open-source!
 
 ### How do I report a bug?
+
 Please create an issue on [GitHub Issues](https://github.com/devmeter/devmeter/issues) with:
+
 - Description of the bug
 - Steps to reproduce
 - Expected behavior
@@ -610,12 +659,15 @@ Please create an issue on [GitHub Issues](https://github.com/devmeter/devmeter/i
 - Screenshots (if applicable)
 
 ### How can I request a feature?
+
 Create a feature request on [GitHub Discussions](https://github.com/devmeter/devmeter/discussions) with:
+
 - Description of the feature
 - Use case and benefits
 - Mockups or examples (if applicable)
 
 ### What's your privacy policy?
+
 See our [Privacy Policy](https://devmeter-v2.zaidcode.me/privacy) for complete details.
 
 ---
@@ -625,16 +677,19 @@ See our [Privacy Policy](https://devmeter-v2.zaidcode.me/privacy) for complete d
 ### Getting Help
 
 **Documentation**
+
 - [Full Documentation](https://devmeter-v2.zaidcode.me/docs)
 - [Blog & Tutorials](https://devmeter-v2.zaidcode.me/blog)
 - [FAQ](https://devmeter-v2.zaidcode.me/docs#faq)
 
 **Community**
+
 - [GitHub Discussions](https://github.com/devmeter/devmeter/discussions)
 - [GitHub Issues](https://github.com/devmeter/devmeter/issues)
 
 **Contact**
-- Email: support@devmeter.io
+
+- Email: <support@devmeter.io>
 - Twitter: [@devmeter](https://twitter.com/devmeter)
 - Discord: [Join Community](https://discord.gg/devmeter)
 
@@ -651,6 +706,7 @@ DevMeter is open source and available under the [MIT License](LICENSE).
 Thanks to all our contributors, users, and the open-source community for making DevMeter possible!
 
 ### Built With
+
 - [VS Code Extension API](https://code.visualstudio.com/api)
 - [Next.js](https://nextjs.org)
 - [Prisma](https://www.prisma.io)
