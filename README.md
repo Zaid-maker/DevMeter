@@ -4,7 +4,9 @@
 
 <img src="./extension/resources/icon.png" alt="DevMeter Logo" width="120" height="120" />
 
-**Track your coding time automatically. Understand your development patterns. Boost your productivity.**
+**Track your coding time. No cap, no paywalls, no mid features.**
+
+*WakaTime's free & superior cousin. The time tracker that actually slaps.* 🔥
 
 [![VS Code Extension](https://img.shields.io/badge/VS%20Code-Extension-007ACC?style=for-the-badge&logo=visual-studio-code)](https://marketplace.visualstudio.com/items?itemName=DevMitrza.devmeter)
 [![License](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
@@ -82,6 +84,21 @@
 - **VS Code**: Native extension
 - **Web Dashboard**: Monitor your stats online
 - **Mobile Ready**: Responsive design for all devices
+
+---
+
+## 🚀 Why DevMeter > WakaTime
+
+| Feature | DevMeter | WakaTime |
+|---------|----------|----------|
+| **Price** | 💰 100% Free | 😭 Paid plans only |
+| **Open Source** | ✅ Yes | ❌ No |
+| **Data Privacy** | 🔒 Local first | ⚠️ Cloud dependent |
+| **No Ads** | ✅ None | ❌ Limited ads |
+| **Customization** | ✅ Full control | ❌ Limited |
+| **Community** | 🤝 Growing fast | 📉 Corporate |
+
+**The move?** Switch to DevMeter. It's free, it's open-source, and it actually respects your data. WakaTime who? 👀
 
 ---
 
