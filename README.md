@@ -690,7 +690,7 @@ See our [Privacy Policy](https://devmeter-v2.zaidcode.me/privacy) for complete d
 **Contact**
 
 - Email: <support@devmeter.io>
-- Twitter: [@devmeter](https://twitter.com/devmeter)
+- X: [@devmeter_stroke](https://x.com/devmeter_stroke)
 - Discord: [Join Community](https://discord.gg/devmeter)
 
 ---
@@ -719,7 +719,7 @@ Thanks to all our contributors, users, and the open-source community for making 
 
 **Made with ❤️ by the DevMeter Team**
 
-[⭐ Star us on GitHub](https://github.com/devmeter/devmeter) • [🐦 Follow us on Twitter](https://twitter.com/devmeter) • [💬 Join our Community](https://discord.gg/devmeter)
+[⭐ Star us on GitHub](https://github.com/devmeter/devmeter) • [𝕏 Follow us on X](https://x.com/devmeter_stroke) • [💬 Join our Community](https://discord.gg/devmeter)
 
 © 2026 DevMeter. All rights reserved.
 
