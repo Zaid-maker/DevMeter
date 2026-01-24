@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![DevMeter Logo](./client/public/icons/logo.svg)
+<img src="./extension/resources/icon.png" alt="DevMeter Logo" width="120" height="120" />
 
 **Track your coding time automatically. Understand your development patterns. Boost your productivity.**
 
