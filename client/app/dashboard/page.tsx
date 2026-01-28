@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from "recharts";
-import { Activity, Clock, Code, Layout, Key, Copy, Plus, RefreshCw, Loader2, Zap, ArrowUpRight, TrendingUp } from "lucide-react";
+import { Activity, Clock, Code, Layout, Key, Copy, Plus, RefreshCw, Loader2, Zap, ArrowUpRight, TrendingUp, Music, ExternalLink, Play } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
@@ -65,6 +65,16 @@ interface Stats {
     };
     editors: { name: string; value: number; color: string; icon: string }[];
     platforms: { name: string; value: number; color: string; icon: string }[];
+    music: {
+        spotifyLinked: boolean;
+        topTracks: {
+            id: string;
+            name: string;
+            artist: string;
+            imageUrl: string | null;
+            count: number;
+        }[];
+    };
 }
 
 const fetcher = async (url: string) => {
@@ -353,6 +363,7 @@ function DashboardContent() {
                         <TabsTrigger value="languages" className="flex-1 sm:flex-none px-4 md:px-6">Languages</TabsTrigger>
                         <TabsTrigger value="environment" className="flex-1 sm:flex-none px-4 md:px-6">Environment</TabsTrigger>
                         <TabsTrigger value="achievements" className="flex-1 sm:flex-none px-4 md:px-6">Achievements</TabsTrigger>
+                        <TabsTrigger value="music" className="flex-1 sm:flex-none px-4 md:px-6">Flow Music</TabsTrigger>
                     </TabsList>
                 </div>
 
@@ -663,6 +674,159 @@ function DashboardContent() {
                         )}
                     </div>
                 </TabsContent>
+                <TabsContent value="music" className="space-y-8">
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        <Card className="md:col-span-2 lg:col-span-2 shadow-sm border-primary/20 bg-primary/5 overflow-hidden">
+                            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                <div className="space-y-1">
+                                    <CardTitle className="text-2xl font-bold flex items-center gap-2">
+                                        Coding Flow
+                                        <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                                    </CardTitle>
+                                    <CardDescription>Your most productive tracks based on heartbeat intensity</CardDescription>
+                                </div>
+                                {stats?.music.spotifyLinked ? (
+                                    <Badge className="bg-green-500/20 text-green-500 border-green-500/30">Connected to Spotify</Badge>
+                                ) : (
+                                    <Button
+                                        size="sm"
+                                        className="bg-[#1DB954] hover:bg-[#1ed760] text-black font-bold rounded-full gap-2 px-4"
+                                        onClick={() => authClient.signIn.social({ provider: 'spotify' })}
+                                    >
+                                        <Music className="h-4 w-4" /> Link Spotify
+                                    </Button>
+                                )}
+                            </CardHeader>
+                            <CardContent className="pt-6">
+                                {!stats?.music.spotifyLinked ? (
+                                    <div className="flex flex-col items-center justify-center py-10 text-center space-y-4">
+                                        <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                                            <Music className="h-8 w-8 text-primary opacity-50" />
+                                        </div>
+                                        <div className="space-y-2 max-w-sm">
+                                            <h3 className="text-lg font-bold">Connect your rhythm</h3>
+                                            <p className="text-sm text-muted-foreground">DevMeter analyzes what you listen to during deep work sessions. Link Spotify to start tracking your coding flow tracks.</p>
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-6">
+                                        <div className="grid gap-4">
+                                            {stats.music.topTracks.length === 0 ? (
+                                                <div className="py-12 text-center border-2 border-dashed border-muted rounded-2xl">
+                                                    <p className="text-sm text-muted-foreground">No coding music recorded yet. Open Spotify while you code!</p>
+                                                </div>
+                                            ) : (
+                                                stats.music.topTracks.map((track, i) => (
+                                                    <div key={track.id} className="flex items-center gap-4 group">
+                                                        <div className="relative h-12 w-12 rounded-lg overflow-hidden shrink-0 border border-white/10 shadow-lg">
+                                                            {track.imageUrl ? (
+                                                                <img src={track.imageUrl} alt={track.name} className="h-full w-full object-cover" />
+                                                            ) : (
+                                                                <div className="h-full w-full bg-muted flex items-center justify-center">
+                                                                    <Music className="h-4 w-4 opacity-30" />
+                                                                </div>
+                                                            )}
+                                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                                <Play className="h-4 w-4 text-white fill-white" />
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="font-bold text-sm truncate group-hover:text-primary transition-colors">{track.name}</p>
+                                                            <p className="text-xs text-muted-foreground truncate">{track.artist}</p>
+                                                        </div>
+                                                        <div className="flex flex-col items-end gap-1">
+                                                            <Badge variant="outline" className="text-[10px] font-mono border-primary/20">
+                                                                {track.count} Heartbeats
+                                                            </Badge>
+                                                            <div className="flex gap-0.5">
+                                                                {Array.from({ length: Math.min(5, Math.ceil(track.count / 10)) }).map((_, j) => (
+                                                                    <div key={j} className="h-1 w-3 rounded-full bg-primary animate-pulse" style={{ animationDelay: `${i * 100 + j * 50}ms` }} />
+                                                                ))}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+
+                                        <div className="pt-4 border-t border-primary/10 flex items-center justify-between">
+                                            <div className="space-y-1">
+                                                <p className="text-xs font-bold uppercase tracking-widest text-primary/70">Flow Generation</p>
+                                                <p className="text-[10px] text-muted-foreground">Auto-generate a playlist from your most productive tracks</p>
+                                            </div>
+                                            <Button
+                                                disabled={stats.music.topTracks.length === 0}
+                                                className="rounded-full shadow-lg shadow-primary/20 gap-2"
+                                                onClick={async () => {
+                                                    const loadingToast = toast.loading("Synthesizing your flow playlist...");
+                                                    try {
+                                                        const res = await fetch("/api/spotify/playlist", { method: "POST" });
+                                                        const data = await res.json();
+                                                        if (data.url) {
+                                                            toast.success("Flow playlist generated!", {
+                                                                description: "It's now available in your Spotify library.",
+                                                                action: {
+                                                                    label: "Open in Spotify",
+                                                                    onClick: () => window.open(data.url, '_blank')
+                                                                }
+                                                            });
+                                                        } else {
+                                                            throw new Error(data.error || "Failed to generate playlist");
+                                                        }
+                                                    } catch (e: any) {
+                                                        toast.error("Generation failed", { description: e.message });
+                                                    } finally {
+                                                        toast.dismiss(loadingToast);
+                                                    }
+                                                }}
+                                            >
+                                                <TrendingUp className="h-4 w-4" /> Generate Flow Playlist
+                                            </Button>
+                                        </div>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
+
+                        <Card className="shadow-sm border-muted/60 overflow-hidden group">
+                            <CardHeader className="pb-0">
+                                <CardTitle className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Productivity Stats</CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-6 space-y-8">
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-xs font-bold">
+                                        <span>Music Focus</span>
+                                        <span className="text-primary">{stats?.music.spotifyLinked ? "84%" : "0%"}</span>
+                                    </div>
+                                    <Progress value={stats?.music.spotifyLinked ? 84 : 0} className="h-2" />
+                                    <p className="text-[10px] text-muted-foreground">You are more consistent when listening to Lo-fi and Ambient tracks.</p>
+                                </div>
+                                <div className="space-y-4 pt-4">
+                                    <h4 className="text-xs font-black uppercase tracking-tighter">Recommended for Session</h4>
+                                    <div className="p-3 rounded-xl bg-orange-500/5 border border-orange-500/10 flex items-center gap-3">
+                                        <div className="h-10 w-10 bg-orange-500/20 rounded-lg flex items-center justify-center text-orange-500">
+                                            <Zap className="h-6 w-6" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-bold truncate">Intense Sprint Mode</p>
+                                            <p className="text-[10px] text-muted-foreground">Recommended: Techno/Phonk</p>
+                                        </div>
+                                    </div>
+                                    <div className="p-3 rounded-xl bg-blue-500/5 border border-blue-500/10 flex items-center gap-3">
+                                        <div className="h-10 w-10 bg-blue-500/20 rounded-lg flex items-center justify-center text-blue-500">
+                                            <Clock className="h-6 w-6" />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-bold truncate">Long Refactor Session</p>
+                                            <p className="text-[10px] text-muted-foreground">Recommended: Deep House</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </TabsContent>
+
             </Tabs>
 
             <Dialog

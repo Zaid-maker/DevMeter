@@ -21,6 +21,15 @@ export const auth = betterAuth({
     database: prismaAdapter(prisma, {
         provider: "postgresql",
     }),
+    socialProviders: {
+        spotify: {
+            clientId: process.env.SPOTIFY_CLIENT_ID || "PLACEHOLDER",
+            clientSecret: process.env.SPOTIFY_CLIENT_SECRET || "PLACEHOLDER",
+            scope: ["user-read-currently-playing", "user-read-recently-played", "playlist-modify-public", "playlist-modify-private"]
+        }
+    },
+    plugins: [
+    ],
     user: {
         additionalFields: {
             timezone: {
