@@ -2,7 +2,7 @@
   "name": "devmeter",
   "displayName": "DevMeter",
   "description": "Open-source automated coding time tracker. Master your craft with real-time insights.",
-  "version": "0.1.4",
+  "version": "0.4.0",
   "license": "MIT",
   "publisher": "DevMitrza",
   "repository": {
@@ -10,7 +10,7 @@
     "url": "https://github.com/Zaid-maker/DevMeter"
   },
   "engines": {
-    "vscode": "^1.108.1"
+    "vscode": "^1.74.0"
   },
   "categories": [
     "Visualization",
@@ -44,6 +44,14 @@
       {
         "command": "devmeter.showMenu",
         "title": "DevMeter: Show Menu"
+      },
+      {
+        "command": "devmeter.syncNow",
+        "title": "DevMeter: Sync Now"
+      },
+      {
+        "command": "devmeter.checkStatus",
+        "title": "DevMeter: Check API Status"
       }
     ],
     "configuration": {
@@ -56,7 +64,7 @@
         },
         "devmeter.apiUrl": {
           "type": "string",
-          "default": "https://devmeter-v2.zaidcode.me/api",
+          "default": "https://devmeter.codepro.it/api",
           "description": "DevMeter API URL"
         },
         "devmeter.showProject": {
@@ -68,6 +76,11 @@
           "type": "boolean",
           "default": true,
           "description": "Show current streak in status bar"
+        },
+        "devmeter.deviceName": {
+          "type": "string",
+          "default": "",
+          "description": "Custom name for this device (e.g. 'Work Laptop', 'Home PC'). If empty, uses hostname."
         }
       }
     }
@@ -80,7 +93,8 @@
     "lint": "eslint src --ext ts"
   },
   "devDependencies": {
-    "@types/vscode": "^1.108.1",
+    "@types/node": "^25.1.0",
+    "@types/vscode": "^1.74.0",
     "@vscode/vsce": "^3.7.1",
     "esbuild": "^0.27.2",
     "typescript": "^5.0.0"
