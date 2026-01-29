@@ -23,7 +23,7 @@ export function MainNav() {
     const pathname = usePathname();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    if (pathname === "/" || pathname.startsWith("/auth")) return null;
+    if (pathname === "/" || pathname.startsWith("/auth") || pathname.startsWith("/u/")) return null;
 
     const handleSignOut = async () => {
         await authClient.signOut({
@@ -43,8 +43,6 @@ export function MainNav() {
 
     const navItems = [
         { name: "Dashboard", href: "/dashboard" },
-        { name: "Projects", href: "/projects" },
-        { name: "Goals", href: "/goals" },
         { name: "Leaderboard", href: "/leaderboard" },
         { name: "Blog", href: "/blog" },
         { name: "Docs", href: "/docs" },

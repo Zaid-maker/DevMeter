@@ -64,6 +64,18 @@ export default function ProfilePage() {
     const [isSharing, setIsSharing] = useState(false);
     const [currentTimezone, setCurrentTimezone] = useState<string>("UTC");
     const [isUpdatingTz, setIsUpdatingTz] = useState(false);
+    const [profileUsername, setProfileUsername] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (session?.user) {
+            fetch("/api/user")
+                .then(res => res.json())
+                .then(data => {
+                    if (data.username) setProfileUsername(data.username);
+                })
+                .catch(() => {});
+        }
+    }, [session?.user]);
 
     const timezones = Intl.supportedValuesOf('timeZone');
 
@@ -128,11 +140,17 @@ export default function ProfilePage() {
 
     const handleShare = () => {
         setIsSharing(true);
-        const url = window.location.href;
-        navigator.clipboard.writeText(url);
-        toast.success("Profile link copied!", {
-            description: "Anyone with this link can view your coding activity."
-        });
+        if (profileUsername) {
+            const publicUrl = `${window.location.origin}/u/${profileUsername}`;
+            navigator.clipboard.writeText(publicUrl);
+            toast.success("Public profile link copied!", {
+                description: publicUrl
+            });
+        } else {
+            toast.info("Set a username first", {
+                description: "Go to your dashboard and click 'Share Stats' to set up your public profile."
+            });
+        }
         setTimeout(() => setIsSharing(false), 2000);
     };
 
