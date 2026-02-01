@@ -6,16 +6,9 @@ import { Resend } from "resend";
 const resendApiKey = process.env.RESEND_API_KEY;
 const emailFrom = process.env.EMAIL_FROM;
 
-if (process.env.NODE_ENV === "production") {
-    if (!resendApiKey) {
-        throw new Error("RESEND_API_KEY is missing. Production environment requires a valid Resend API key.");
-    }
-    if (!emailFrom) {
-        throw new Error("EMAIL_FROM is missing. Production environment requires a verified sender email address.");
-    }
-}
+const isResendConfigured = resendApiKey && !resendApiKey.startsWith("re_placeholder");
 
-export const resend = resendApiKey ? new Resend(resendApiKey) : null;
+export const resend = isResendConfigured ? new Resend(resendApiKey) : null;
 
 export const auth = betterAuth({
     database: prismaAdapter(prisma, {
@@ -30,6 +23,26 @@ export const auth = betterAuth({
             deletedAt: {
                 type: "date",
                 required: false,
+            },
+            username: {
+                type: "string",
+                required: false,
+            },
+            publicProfile: {
+                type: "boolean",
+                defaultValue: false,
+            },
+            githubUrl: {
+                type: "string",
+                required: false,
+            },
+            linkedinUrl: {
+                type: "string",
+                required: false,
+            },
+            hideProjects: {
+                type: "boolean",
+                defaultValue: false,
             }
         }
     },
@@ -84,7 +97,7 @@ export const auth = betterAuth({
         },
     },
     emailVerification: {
-        sendOnSignUp: true,
+        sendOnSignUp: !!resend,
         autoSignInAfterVerification: true,
         sendVerificationEmail: async ({ user, url }) => {
             if (!resend) {

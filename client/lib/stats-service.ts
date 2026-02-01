@@ -12,6 +12,7 @@ export interface Stats {
         project: string;
         language: string;
         file: string;
+        editor: string | null;
         timestamp: Date;
         color: string;
         icon: string;
@@ -45,6 +46,7 @@ export interface Stats {
     };
     editors: { name: string; value: number; color: string; icon: string }[];
     platforms: { name: string; value: number; color: string; icon: string }[];
+    machines: { name: string; value: number; hours: number; color: string }[];
 }
 
 /**
@@ -186,7 +188,8 @@ export async function calculateUserStats(userId: string, range?: "today" | "all"
             hours: parseFloat(pd.duration.toFixed(1))
         }))
         .sort((a, b) => b.value - a.value)
-        .slice(0, 5);
+        .slice(0, 5)
+        .map((p, i) => ({ ...p, color: getProjectColor(i) }));
 
     const topProject = projects[0]?.name || "None";
     const totalHoursVal = Math.floor(totalDuration);
@@ -201,6 +204,7 @@ export async function calculateUserStats(userId: string, range?: "today" | "all"
             project: h.project,
             language: h.language,
             file: h.file,
+            editor: h.editor,
             timestamp: h.timestamp,
             color: getLanguageColor(h.language),
             icon: getLanguageIcon(h.language)
@@ -313,7 +317,30 @@ export async function calculateUserStats(userId: string, range?: "today" | "all"
         }))
         .sort((a, b) => b.value - a.value);
 
-    // 8. Achievements (Merged Locked + Unlocked)
+    // 8. Machine Distribution
+    const machineGroups = new Map<string, typeof heartbeats>();
+    heartbeats.forEach(h => {
+        const machine = (h as any).machine;
+        if (!machine) return;
+        if (!machineGroups.has(machine)) machineGroups.set(machine, []);
+        machineGroups.get(machine)!.push(h);
+    });
+
+    const machineDurations = Array.from(machineGroups.entries()).map(([name, hList]) => ({
+        name,
+        duration: calculateDuration(hList)
+    }));
+
+    const machines = machineDurations
+        .map(md => ({
+            name: md.name,
+            value: totalDuration > 0 ? Math.round((md.duration / totalDuration) * 100) : 0,
+            hours: parseFloat(md.duration.toFixed(1)),
+            color: getMachineColor(md.name)
+        }))
+        .sort((a, b) => b.value - a.value);
+
+    // 9. Achievements (Merged Locked + Unlocked)
     const allAchievements = await prisma.achievement.findMany({
         orderBy: { createdAt: 'asc' }
     });
@@ -338,6 +365,7 @@ export async function calculateUserStats(userId: string, range?: "today" | "all"
         recentActivity,
         editors,
         platforms,
+        machines,
         summary: {
             totalTime: `${totalHoursVal}h ${remainingMinutes}m`,
             totalTime24h: `${totalHours24h}h ${remainingMinutes24h}m`,
@@ -402,6 +430,8 @@ export function getLanguageColor(lang: string): string {
         xml: "#0060ac",
         jsonc: "#292929",
         json5: "#292929",
+        terminal: "#4EC9B0",
+        shellscript: "#89e051",
     };
     return colors[lang.toLowerCase()] || "#888888";
 }
@@ -447,13 +477,32 @@ export function getLanguageIcon(lang: string): string {
         jsonc: "json",
     };
 
-    const name = langMap[lang.toLowerCase()] || lang.toLowerCase();
+    const lower = lang.toLowerCase();
+
+    // Special cases that don't have devicon entries
+    const specialIcons: Record<string, string> = {
+        terminal: "/icons/terminal.svg",
+        shellscript: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/bash/bash-original.svg",
+        unknown: "/icons/code.svg",
+    };
+    if (specialIcons[lower]) return specialIcons[lower];
+
+    const name = langMap[lower] || lower;
     return `https://cdn.jsdelivr.net/gh/devicons/devicon/icons/${name}/${name}-original.svg`;
 }
 
 export function getEditorColor(editor: string): string {
     const colors: Record<string, string> = {
         vscode: "#007ACC",
+        "code-server": "#1A8CFF",
+        cursor: "#7C3AED",
+        windsurf: "#00C9A7",
+        vscodium: "#2F80ED",
+        theia: "#5B2D8E",
+        gitpod: "#FFAE33",
+        "claude-code": "#D97757",
+        terminal: "#4EC9B0",
+        external: "#6A9955",
         intellij: "#000000",
         sublime: "#FF9800",
         vim: "#019733",
@@ -480,4 +529,28 @@ export function getPlatformColor(platform: string): string {
 
 export function getPlatformIcon(platform: string): string {
     return ""; // Frontend handles icons locally
+}
+
+const PROJECT_COLORS = [
+    "#6366f1", "#f59e0b", "#10b981", "#ef4444",
+    "#8b5cf6", "#06b6d4", "#f97316", "#ec4899",
+];
+
+export function getProjectColor(index: number): string {
+    return PROJECT_COLORS[index % PROJECT_COLORS.length];
+}
+
+const MACHINE_COLORS = [
+    "#007ACC", "#D97757", "#4EC9B0", "#C586C0",
+    "#DCDCAA", "#569CD6", "#CE9178", "#6A9955",
+    "#F44747", "#B5CEA8", "#9CDCFE", "#D7BA7D",
+];
+
+export function getMachineColor(machine: string): string {
+    // Deterministic color based on machine name hash
+    let hash = 0;
+    for (let i = 0; i < machine.length; i++) {
+        hash = ((hash << 5) - hash + machine.charCodeAt(i)) | 0;
+    }
+    return MACHINE_COLORS[Math.abs(hash) % MACHINE_COLORS.length];
 }

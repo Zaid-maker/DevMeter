@@ -10,6 +10,11 @@ model User {
   id            String            @id @default(cuid())
   email         String            @unique
   name          String?
+  username      String?           @unique
+  publicProfile Boolean           @default(false)
+  githubUrl     String?
+  linkedinUrl   String?
+  hideProjects  Boolean           @default(false)
   emailVerified Boolean           @default(false)
   image         String?
   createdAt     DateTime          @default(now())
@@ -108,6 +113,7 @@ model Heartbeat {
   isSave    Boolean  @default(false)
   editor    String?
   platform  String?
+  machine   String?
   timestamp DateTime
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -117,4 +123,5 @@ model Heartbeat {
   @@index([timestamp])
   @@index([editor])
   @@index([platform])
+  @@index([machine])
 }
