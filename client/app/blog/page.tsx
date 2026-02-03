@@ -29,6 +29,16 @@ const blogPosts: BlogPost[] = [
     featured: true,
   },
   {
+    id: "why-wakatime-alternative-devmeter",
+    title: "Why We Built DevMeter: A Free Alternative to WakaTime",
+    description: "The story behind DevMeter. Why we believed developers deserve a free, open-source time tracker without paywalls or limited features.",
+    author: "Zaid Code",
+    date: "2026-02-04",
+    readTime: 7,
+    category: "News",
+    featured: true,
+  },
+  {
     id: "understanding-developer-metrics",
     title: "Understanding Developer Metrics: What Actually Matters",
     description: "Not all metrics are created equal. We break down which development metrics actually impact your productivity and how to use them effectively.",
@@ -39,6 +49,24 @@ const blogPosts: BlogPost[] = [
     featured: true,
   },
   {
+    id: "productivity-metrics-lines-of-code-meaningless",
+    title: "Productivity Metrics That Matter: Why Lines of Code is Meaningless",
+    description: "Stop measuring code quantity. Learn which metrics actually indicate developer productivity and how to interpret them correctly.",
+    author: "Dr. Michael Thompson",
+    date: "2026-02-03",
+    readTime: 9,
+    category: "Analytics",
+  },
+  {
+    id: "developer-burnout-early-detection",
+    title: "Developer Burnout: How to Detect It Early with Time Tracking",
+    description: "Burnout is real. Discover the warning signs hidden in your coding patterns and how time tracking can help you recover before it's too late.",
+    author: "Jessica Moore",
+    date: "2026-02-02",
+    readTime: 11,
+    category: "Mental Health",
+  },
+  {
     id: "best-vs-code-extensions-developers",
     title: "10 Essential VS Code Extensions Every Developer Should Use",
     description: "From time tracking to code formatting, we've compiled the best VS Code extensions that will transform your development workflow.",
@@ -46,6 +74,15 @@ const blogPosts: BlogPost[] = [
     date: "2026-01-15",
     readTime: 10,
     category: "Tools",
+  },
+  {
+    id: "building-coding-habits-data-driven",
+    title: "Building Better Coding Habits: A Data-Driven Approach",
+    description: "Use your own data to understand and improve your coding habits. Real strategies based on actual developer patterns.",
+    author: "David Park",
+    date: "2026-02-01",
+    readTime: 10,
+    category: "Habits",
   },
   {
     id: "remote-work-productivity-guide",
@@ -73,6 +110,15 @@ const blogPosts: BlogPost[] = [
     date: "2026-01-08",
     readTime: 9,
     category: "Tutorial",
+  },
+  {
+    id: "open-source-vs-paid-tools",
+    title: "Open Source vs Paid Developer Tools: Why You Should Care",
+    description: "The hidden costs of paid tools. Explore why open-source alternatives like DevMeter offer better value and more control.",
+    author: "Rachel Green",
+    date: "2026-01-31",
+    readTime: 8,
+    category: "Tools",
   },
 ];
 
