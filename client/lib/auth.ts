@@ -1,4 +1,5 @@
 import { betterAuth } from "better-auth";
+import { emailOTP } from "better-auth/plugins";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { prisma } from "./prisma";
 import { Resend } from "resend";
@@ -33,6 +34,74 @@ export const auth = betterAuth({
             }
         }
     },
+    plugins: [
+        emailOTP({
+            sendVerificationOnSignUp: true,
+            async sendVerificationOTP({ email, otp, type }, request) {
+                if (!resend) {
+                    console.warn("Resend client not initialized. Skipping OTP email.");
+                    return;
+                }
+
+                let subject = "Verify your email";
+                let message = "use the code below to verify your email.";
+
+                if (type === "sign-in") {
+                    subject = "Sign in to DevMeter";
+                    message = "use the code below to sign in.";
+                } else if (type === "forget-password") {
+                    subject = "Reset your password";
+                    message = "use the code below to reset your password.";
+                }
+
+                const { error } = await resend.emails.send({
+                    from: emailFrom || "onboarding@resend.dev",
+                    to: email,
+                    subject: subject,
+                    html: `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <meta name="color-scheme" content="light dark">
+                        <style>
+                            :root { color-scheme: light dark; }
+                            body { background-color: #ffffff; color: #000000; font-family: sans-serif; margin: 0; padding: 0; }
+                            .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
+                            .card { background-color: #f9fafb; border: 1px solid #e5e7eb; border-radius: 16px; padding: 40px; text-align: center; }
+                            .logo { font-size: 24px; font-weight: 900; margin-bottom: 32px; }
+                            .title { font-size: 24px; font-weight: 800; margin-bottom: 16px; }
+                            .otp-container { background-color: #000000; color: #ffffff !important; padding: 20px; border-radius: 12px; font-size: 32px; font-weight: 800; letter-spacing: 0.2em; display: inline-block; margin: 24px 0; }
+                            .footer { margin-top: 32px; font-size: 14px; color: #6b7280; }
+                            @media (prefers-color-scheme: dark) {
+                                body { background-color: #000000 !important; color: #ffffff !important; }
+                                .card { background-color: #0a0a0a !important; border-color: #1f2937 !important; }
+                                .otp-container { background-color: #ffffff !important; color: #000000 !important; }
+                            }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="container">
+                            <div class="card">
+                                <div class="logo">DevMeter</div>
+                                <h1 class="title">Verification Code</h1>
+                                <p>To complete your request, ${message}</p>
+                                <div class="otp-container">${otp}</div>
+                                <p class="footer">If you didn't request this, you can safely ignore this email.</p>
+                            </div>
+                        </div>
+                    </body>
+                    </html>
+                    `,
+                });
+
+                if (error) {
+                    console.error("Failed to send OTP email:", error);
+                    throw error;
+                }
+            },
+        }),
+    ],
+
     emailAndPassword: {
         enabled: true,
         async sendResetPassword({ user, url }) {
@@ -84,7 +153,7 @@ export const auth = betterAuth({
         },
     },
     emailVerification: {
-        sendOnSignUp: true,
+        sendOnSignUp: false,
         autoSignInAfterVerification: true,
         sendVerificationEmail: async ({ user, url }) => {
             if (!resend) {
