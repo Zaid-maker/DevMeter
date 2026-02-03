@@ -49,6 +49,7 @@ interface Stats {
         topLanguage24h: string;
         topLanguageIcon?: string;
         topLanguageIcon24h?: string;
+        isLive?: boolean;
         percentGrowth?: number;
         currentStreak: number;
         xp: number;
@@ -204,6 +205,12 @@ function DashboardContent() {
         }
     };
 
+    useEffect(() => {
+        if (!isAuthPending && !session) {
+            router.replace("/auth/sign-in");
+        }
+    }, [session, isAuthPending, router]);
+
     if (isAuthPending) {
         return (
             <div className="flex items-center justify-center min-h-[600px]">
@@ -216,7 +223,6 @@ function DashboardContent() {
     }
 
     if (!session) {
-        router.replace("/auth/sign-in");
         return null;
     }
 
