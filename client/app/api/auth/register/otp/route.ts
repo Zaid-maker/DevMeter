@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { resend } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import crypto from "crypto";
+import { checkRateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
     try {
@@ -11,21 +12,49 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Email is required" }, { status: 400 });
         }
 
-        // 1. Check if user already exists
-        const existingUser = await prisma.user.findUnique({
-            where: { email }
-        });
+        const normalizedEmail = email.toLowerCase().trim();
+        const ip = req.headers.get("x-forwarded-for")?.split(",")[0] || "127.0.0.1";
 
-        if (existingUser) {
-            return NextResponse.json({ error: "User already exists" }, { status: 400 });
+        // 1. Rate Limiting
+        // IP limits: 5 per minute, 20 per hour
+        const ipMinuteLimit = await checkRateLimit({ key: `rate:ip:min:${ip}`, limit: 5, windowSeconds: 60 });
+        if (!ipMinuteLimit.success) {
+            return new NextResponse("Too Many Requests", { status: 429, headers: { "Retry-After": ipMinuteLimit.retryAfter!.toString() } });
         }
 
-        // 2. Generate 6-digit OTP using cryptographically secure randomness
+        const ipHourLimit = await checkRateLimit({ key: `rate:ip:hour:${ip}`, limit: 20, windowSeconds: 3600 });
+        if (!ipHourLimit.success) {
+            return new NextResponse("Too Many Requests", { status: 429, headers: { "Retry-After": ipHourLimit.retryAfter!.toString() } });
+        }
+
+        // Email limits: 3 per minute, 10 per hour
+        const emailMinuteLimit = await checkRateLimit({ key: `rate:email:min:${normalizedEmail}`, limit: 3, windowSeconds: 60 });
+        if (!emailMinuteLimit.success) {
+            return new NextResponse("Too Many Requests", { status: 429, headers: { "Retry-After": emailMinuteLimit.retryAfter!.toString() } });
+        }
+
+        const emailHourLimit = await checkRateLimit({ key: `rate:email:hour:${normalizedEmail}`, limit: 10, windowSeconds: 3600 });
+        if (!emailHourLimit.success) {
+            return new NextResponse("Too Many Requests", { status: 429, headers: { "Retry-After": emailHourLimit.retryAfter!.toString() } });
+        }
+
+        // 2. Check if user already exists
+        const existingUser = await prisma.user.findUnique({
+            where: { email: normalizedEmail }
+        });
+
+        // Always return success to prevent user enumeration
+        const successResponse = NextResponse.json({ success: true });
+
+        if (existingUser) {
+            return successResponse;
+        }
+
+        // 3. Generate 6-digit OTP using cryptographically secure randomness
         const otp = crypto.randomInt(0, 1_000_000).toString().padStart(6, "0");
 
-        // 3. Store in Verification table
-        // We use a prefix to identify signup OTPs
-        const identifier = `signup:${email}`;
+        // 4. Store in Verification table
+        const identifier = `signup:${normalizedEmail}`;
 
         await prisma.verification.upsert({
             where: { id: identifier },
@@ -35,19 +64,19 @@ export async function POST(req: Request) {
             },
             create: {
                 id: identifier,
-                identifier: email,
+                identifier: normalizedEmail,
                 value: otp,
                 expiresAt: new Date(Date.now() + 10 * 60 * 1000)
             }
         });
 
-        // 4. Send Email
+        // 5. Send Email
         const emailFrom = process.env.EMAIL_FROM || "onboarding@resend.dev";
 
         if (resend) {
             const { error } = await resend.emails.send({
                 from: emailFrom,
-                to: email,
+                to: normalizedEmail,
                 subject: "Verify your email - DevMeter",
                 html: `
                 <!DOCTYPE html>
@@ -90,10 +119,10 @@ export async function POST(req: Request) {
                 throw new Error(error.message || "Failed to send email");
             }
         } else {
-            console.log(`[DEV] OTP for ${email}: ${otp}`);
+            console.log(`[DEV] OTP for ${normalizedEmail}: ${otp}`);
         }
 
-        return NextResponse.json({ success: true });
+        return successResponse;
     } catch (error: any) {
         console.error("Error sending signup OTP:", error);
         return NextResponse.json({ error: "Failed to send verification code" }, { status: 500 });
