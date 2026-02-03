@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { resend } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 
 export async function POST(req: Request) {
     try {
@@ -19,8 +20,8 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "User already exists" }, { status: 400 });
         }
 
-        // 2. Generate 6-digit OTP
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        // 2. Generate 6-digit OTP using cryptographically secure randomness
+        const otp = crypto.randomInt(0, 1_000_000).toString().padStart(6, "0");
 
         // 3. Store in Verification table
         // We use a prefix to identify signup OTPs

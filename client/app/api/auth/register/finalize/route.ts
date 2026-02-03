@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
+import crypto from "crypto";
 
 export async function POST(req: Request) {
     try {
@@ -16,12 +17,25 @@ export async function POST(req: Request) {
             where: { id: identifier }
         });
 
-        if (!verification || verification.value !== otp) {
+        if (!verification) {
             return NextResponse.json({ error: "Invalid or expired verification code" }, { status: 400 });
         }
 
-        if (verification.expiresAt < new Date()) {
-            return NextResponse.json({ error: "Verification code has expired" }, { status: 400 });
+        // Timing-safe comparison
+        const storedOtp = verification.value;
+        const providedOtp = otp;
+
+        if (storedOtp.length !== providedOtp.length) {
+            return NextResponse.json({ error: "Invalid or expired verification code" }, { status: 400 });
+        }
+
+        const isMatch = crypto.timingSafeEqual(
+            Buffer.from(storedOtp),
+            Buffer.from(providedOtp)
+        );
+
+        if (!isMatch || verification.expiresAt < new Date()) {
+            return NextResponse.json({ error: "Invalid or expired verification code" }, { status: 400 });
         }
 
         // 2. Finalize Signup using Better Auth
