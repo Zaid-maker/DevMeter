@@ -19,10 +19,13 @@ import {
     RefreshCw,
     ShieldCheck,
     Trash2,
-    Lock
+    Lock,
+    Globe,
+    ExternalLink,
+    Loader2
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect, useCallback } from "react";
 import useSWR, { mutate } from "swr";
 
 interface ApiKey {
@@ -60,6 +63,74 @@ function SettingsContent() {
     const [revokingId, setRevokingId] = useState<string | null>(null);
     const [showKeyId, setShowKeyId] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+
+    // Public profile state
+    const [publicProfile, setPublicProfile] = useState(false);
+    const [profileUsername, setProfileUsername] = useState<string | null>(null);
+    const [usernameInput, setUsernameInput] = useState("");
+    const [usernameError, setUsernameError] = useState("");
+    const [savingUsername, setSavingUsername] = useState(false);
+    const [togglingProfile, setTogglingProfile] = useState(false);
+    const [checkingUsername, setCheckingUsername] = useState(false);
+    const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+    const [githubUrl, setGithubUrl] = useState("");
+    const [linkedinUrl, setLinkedinUrl] = useState("");
+    const [hideProjects, setHideProjects] = useState(false);
+    const [savingSocials, setSavingSocials] = useState(false);
+
+    useEffect(() => {
+        if (session) {
+            fetch("/api/user")
+                .then(res => res.json())
+                .then(data => {
+                    setProfileUsername(data.username || null);
+                    setPublicProfile(data.publicProfile ?? false);
+                    setGithubUrl(data.githubUrl || "");
+                    setLinkedinUrl(data.linkedinUrl || "");
+                    setHideProjects(data.hideProjects ?? false);
+                    if (data.username) setUsernameInput(data.username);
+                })
+                .catch(() => {});
+        }
+    }, [session]);
+
+    // Debounced username availability check
+    useEffect(() => {
+        if (!usernameInput || usernameInput.length < 3 || usernameInput === profileUsername) {
+            setUsernameAvailable(null);
+            setUsernameError("");
+            return;
+        }
+
+        const regex = /^[a-z0-9]([a-z0-9_-]{1,28}[a-z0-9])$/;
+        if (!regex.test(usernameInput)) {
+            setUsernameAvailable(null);
+            setUsernameError("Must be 3-30 chars, lowercase alphanumeric, hyphens/underscores (not at start/end)");
+            return;
+        }
+
+        setCheckingUsername(true);
+        setUsernameAvailable(null);
+        setUsernameError("");
+
+        const timeout = setTimeout(() => {
+            fetch(`/api/user/username-check?username=${encodeURIComponent(usernameInput)}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.available) {
+                        setUsernameAvailable(true);
+                        setUsernameError("");
+                    } else {
+                        setUsernameAvailable(false);
+                        setUsernameError(data.error || "Username already taken");
+                    }
+                })
+                .catch(() => setUsernameAvailable(null))
+                .finally(() => setCheckingUsername(false));
+        }, 500);
+
+        return () => clearTimeout(timeout);
+    }, [usernameInput, profileUsername]);
 
     async function generateKey() {
         setGenerating(true);
@@ -138,7 +209,7 @@ function SettingsContent() {
                 <TabsContent value="profile" className="space-y-6">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Public Profile</CardTitle>
+                            <CardTitle>Account Info</CardTitle>
                             <CardDescription>How others see you on the leaderboard.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-6">
@@ -166,6 +237,266 @@ function SettingsContent() {
                         <CardFooter className="border-t px-6 py-4">
                             <Button size="sm">Save Changes</Button>
                         </CardFooter>
+                    </Card>
+
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div className="space-y-1">
+                                <CardTitle className="flex items-center gap-2">
+                                    <Globe className="h-5 w-5 text-primary" />
+                                    Public Profile
+                                </CardTitle>
+                                <CardDescription>Allow others to view your coding stats via a public link.</CardDescription>
+                            </div>
+                            <Switch
+                                checked={publicProfile}
+                                disabled={togglingProfile || (!profileUsername && !publicProfile)}
+                                onCheckedChange={async (checked) => {
+                                    if (checked && !profileUsername) {
+                                        toast.error("Set a username first", {
+                                            description: "You need a username before enabling your public profile."
+                                        });
+                                        return;
+                                    }
+                                    setTogglingProfile(true);
+                                    try {
+                                        const res = await fetch("/api/user", {
+                                            method: "PATCH",
+                                            headers: { "Content-Type": "application/json" },
+                                            body: JSON.stringify({ publicProfile: checked }),
+                                        });
+                                        if (res.ok) {
+                                            setPublicProfile(checked);
+                                            toast.success(checked ? "Public profile enabled" : "Public profile disabled");
+                                        } else {
+                                            toast.error("Failed to update");
+                                        }
+                                    } catch {
+                                        toast.error("Something went wrong");
+                                    } finally {
+                                        setTogglingProfile(false);
+                                    }
+                                }}
+                            />
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="settings-username">Username</Label>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-muted-foreground text-sm font-mono">@</span>
+                                    <div className="relative flex-1">
+                                        <Input
+                                            id="settings-username"
+                                            placeholder="your-username"
+                                            value={usernameInput}
+                                            onChange={(e) => {
+                                                setUsernameInput(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""));
+                                                setUsernameError("");
+                                            }}
+                                            maxLength={30}
+                                            className={usernameError ? "border-destructive" : usernameAvailable === true && usernameInput !== profileUsername ? "border-green-500" : ""}
+                                        />
+                                        {checkingUsername && (
+                                            <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                            </div>
+                                        )}
+                                        {!checkingUsername && usernameAvailable === true && usernameInput !== profileUsername && usernameInput.length >= 3 && (
+                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500 text-xs font-medium">
+                                                Available
+                                            </div>
+                                        )}
+                                    </div>
+                                    <Button
+                                        size="sm"
+                                        disabled={
+                                            savingUsername ||
+                                            usernameInput.length < 3 ||
+                                            usernameInput === profileUsername ||
+                                            usernameAvailable === false ||
+                                            checkingUsername
+                                        }
+                                        onClick={async () => {
+                                            setSavingUsername(true);
+                                            setUsernameError("");
+                                            try {
+                                                const res = await fetch("/api/user/username", {
+                                                    method: "PUT",
+                                                    headers: { "Content-Type": "application/json" },
+                                                    body: JSON.stringify({ username: usernameInput }),
+                                                });
+                                                const data = await res.json();
+                                                if (!res.ok) {
+                                                    setUsernameError(data.error || "Failed to save");
+                                                    return;
+                                                }
+                                                setProfileUsername(data.username);
+                                                toast.success("Username saved!", {
+                                                    description: `Your profile will be at devmeter.codepro.it/u/${data.username}`
+                                                });
+                                            } catch {
+                                                setUsernameError("Something went wrong");
+                                            } finally {
+                                                setSavingUsername(false);
+                                            }
+                                        }}
+                                    >
+                                        {savingUsername ? <Loader2 className="h-4 w-4 animate-spin" /> : "Save"}
+                                    </Button>
+                                </div>
+                                {usernameError && (
+                                    <p className="text-xs text-destructive">{usernameError}</p>
+                                )}
+                                <p className="text-[11px] text-muted-foreground">
+                                    3-30 characters. Lowercase letters, numbers, hyphens and underscores only.
+                                </p>
+                            </div>
+
+                            {profileUsername && (
+                                <>
+                                    <Separator />
+                                    <div className="flex items-center justify-between">
+                                        <div className="space-y-0.5">
+                                            <Label className="text-sm">Public URL</Label>
+                                            <p className="text-xs font-mono text-muted-foreground">
+                                                devmeter.codepro.it/u/{profileUsername}
+                                            </p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(`https://devmeter.codepro.it/u/${profileUsername}`);
+                                                    toast.success("Link copied!");
+                                                }}
+                                            >
+                                                <Copy className="h-3.5 w-3.5 mr-1.5" /> Copy
+                                            </Button>
+                                            {publicProfile && (
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    asChild
+                                                >
+                                                    <a href={`/u/${profileUsername}`} target="_blank" rel="noopener noreferrer">
+                                                        <ExternalLink className="h-3.5 w-3.5 mr-1.5" /> View
+                                                    </a>
+                                                </Button>
+                                            )}
+                                        </div>
+                                    </div>
+                                    {!publicProfile && (
+                                        <div className="bg-yellow-500/5 border border-yellow-500/20 px-4 py-3 rounded-xl flex items-start gap-3">
+                                            <Globe className="h-4 w-4 text-yellow-500 mt-0.5 shrink-0" />
+                                            <p className="text-xs text-yellow-500/80 leading-relaxed">
+                                                Your public profile is currently <strong>disabled</strong>. Enable the toggle above to make your profile visible to others.
+                                            </p>
+                                        </div>
+                                    )}
+                                </>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Social Links</CardTitle>
+                            <CardDescription>Add your social profiles to your public page.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="grid gap-4 sm:grid-cols-2">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="github-url" className="flex items-center gap-1.5">
+                                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                                        GitHub
+                                    </Label>
+                                    <Input
+                                        id="github-url"
+                                        placeholder="https://github.com/username"
+                                        value={githubUrl}
+                                        onChange={(e) => setGithubUrl(e.target.value)}
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label htmlFor="linkedin-url" className="flex items-center gap-1.5">
+                                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>
+                                        LinkedIn
+                                    </Label>
+                                    <Input
+                                        id="linkedin-url"
+                                        placeholder="https://linkedin.com/in/username"
+                                        value={linkedinUrl}
+                                        onChange={(e) => setLinkedinUrl(e.target.value)}
+                                    />
+                                </div>
+                            </div>
+                        </CardContent>
+                        <CardFooter className="border-t px-6 py-4">
+                            <Button
+                                size="sm"
+                                disabled={savingSocials}
+                                onClick={async () => {
+                                    setSavingSocials(true);
+                                    try {
+                                        const res = await fetch("/api/user", {
+                                            method: "PATCH",
+                                            headers: { "Content-Type": "application/json" },
+                                            body: JSON.stringify({ githubUrl, linkedinUrl }),
+                                        });
+                                        if (res.ok) {
+                                            toast.success("Social links saved!");
+                                        } else {
+                                            toast.error("Failed to save");
+                                        }
+                                    } catch {
+                                        toast.error("Something went wrong");
+                                    } finally {
+                                        setSavingSocials(false);
+                                    }
+                                }}
+                            >
+                                {savingSocials ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                Save Social Links
+                            </Button>
+                        </CardFooter>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Privacy</CardTitle>
+                            <CardDescription>Control what is visible on your public profile.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="flex items-center justify-between">
+                                <div className="space-y-0.5">
+                                    <Label>Hide Project Names</Label>
+                                    <p className="text-sm text-muted-foreground">Project names will appear as &quot;Project 1&quot;, &quot;Project 2&quot;, etc. on your public profile.</p>
+                                </div>
+                                <Switch
+                                    checked={hideProjects}
+                                    onCheckedChange={async (checked) => {
+                                        setHideProjects(checked);
+                                        try {
+                                            const res = await fetch("/api/user", {
+                                                method: "PATCH",
+                                                headers: { "Content-Type": "application/json" },
+                                                body: JSON.stringify({ hideProjects: checked }),
+                                            });
+                                            if (res.ok) {
+                                                toast.success(checked ? "Project names hidden" : "Project names visible");
+                                            } else {
+                                                setHideProjects(!checked);
+                                                toast.error("Failed to update");
+                                            }
+                                        } catch {
+                                            setHideProjects(!checked);
+                                            toast.error("Something went wrong");
+                                        }
+                                    }}
+                                />
+                            </div>
+                        </CardContent>
                     </Card>
 
                     <Card>

@@ -1,0 +1,61 @@
+# CLAUDE.md - File di contesto privato, NON condividere
+CLAUDE.md
+
+# VS Code Extension builds
+*.vsix
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+*.lcov
+.nyc_output
+
+# Production
+build/
+dist/
+out/
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Lock files (opzionale - alcuni progetti li committano)
+# package-lock.json
+# bun.lockb

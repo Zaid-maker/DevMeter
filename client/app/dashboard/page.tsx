@@ -3,15 +3,16 @@
 import { useEffect, useState, Suspense } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from "recharts";
-import { Activity, Clock, Code, Layout, Key, Copy, Plus, RefreshCw, Loader2, Zap, ArrowUpRight, TrendingUp } from "lucide-react";
+import { Bar, BarChart, PieChart, Pie, Cell, ResponsiveContainer, XAxis, YAxis, Tooltip as RechartsTooltip } from "recharts";
+import { Activity, Clock, Code, Layout, Key, Copy, Plus, RefreshCw, Loader2, Zap, ArrowUpRight, TrendingUp, Monitor, Terminal, Flame, Calendar, Target, FolderOpen, BarChart3 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { formatDistanceToNow } from "date-fns";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { formatDistanceToNow, format, subDays, eachDayOfInterval } from "date-fns";
 import useSWR from "swr";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { toast } from "sonner";
@@ -23,18 +24,21 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { Mail, Star, Trophy, Award } from "lucide-react";
+import { Mail, Star, Trophy, Award, Check } from "lucide-react";
 import { getXPLvlProgress } from "@/lib/gamification";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 interface Stats {
     activityByDay: { name: string; total: number }[];
     languages: { name: string; value: number; color: string; icon: string }[];
-    projects: { name: string; value: number; hours: number }[];
+    projects: { name: string; value: number; hours: number; color: string }[];
     recentActivity: {
         id: string;
         project: string;
         language: string;
         file: string;
+        editor: string | null;
         timestamp: string;
         color: string;
         icon: string;
@@ -65,6 +69,7 @@ interface Stats {
     };
     editors: { name: string; value: number; color: string; icon: string }[];
     platforms: { name: string; value: number; color: string; icon: string }[];
+    machines: { name: string; value: number; hours: number; color: string }[];
 }
 
 const fetcher = async (url: string) => {
@@ -85,23 +90,83 @@ function DashboardContent() {
     const { data: stats, isLoading } = useSWR<Stats>(
         session ? "/api/stats" : null,
         fetcher,
-        { refreshInterval: 60000 } // Refresh every minute
+        { refreshInterval: 60000 }
+    );
+    const { data: contributionData, isLoading: isContribLoading, error: contribError } = useSWR<{
+        contributions: { date: string; count: number }[];
+        streaks: { current: number; longest: number };
+        summary: { totalHours: number; daysActive: number; averagePerDay: number };
+    }>(
+        session ? "/api/stats/contribution" : null,
+        fetcher,
+        { refreshInterval: 300000, errorRetryCount: 3 } // Refresh every 5 min, retry on error
     );
     const router = useRouter()
     const searchParams = useSearchParams();
     const pathname = usePathname();
 
-    const activeTab = searchParams.get("tab") || "overview";
+    const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "overview");
 
     const handleTabChange = (value: string) => {
+        setActiveTab(value);
         const params = new URLSearchParams(searchParams.toString());
         params.set("tab", value);
-        router.push(`${pathname}?${params.toString()}`, { scroll: false });
+        window.history.replaceState(null, "", `${pathname}?${params.toString()}`);
     };
 
     const [sendingEmail, setSendingEmail] = useState(false);
     const [showVerificationDialog, setShowVerificationDialog] = useState(false);
     const [hasDismissed, setHasDismissed] = useState(false);
+
+    // Username state for public profile
+    const [username, setUsername] = useState<string | null>(null);
+    const [showUsernameDialog, setShowUsernameDialog] = useState(false);
+    const [usernameInput, setUsernameInput] = useState("");
+    const [usernameError, setUsernameError] = useState("");
+    const [savingUsername, setSavingUsername] = useState(false);
+    const [checkingUsername, setCheckingUsername] = useState(false);
+    const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+
+    useEffect(() => {
+        if (session?.user) {
+            fetch("/api/user")
+                .then(res => res.json())
+                .then(data => {
+                    if (data.username) setUsername(data.username);
+                })
+                .catch(() => {});
+        }
+    }, [session?.user]);
+
+    // Debounced username availability check
+    useEffect(() => {
+        if (!usernameInput || usernameInput.length < 3) {
+            setUsernameAvailable(null);
+            return;
+        }
+        const regex = /^[a-z0-9]([a-z0-9_-]{1,28}[a-z0-9])$/;
+        if (!regex.test(usernameInput)) {
+            setUsernameAvailable(null);
+            return;
+        }
+
+        setCheckingUsername(true);
+        setUsernameAvailable(null);
+
+        const timeout = setTimeout(() => {
+            fetch(`/api/user/username-check?username=${encodeURIComponent(usernameInput)}`)
+                .then(res => res.json())
+                .then(data => {
+                    setUsernameAvailable(data.available);
+                    if (!data.available) setUsernameError("Username already taken");
+                    else setUsernameError("");
+                })
+                .catch(() => setUsernameAvailable(null))
+                .finally(() => setCheckingUsername(false));
+        }, 500);
+
+        return () => clearTimeout(timeout);
+    }, [usernameInput]);
 
     // Timezone synchronization
     useEffect(() => {
@@ -152,7 +217,7 @@ function DashboardContent() {
         const lowerName = name.toLowerCase();
 
         if (type === 'editor') {
-            if (lowerName.includes('vscode')) {
+            if (lowerName === 'vscode') {
                 return (
                     <img
                         src="/icons/vscode_nano.png"
@@ -161,6 +226,54 @@ function DashboardContent() {
                         style={{ filter: "brightness(1.1) saturate(1.2)" }}
                     />
                 );
+            }
+            if (lowerName.includes('code-server')) {
+                return (
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full p-0.5">
+                        <rect width="24" height="24" rx="4" fill="#1A8CFF" />
+                        <path d="M8 7L4 12L8 17M16 7L20 12L16 17M13 6L11 18" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                );
+            }
+            if (lowerName.includes('cursor')) {
+                return (
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full p-0.5">
+                        <rect width="24" height="24" rx="4" fill="#111" />
+                        <path d="M7 4L18 12L12 13L15 20L12.5 21L9.5 14L7 17V4Z" fill="#7C3AED" />
+                    </svg>
+                );
+            }
+            if (lowerName.includes('windsurf')) {
+                return (
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full p-0.5">
+                        <rect width="24" height="24" rx="4" fill="#0A1628" />
+                        <path d="M6 18C8 14 10 10 16 6C14 10 13 14 12 18" stroke="#00C9A7" strokeWidth="2.5" strokeLinecap="round"/>
+                        <path d="M10 16C12 12 14 10 18 8" stroke="#00C9A7" strokeWidth="1.5" strokeLinecap="round" opacity="0.6"/>
+                    </svg>
+                );
+            }
+            if (lowerName.includes('vscodium')) {
+                return (
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full p-0.5">
+                        <rect width="24" height="24" rx="4" fill="#2F80ED" />
+                        <path d="M8 7L4 12L8 17M16 7L20 12L16 17" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                );
+            }
+            if (lowerName.includes('claude')) {
+                return (
+                    <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full p-0.5">
+                        <rect width="24" height="24" rx="4" fill="#2D2B2A" />
+                        <circle cx="12" cy="12" r="6" fill="#D97757" />
+                        <circle cx="12" cy="12" r="2.5" fill="#2D2B2A" />
+                    </svg>
+                );
+            }
+            if (lowerName.includes('terminal')) {
+                return <Terminal className="h-full w-full p-0.5 text-emerald-400" />;
+            }
+            if (lowerName.includes('external')) {
+                return <Code className="h-full w-full p-0.5 text-green-600" />;
             }
             if (lowerName.includes('intellij')) {
                 return (
@@ -332,12 +445,19 @@ function DashboardContent() {
                     <Button
                         variant="outline"
                         size="sm"
-                        className="hidden sm:flex rounded-lg h-9"
+                        className="rounded-lg h-9"
                         onClick={() => {
-                            navigator.clipboard.writeText(window.location.href);
-                            toast.success("Stats link copied!", {
-                                description: "You can now share your dashboard with others.",
-                            });
+                            if (username) {
+                                const publicUrl = `${window.location.origin}/u/${username}`;
+                                navigator.clipboard.writeText(publicUrl);
+                                toast.success("Public profile link copied!", {
+                                    description: publicUrl,
+                                });
+                            } else {
+                                setUsernameInput("");
+                                setUsernameError("");
+                                setShowUsernameDialog(true);
+                            }
                         }}
                     >
                         Share Stats <ArrowUpRight className="ml-2 h-4 w-4" />
@@ -392,7 +512,7 @@ function DashboardContent() {
                                             </defs>
                                             <XAxis dataKey="name" stroke="#888888" fontSize={12} tickLine={false} axisLine={false} />
                                             <YAxis stroke="#888888" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value} h`} />
-                                            <Tooltip
+                                            <RechartsTooltip
                                                 cursor={{ fill: 'rgba(255,255,255,0.03)' }}
                                                 contentStyle={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '8px' }}
                                                 itemStyle={{ color: '#fff' }}
@@ -418,19 +538,29 @@ function DashboardContent() {
                                 ) : (
                                     <ScrollArea className="h-[350px] pr-4">
                                         <div className="space-y-6">
-                                            {stats?.recentActivity.map((activity) => (
+                                            {stats?.recentActivity.map((activity) => {
+                                                const editorLower = (activity.editor || '').toLowerCase();
+                                                const isClaudeCode = editorLower === 'claude-code';
+                                                const isTerminalEditor = editorLower === 'terminal';
+                                                const useEditorIcon = isClaudeCode || isTerminalEditor;
+
+                                                return (
                                                 <div key={activity.id} className="flex items-start space-x-4">
                                                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-muted/40 p-2.5 shadow-sm border border-muted/50 backdrop-blur-sm">
-                                                        <img
-                                                            src={activity.icon}
-                                                            alt={activity.language}
-                                                            className="h-full w-full object-contain"
-                                                            style={{ filter: "brightness(1.2) saturate(1.3) drop-shadow(0 2px 4px rgba(0,0,0,0.2))" }}
-                                                            onError={(e) => {
-                                                                (e.target as HTMLImageElement).style.display = 'none';
-                                                                (e.target as HTMLImageElement).parentElement!.style.backgroundColor = activity.color;
-                                                            }}
-                                                        />
+                                                        {useEditorIcon ? (
+                                                            getIconComponent(activity.editor!, 'editor')
+                                                        ) : (
+                                                            <img
+                                                                src={activity.icon}
+                                                                alt={activity.language}
+                                                                className="h-full w-full object-contain"
+                                                                style={{ filter: "brightness(1.2) saturate(1.3) drop-shadow(0 2px 4px rgba(0,0,0,0.2))" }}
+                                                                onError={(e) => {
+                                                                    (e.target as HTMLImageElement).style.display = 'none';
+                                                                    (e.target as HTMLImageElement).parentElement!.style.backgroundColor = activity.color;
+                                                                }}
+                                                            />
+                                                        )}
                                                     </div>
                                                     <div className="space-y-1 overflow-hidden">
                                                         <p className="text-sm font-semibold leading-none truncate">
@@ -445,16 +575,135 @@ function DashboardContent() {
                                                         </p>
                                                     </div>
                                                 </div>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                     </ScrollArea>
                                 )}
                             </CardContent>
                         </Card>
                     </div>
+
+                    {/* Contribution Heatmap */}
+                    <Card className="shadow-sm border-muted/60">
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <div className="space-y-1">
+                                <CardTitle className="flex items-center gap-2">
+                                    <Calendar className="h-5 w-5 text-primary" />
+                                    Contribution Map
+                                </CardTitle>
+                                <CardDescription>Your coding activity over the past year</CardDescription>
+                            </div>
+                            {contributionData?.streaks && (
+                                <div className="flex items-center gap-4 text-sm">
+                                    <div className="flex items-center gap-1.5">
+                                        <Flame className="h-4 w-4 text-orange-400" />
+                                        <span className="font-bold">{contributionData.streaks.current}d</span>
+                                        <span className="text-muted-foreground text-xs">streak</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        <Trophy className="h-4 w-4 text-yellow-400" />
+                                        <span className="font-bold">{contributionData.streaks.longest}d</span>
+                                        <span className="text-muted-foreground text-xs">best</span>
+                                    </div>
+                                </div>
+                            )}
+                        </CardHeader>
+                        <CardContent>
+                            {(isContribLoading || (!contributionData && !contribError && session)) ? (
+                                <Skeleton className="h-[140px] w-full" />
+                            ) : contribError ? (
+                                <p className="text-muted-foreground text-sm text-center py-8">Failed to load contribution data. Retrying...</p>
+                            ) : contributionData?.contributions ? (
+                                <div className="space-y-4">
+                                    <ContributionHeatmap data={contributionData.contributions} />
+                                    <div className="flex items-center justify-between flex-wrap gap-2">
+                                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-mono">
+                                            <span>Less</span>
+                                            {[0, 0.25, 0.75, 2, 5, 7].map((v) => (
+                                                <div
+                                                    key={v}
+                                                    className={`h-[10px] w-[10px] rounded-[2px] border ${getLevelColor(v)}`}
+                                                />
+                                            ))}
+                                            <span>More</span>
+                                        </div>
+                                        {contributionData.summary && (
+                                            <div className="flex items-center gap-4 text-[10px] text-muted-foreground font-mono">
+                                                <span><strong className="text-foreground">{contributionData.summary.totalHours.toFixed(0)}h</strong> total</span>
+                                                <span><strong className="text-foreground">{contributionData.summary.daysActive}</strong> days active</span>
+                                                <span><strong className="text-foreground">{contributionData.summary.averagePerDay.toFixed(1)}h</strong>/day avg</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ) : (
+                                <p className="text-muted-foreground text-sm text-center py-8">No contribution data available yet. Start coding to fill your map!</p>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    {/* Insights Row */}
+                    {contributionData?.summary && (
+                        <div className="grid gap-4 md:grid-cols-3">
+                            <Card className="shadow-sm border-muted/60">
+                                <CardContent className="pt-6">
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-orange-500/10 border border-orange-500/20">
+                                            <Flame className="h-6 w-6 text-orange-400" />
+                                        </div>
+                                        <div>
+                                            <p className="text-3xl font-black tracking-tight">{contributionData.streaks.current}</p>
+                                            <p className="text-xs text-muted-foreground font-medium">Day Streak</p>
+                                        </div>
+                                        <div className="ml-auto text-right">
+                                            <p className="text-sm font-bold text-muted-foreground">{contributionData.streaks.longest}</p>
+                                            <p className="text-[10px] text-muted-foreground">Best</p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                            <Card className="shadow-sm border-muted/60">
+                                <CardContent className="pt-6">
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10 border border-blue-500/20">
+                                            <Calendar className="h-6 w-6 text-blue-400" />
+                                        </div>
+                                        <div>
+                                            <p className="text-3xl font-black tracking-tight">{contributionData.summary.daysActive}</p>
+                                            <p className="text-xs text-muted-foreground font-medium">Days Active</p>
+                                        </div>
+                                        <div className="ml-auto text-right">
+                                            <p className="text-sm font-bold text-muted-foreground">{contributionData.summary.totalHours.toFixed(0)}h</p>
+                                            <p className="text-[10px] text-muted-foreground">Total</p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                            <Card className="shadow-sm border-muted/60">
+                                <CardContent className="pt-6">
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+                                            <Target className="h-6 w-6 text-emerald-400" />
+                                        </div>
+                                        <div>
+                                            <p className="text-3xl font-black tracking-tight">{contributionData.summary.averagePerDay.toFixed(1)}</p>
+                                            <p className="text-xs text-muted-foreground font-medium">Hours/Day Avg</p>
+                                        </div>
+                                        <div className="ml-auto text-right">
+                                            <p className="text-sm font-bold text-muted-foreground">
+                                                {contributionData.summary.averagePerDay >= 4 ? "On Track" : "Keep Going"}
+                                            </p>
+                                            <p className="text-[10px] text-muted-foreground">Goal: 4h</p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
                 </TabsContent>
 
-                <TabsContent value="projects" className="space-y-8">
+                <TabsContent value="projects" className="space-y-6">
                     <Card className="shadow-sm">
                         <CardHeader>
                             <CardTitle>Project Decomposition</CardTitle>
@@ -466,23 +715,128 @@ function DashboardContent() {
                                     {[1, 2, 3].map(i => <Skeleton key={i} className="h-16 w-full" />)}
                                 </div>
                             ) : (
-                                <div className="grid gap-8 py-4">
-                                    {stats?.projects.map(project => (
-                                        <div key={project.name} className="space-y-3">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex flex-col">
-                                                    <span className="font-semibold text-lg">{project.name}</span>
-                                                    <span className="text-xs text-muted-foreground uppercase tracking-widest">{project.hours} Hours tracked</span>
+                                <div className="grid gap-12 md:grid-cols-2 py-4">
+                                    {/* Donut Chart */}
+                                    <div className="flex flex-col items-center justify-center">
+                                        <div className="relative w-full" style={{ height: 280 }}>
+                                            <ResponsiveContainer width="100%" height={280}>
+                                                <PieChart>
+                                                    <Pie
+                                                        data={stats?.projects || []}
+                                                        dataKey="value"
+                                                        nameKey="name"
+                                                        cx="50%"
+                                                        cy="50%"
+                                                        innerRadius={65}
+                                                        outerRadius={105}
+                                                        paddingAngle={3}
+                                                        strokeWidth={0}
+                                                        animationDuration={800}
+                                                    >
+                                                        {stats?.projects.map((project, i) => (
+                                                            <Cell key={i} fill={project.color} />
+                                                        ))}
+                                                    </Pie>
+                                                    <RechartsTooltip
+                                                        contentStyle={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '8px' }}
+                                                        itemStyle={{ color: '#fff' }}
+                                                        formatter={(value: number, name: string) => {
+                                                            const proj = stats?.projects.find(p => p.name === name);
+                                                            return [`${value}% (${proj?.hours || 0}h)`, name];
+                                                        }}
+                                                    />
+                                                </PieChart>
+                                            </ResponsiveContainer>
+                                            {/* Center label */}
+                                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                                <div className="text-center">
+                                                    <p className="text-2xl font-black">
+                                                        {stats?.projects.reduce((sum, p) => sum + p.hours, 0).toFixed(1) || '0'}h
+                                                    </p>
+                                                    <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">Total</p>
                                                 </div>
-                                                <Badge variant="outline" className="text-lg px-4 py-1.5 font-bold">{project.value}%</Badge>
                                             </div>
-                                            <Progress value={project.value} className="h-3" />
                                         </div>
-                                    ))}
+                                        {/* Legend */}
+                                        <div className="flex flex-wrap justify-center gap-3 mt-2">
+                                            {stats?.projects.map((project) => (
+                                                <div key={project.name} className="flex items-center gap-1.5">
+                                                    <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: project.color }} />
+                                                    <span className="text-xs text-muted-foreground font-medium">{project.name}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    {/* Progress Bars */}
+                                    <div className="space-y-6">
+                                        {stats?.projects.map(project => (
+                                            <div key={project.name} className="space-y-3">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="h-3 w-3 rounded-full shrink-0" style={{ backgroundColor: project.color }} />
+                                                        <div className="flex flex-col">
+                                                            <span className="font-semibold text-base">{project.name}</span>
+                                                            <span className="text-xs text-muted-foreground uppercase tracking-widest">{project.hours}h tracked</span>
+                                                        </div>
+                                                    </div>
+                                                    <Badge variant="outline" className="text-base px-3 py-1 font-bold">{project.value}%</Badge>
+                                                </div>
+                                                <Progress value={project.value} className="h-2.5" />
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
                         </CardContent>
                     </Card>
+
+                    {/* Summary Cards */}
+                    {!isLoading && stats?.projects && stats.projects.length > 0 && (
+                        <div className="grid gap-4 md:grid-cols-3">
+                            <Card className="shadow-sm">
+                                <CardContent className="pt-6">
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-primary/10 border border-primary/20">
+                                            <FolderOpen className="h-5 w-5 text-primary" />
+                                        </div>
+                                        <div>
+                                            <p className="text-2xl font-black">{stats.projects.length}</p>
+                                            <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest">Projects</p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                            <Card className="shadow-sm">
+                                <CardContent className="pt-6">
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-primary/10 border border-primary/20">
+                                            <Trophy className="h-5 w-5 text-primary" />
+                                        </div>
+                                        <div>
+                                            <p className="text-2xl font-black">{stats.projects[0]?.name || 'N/A'}</p>
+                                            <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest">{stats.projects[0]?.hours || 0}h - Most Active</p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                            <Card className="shadow-sm">
+                                <CardContent className="pt-6">
+                                    <div className="flex items-center gap-4">
+                                        <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-primary/10 border border-primary/20">
+                                            <BarChart3 className="h-5 w-5 text-primary" />
+                                        </div>
+                                        <div>
+                                            <p className="text-2xl font-black">
+                                                {(stats.projects.reduce((sum, p) => sum + p.hours, 0) / stats.projects.length).toFixed(1)}h
+                                            </p>
+                                            <p className="text-xs text-muted-foreground font-medium uppercase tracking-widest">Avg / Project</p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </div>
+                    )}
                 </TabsContent>
 
                 <TabsContent value="languages" className="space-y-8">
@@ -518,11 +872,49 @@ function DashboardContent() {
                                         </div>
                                     ))}
                                 </div>
-                                <div className="flex items-center justify-center p-8 bg-muted/20 rounded-2xl border-2 border-dashed border-muted">
-                                    <div className="text-center space-y-2">
-                                        <TrendingUp className="h-12 w-12 text-primary mx-auto opacity-20" />
-                                        <p className="text-sm font-medium">Stack Insights coming soon</p>
-                                        <p className="text-xs text-muted-foreground max-w-xs">Detailed historical stack comparison and predictions will appear here.</p>
+                                <div className="flex flex-col items-center justify-center">
+                                    <div className="relative w-full" style={{ height: 260 }}>
+                                        <ResponsiveContainer width="100%" height={260}>
+                                            <PieChart>
+                                                <Pie
+                                                    data={stats?.languages || []}
+                                                    dataKey="value"
+                                                    nameKey="name"
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    innerRadius={65}
+                                                    outerRadius={100}
+                                                    paddingAngle={3}
+                                                    strokeWidth={0}
+                                                    animationDuration={800}
+                                                >
+                                                    {stats?.languages.map((lang, i) => (
+                                                        <Cell key={i} fill={lang.color} />
+                                                    ))}
+                                                </Pie>
+                                                <RechartsTooltip
+                                                    contentStyle={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '8px' }}
+                                                    itemStyle={{ color: '#fff' }}
+                                                    formatter={(value: number, name: string) => [`${value}%`, name]}
+                                                />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                        {/* Center label */}
+                                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                            <div className="text-center">
+                                                <p className="text-2xl font-black">{stats?.languages[0]?.value || 0}%</p>
+                                                <p className="text-[10px] text-muted-foreground font-medium uppercase tracking-widest">{stats?.languages[0]?.name || ''}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {/* Legend */}
+                                    <div className="flex flex-wrap justify-center gap-3 mt-4">
+                                        {stats?.languages.map((lang) => (
+                                            <div key={lang.name} className="flex items-center gap-1.5">
+                                                <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: lang.color }} />
+                                                <span className="text-xs text-muted-foreground font-medium">{lang.name}</span>
+                                            </div>
+                                        ))}
                                     </div>
                                 </div>
                             </div>
@@ -538,6 +930,34 @@ function DashboardContent() {
                                 <CardDescription>Your favorite coding environments.</CardDescription>
                             </CardHeader>
                             <CardContent>
+                                {/* Pie Chart */}
+                                {stats?.editors && stats.editors.length > 0 && (
+                                    <div className="flex justify-center mb-6">
+                                        <ResponsiveContainer width={160} height={160}>
+                                            <PieChart>
+                                                <Pie
+                                                    data={stats.editors}
+                                                    dataKey="value"
+                                                    nameKey="name"
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    outerRadius={70}
+                                                    strokeWidth={0}
+                                                    animationDuration={800}
+                                                >
+                                                    {stats.editors.map((editor, i) => (
+                                                        <Cell key={i} fill={editor.color} />
+                                                    ))}
+                                                </Pie>
+                                                <RechartsTooltip
+                                                    contentStyle={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '8px' }}
+                                                    itemStyle={{ color: '#fff' }}
+                                                    formatter={(value: number, name: string) => [`${value}%`, name]}
+                                                />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                )}
                                 <div className="space-y-6">
                                     {stats?.editors.map(editor => (
                                         <div key={editor.name} className="space-y-2">
@@ -563,6 +983,37 @@ function DashboardContent() {
                                 <CardDescription>Deployment and development operating systems.</CardDescription>
                             </CardHeader>
                             <CardContent>
+                                {/* Pie Chart */}
+                                {stats?.platforms && stats.platforms.length > 0 && (
+                                    <div className="flex justify-center mb-6">
+                                        <ResponsiveContainer width={160} height={160}>
+                                            <PieChart>
+                                                <Pie
+                                                    data={stats.platforms}
+                                                    dataKey="value"
+                                                    nameKey="name"
+                                                    cx="50%"
+                                                    cy="50%"
+                                                    outerRadius={70}
+                                                    strokeWidth={0}
+                                                    animationDuration={800}
+                                                >
+                                                    {stats.platforms.map((platform, i) => (
+                                                        <Cell key={i} fill={platform.color} />
+                                                    ))}
+                                                </Pie>
+                                                <RechartsTooltip
+                                                    contentStyle={{ backgroundColor: '#111', border: '1px solid #333', borderRadius: '8px' }}
+                                                    itemStyle={{ color: '#fff' }}
+                                                    formatter={(value: number, name: string) => {
+                                                        const label = name === 'win32' ? 'Windows' : name === 'darwin' ? 'macOS' : name;
+                                                        return [`${value}%`, label];
+                                                    }}
+                                                />
+                                            </PieChart>
+                                        </ResponsiveContainer>
+                                    </div>
+                                )}
                                 <div className="space-y-6">
                                     {stats?.platforms.map(platform => (
                                         <div key={platform.name} className="space-y-2">
@@ -582,6 +1033,35 @@ function DashboardContent() {
                             </CardContent>
                         </Card>
                     </div>
+
+                    {/* Devices Section */}
+                    {stats?.machines && stats.machines.length > 0 && (
+                        <Card className="shadow-sm">
+                            <CardHeader>
+                                <CardTitle>Devices</CardTitle>
+                                <CardDescription>Activity breakdown by machine. Set a custom name in VS Code settings (devmeter.deviceName).</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                    {stats.machines.map(machine => (
+                                        <div key={machine.name} className="flex items-center gap-4 p-4 rounded-xl bg-muted/20 border border-muted/40">
+                                            <div className="flex items-center justify-center h-10 w-10 rounded-xl border border-muted/50 shrink-0" style={{ backgroundColor: `${machine.color}15` }}>
+                                                <Monitor className="h-5 w-5" style={{ color: machine.color }} />
+                                            </div>
+                                            <div className="flex-1 min-w-0 space-y-2">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="font-bold text-sm truncate">{machine.name}</span>
+                                                    <Badge variant="outline" className="text-xs ml-2 shrink-0">{machine.hours}h</Badge>
+                                                </div>
+                                                <Progress value={machine.value} className="h-1.5" />
+                                                <span className="text-[10px] text-muted-foreground">{machine.value}% of total</span>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
                 </TabsContent>
                 <TabsContent value="achievements" className="space-y-8">
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
@@ -711,6 +1191,113 @@ function DashboardContent() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            <Dialog open={showUsernameDialog} onOpenChange={setShowUsernameDialog}>
+                <DialogContent className="sm:max-w-md bg-black border-white/10">
+                    <DialogHeader>
+                        <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                            <ArrowUpRight className="h-6 w-6 text-primary" />
+                        </div>
+                        <DialogTitle className="text-2xl font-bold text-center">Set your username</DialogTitle>
+                        <DialogDescription className="text-center text-muted-foreground pt-2">
+                            Choose a unique username for your public profile. Others will be able to see your coding stats at <span className="font-mono text-primary">devmeter.codepro.it/u/username</span>
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4 py-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="username" className="text-sm font-medium">Username</Label>
+                            <div className="flex items-center gap-2">
+                                <span className="text-muted-foreground text-sm">@</span>
+                                <div className="relative flex-1">
+                                    <Input
+                                        id="username"
+                                        placeholder="your-username"
+                                        value={usernameInput}
+                                        onChange={(e) => {
+                                            setUsernameInput(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ""));
+                                            setUsernameError("");
+                                        }}
+                                        className={`bg-white/5 border-white/10 ${usernameError ? "border-destructive" : usernameAvailable === true ? "border-green-500" : ""}`}
+                                        maxLength={30}
+                                    />
+                                    {checkingUsername && (
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                                        </div>
+                                    )}
+                                    {!checkingUsername && usernameAvailable === true && usernameInput.length >= 3 && (
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2 text-green-500 text-xs font-medium">
+                                            Available
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                            {usernameError && (
+                                <p className="text-xs text-destructive">{usernameError}</p>
+                            )}
+                            <p className="text-[10px] text-muted-foreground">3-30 characters, lowercase letters, numbers, hyphens and underscores.</p>
+                        </div>
+                    </div>
+                    <DialogFooter className="sm:justify-center gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => setShowUsernameDialog(false)}
+                            className="rounded-full border-white/10 hover:bg-white/5"
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            disabled={savingUsername || usernameInput.length < 3 || usernameAvailable === false || checkingUsername}
+                            className="rounded-full bg-primary text-black hover:bg-primary/90 font-bold px-8 shadow-[0_0_15px_rgba(var(--primary-rgb),0.2)]"
+                            onClick={async () => {
+                                setSavingUsername(true);
+                                setUsernameError("");
+                                try {
+                                    const res = await fetch("/api/user/username", {
+                                        method: "PUT",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ username: usernameInput }),
+                                    });
+                                    const data = await res.json();
+                                    if (!res.ok) {
+                                        setUsernameError(data.error || "Failed to save username");
+                                        return;
+                                    }
+                                    setUsername(data.username);
+                                    // Auto-enable public profile
+                                    await fetch("/api/user", {
+                                        method: "PATCH",
+                                        headers: { "Content-Type": "application/json" },
+                                        body: JSON.stringify({ publicProfile: true }),
+                                    });
+                                    setShowUsernameDialog(false);
+                                    const publicUrl = `${window.location.origin}/u/${data.username}`;
+                                    navigator.clipboard.writeText(publicUrl);
+                                    toast.success("Username set! Public link copied!", {
+                                        description: publicUrl,
+                                    });
+                                } catch {
+                                    setUsernameError("Something went wrong. Try again.");
+                                } finally {
+                                    setSavingUsername(false);
+                                }
+                            }}
+                        >
+                            {savingUsername ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Saving...
+                                </>
+                            ) : (
+                                <>
+                                    <Check className="mr-2 h-4 w-4" />
+                                    Save & Copy Link
+                                </>
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
@@ -773,5 +1360,125 @@ function StatCard({ title, value, subtitle, icon: Icon, logo, loading }: any) {
                 )}
             </div>
         </Card>
+    );
+}
+
+// --- Contribution Heatmap ---
+
+function getLevelColor(count: number): string {
+    if (count === 0) return "bg-[#1b2130] border-[#2d3548]";
+    if (count < 0.5) return "bg-primary/20 border-primary/25";
+    if (count < 1) return "bg-primary/35 border-primary/35";
+    if (count < 3) return "bg-primary/55 border-primary/45";
+    if (count < 6) return "bg-primary/80 border-primary/55";
+    return "bg-primary border-primary shadow-[0_0_6px_rgba(var(--primary-rgb),0.4)]";
+}
+
+
+function ContributionHeatmap({ data }: { data: { date: string; count: number }[] }) {
+    const today = new Date();
+    const dataMap = new Map(data.map(d => [d.date, d.count]));
+
+    // Start from the Sunday 52 weeks ago so the grid aligns properly
+    const todayDow = today.getDay(); // 0=Sun
+    const startDate = subDays(today, 364 + todayDow);
+    const allDays = eachDayOfInterval({ start: startDate, end: today });
+
+    // Build columns (weeks). Each column = 7 rows (Sun..Sat)
+    const weeks: (Date | null)[][] = [];
+    let col: (Date | null)[] = [];
+
+    allDays.forEach((day) => {
+        if (col.length === 7) {
+            weeks.push(col);
+            col = [];
+        }
+        col.push(day);
+    });
+    // Pad last column
+    while (col.length < 7) col.push(null);
+    if (col.length > 0) weeks.push(col);
+
+    // Compute month labels: find the first week where a new month appears
+    const months: { label: string; colIdx: number }[] = [];
+    let lastMonth = -1;
+    weeks.forEach((week, i) => {
+        const firstDay = week.find(d => d !== null);
+        if (firstDay && firstDay.getMonth() !== lastMonth) {
+            lastMonth = firstDay.getMonth();
+            months.push({ label: format(firstDay, "MMM"), colIdx: i });
+        }
+    });
+
+    return (
+        <div className="w-full overflow-x-auto pb-1">
+            {/* Month labels */}
+            <div className="flex mb-1.5" style={{ paddingLeft: 36 }}>
+                {weeks.map((_, i) => {
+                    const m = months.find(m => m.colIdx === i);
+                    return (
+                        <div key={i} className="flex-shrink-0" style={{ width: 14 }}>
+                            {m && (
+                                <span className="text-[10px] font-medium text-muted-foreground/70 select-none">
+                                    {m.label}
+                                </span>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+
+            <div className="flex gap-0">
+                {/* Day-of-week labels */}
+                <div className="flex flex-col flex-shrink-0" style={{ width: 32, gap: 3 }}>
+                    {["", "Mon", "", "Wed", "", "Fri", ""].map((label, i) => (
+                        <div key={i} className="flex items-center" style={{ height: 11 }}>
+                            <span className="text-[9px] font-medium text-muted-foreground/60 select-none leading-none">
+                                {label}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+
+                {/* Grid */}
+                <div className="flex" style={{ gap: 3 }}>
+                    {weeks.map((week, colIdx) => (
+                        <div key={colIdx} className="flex flex-col" style={{ gap: 3 }}>
+                            {week.map((day, rowIdx) => {
+                                if (!day) {
+                                    return <div key={rowIdx} style={{ width: 11, height: 11 }} />;
+                                }
+                                const dateStr = format(day, "yyyy-MM-dd");
+                                const count = dataMap.get(dateStr) || 0;
+
+                                return (
+                                    <TooltipProvider key={rowIdx} delayDuration={0}>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <div
+                                                    className={`rounded-[2px] border cursor-pointer hover:ring-1 hover:ring-primary/60 hover:scale-[1.3] transition-transform ${getLevelColor(count)}`}
+                                                    style={{ width: 11, height: 11 }}
+                                                />
+                                            </TooltipTrigger>
+                                            <TooltipContent
+                                                side="top"
+                                                className="bg-[#0d1117] border-[#30363d] rounded-md px-2.5 py-1.5 text-center"
+                                            >
+                                                <p className="text-[11px] font-semibold text-white">
+                                                    {count > 0 ? `${count.toFixed(1)} hours` : "No activity"}
+                                                </p>
+                                                <p className="text-[10px] text-[#8b949e]">
+                                                    {format(day, "EEEE, MMM d, yyyy")}
+                                                </p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                );
+                            })}
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
     );
 }
