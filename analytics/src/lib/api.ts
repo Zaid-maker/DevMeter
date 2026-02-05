@@ -14,6 +14,14 @@ export interface StatsResponse {
         growth: number;
         isSystemOnline: boolean;
         systemLoad: string;
+        uptime: string;
+        avgResponseTime: string;
+        errorRate: number;
+        peakTrafficTime: string;
+        newUsersThisWeek: number;
+        totalHeartbeats: number;
+        retentionRate: number;
+        topEndpoint: string;
     };
 }
 

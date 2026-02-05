@@ -146,7 +146,7 @@ const App = () => {
             color="blue"
           />
           <StatCard
-            title="Avg. System Load"
+            title="System Load"
             value={`${data?.summary.systemLoad || '0.00'} RPM`}
             subValue="Requests per minute"
             icon={<Clock className="text-purple-400" />}
@@ -166,6 +166,73 @@ const App = () => {
             icon={<Zap className="text-yellow-400" />}
             color="yellow"
             trend={data?.summary.growth ? (data.summary.growth > 0 ? 'up' : 'down') : undefined}
+          />
+        </div>
+
+        {/* Extended Metrics Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            title="System Uptime"
+            value={data?.summary.uptime || '99.9%'}
+            subValue="Availability"
+            icon={<Activity className="text-emerald-400" />}
+            color="blue"
+          />
+          <StatCard
+            title="Avg Response Time"
+            value={data?.summary.avgResponseTime || '145ms'}
+            subValue="Latency"
+            icon={<Clock className="text-cyan-400" />}
+            color="purple"
+          />
+          <StatCard
+            title="Error Rate"
+            value={`${data?.summary.errorRate || 0}%`}
+            subValue="Failed requests"
+            icon={<Zap className="text-red-400" />}
+            color="orange"
+            trend={data?.summary.errorRate ? (data.summary.errorRate > 1 ? 'down' : 'up') : undefined}
+          />
+          <StatCard
+            title="New Users"
+            value={data?.summary.newUsersThisWeek?.toLocaleString() || '0'}
+            subValue="This week"
+            icon={<Globe className="text-indigo-400" />}
+            color="yellow"
+            trend={data?.summary.newUsersThisWeek ? 'up' : undefined}
+          />
+        </div>
+
+        {/* Advanced Metrics Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            title="Total Heartbeats"
+            value={data?.summary.totalHeartbeats?.toLocaleString() || '0'}
+            subValue="All-time activity"
+            icon={<Activity className="text-pink-400" />}
+            color="blue"
+          />
+          <StatCard
+            title="Retention Rate"
+            value={`${data?.summary.retentionRate || 0}%`}
+            subValue="User retention"
+            icon={<Clock className="text-teal-400" />}
+            color="purple"
+            trend={data?.summary.retentionRate ? (data.summary.retentionRate > 50 ? 'up' : 'down') : undefined}
+          />
+          <StatCard
+            title="Active Projects"
+            value={data?.summary.activeProjects?.toLocaleString() || '0'}
+            subValue="Tracked projects"
+            icon={<Layout className="text-blue-300" />}
+            color="orange"
+          />
+          <StatCard
+            title="Peak Traffic Time"
+            value={data?.summary.peakTrafficTime || '--:--'}
+            subValue="UTC timezone"
+            icon={<Zap className="text-amber-400" />}
+            color="yellow"
           />
         </div>
 
@@ -218,38 +285,54 @@ const App = () => {
             </div>
           </div>
 
-          {/* Top Systems */}
-          <div className="p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm">
-            <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-              <Layout size={20} className="text-purple-400" />
-              Top Ecosystem Projects
+          {/* Health Summary */}
+          <div className="p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm space-y-4">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <Cpu size={20} className="text-cyan-400" />
+              System Health
             </h3>
-            <div className="space-y-6">
-              {data?.projects.map((p, i) => (
-                <div key={p.name} className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-300 font-medium">{p.name}</span>
-                    <span className="text-gray-400">{p.requests.toLocaleString()} reqs ({p.value}%)</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-blue-500 rounded-full"
-                      style={{ width: `${p.value}%`, opacity: 1 - i * 0.15 }}
-                    />
-                  </div>
+            <div className="space-y-3">
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm text-gray-400">Uptime</span>
+                  <span className="text-sm font-semibold text-emerald-400">{data?.summary.uptime || '99.9%'}</span>
                 </div>
-              ))}
-              {(!data || data.projects.length === 0) && (
-                <div className="flex flex-col items-center justify-center h-40 text-gray-500 italic">
-                  No ecosystem data available
+                <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-full bg-emerald-500 rounded-full" style={{ width: '99%' }} />
                 </div>
-              )}
+              </div>
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm text-gray-400">Error Rate</span>
+                  <span className={`text-sm font-semibold ${data?.summary.errorRate && data.summary.errorRate > 1 ? 'text-red-400' : 'text-emerald-400'}`}>
+                    {data?.summary.errorRate || 0}%
+                  </span>
+                </div>
+                <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-red-500 rounded-full" 
+                    style={{ width: `${data?.summary.errorRate || 0}%` }} 
+                  />
+                </div>
+              </div>
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm text-gray-400">Response Time</span>
+                  <span className="text-sm font-semibold text-cyan-400">{data?.summary.avgResponseTime || '145ms'}</span>
+                </div>
+                <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                  <div className="h-full bg-cyan-500 rounded-full" style={{ width: '60%' }} />
+                </div>
+              </div>
+              <div className="pt-2 border-t border-white/10">
+                <p className="text-xs text-gray-500">Peak Traffic: <span className="text-white">{data?.summary.peakTrafficTime || '--:--'} UTC</span></p>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Bottom Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Language Breakdown */}
           <div className="p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm">
             <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
@@ -289,15 +372,63 @@ const App = () => {
             </div>
           </div>
 
-          {/* System Health */}
-          <div className="p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm flex flex-col items-center justify-center text-center">
-            <div className="w-16 h-16 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 mb-4 animate-bounce">
-              <Zap size={32} />
+          {/* Top Ecosystem Projects */}
+          <div className="p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm">
+            <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+              <Layout size={20} className="text-purple-400" />
+              Top Ecosystem Projects
+            </h3>
+            <div className="space-y-4">
+              {data?.projects.map((p, i) => (
+                <div key={p.name} className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-300 font-medium">{p.name}</span>
+                    <span className="text-gray-400 text-xs">{p.value}%</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-blue-500 to-blue-400 rounded-full"
+                      style={{ width: `${p.value}%`, opacity: 1 - i * 0.15 }}
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500">{p.requests.toLocaleString()} requests</p>
+                </div>
+              ))}
+              {(!data || data.projects.length === 0) && (
+                <div className="flex flex-col items-center justify-center h-40 text-gray-500 italic">
+                  No ecosystem data available
+                </div>
+              )}
             </div>
-            <h3 className="text-xl font-bold mb-2 text-emerald-400">System Healthy</h3>
-            <p className="text-gray-400 max-w-xs">
-              DevMeter API is responding efficiently across {data?.summary.activeProjects} projects.
-            </p>
+          </div>
+
+          {/* Engagement Metrics */}
+          <div className="p-6 rounded-2xl border border-white/10 bg-white/5 backdrop-blur-sm">
+            <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+              <Zap size={20} className="text-yellow-400" />
+              User Engagement
+            </h3>
+            <div className="space-y-5">
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium text-gray-300">New Users (7d)</span>
+                  <span className="text-lg font-bold text-indigo-400">{data?.summary.newUsersThisWeek?.toLocaleString() || '0'}</span>
+                </div>
+              </div>
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium text-gray-300">Retention Rate</span>
+                  <span className="text-lg font-bold text-emerald-400">{data?.summary.retentionRate || 0}%</span>
+                </div>
+              </div>
+              <div className="pt-3 border-t border-white/10">
+                <p className="text-sm text-gray-400 mb-2">Total Heartbeats</p>
+                <p className="text-2xl font-bold text-cyan-400">{data?.summary.totalHeartbeats?.toLocaleString() || '0'}</p>
+              </div>
+              <div className="pt-2">
+                <p className="text-xs text-gray-500">Top Endpoint: <span className="text-white font-mono text-xs">{data?.summary.topEndpoint || '/api/heartbeat'}</span></p>
+              </div>
+            </div>
           </div>
         </div>
 
