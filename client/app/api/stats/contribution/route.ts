@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { redis } from "@/lib/redis";
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { startOfDay, subDays, format } from "date-fns";
@@ -53,8 +54,13 @@ export async function GET(req: NextRequest) {
     const timezone = userItem.timezone || "UTC";
     const now = new Date();
     const startDate = subDays(startOfDay(now), 365);
+    const cacheKey = `contributions:${userId}`;
 
     try {
+        // Try cache first
+        const cached = await redis.get(cacheKey);
+        if (cached) return NextResponse.json(cached);
+
         const heartbeats = await prisma.heartbeat.findMany({
             where: {
                 userId,
@@ -86,7 +92,7 @@ export async function GET(req: NextRequest) {
 
         const totalHours = contributionData.reduce((acc, curr) => acc + curr.count, 0);
 
-        return NextResponse.json({
+        const result = {
             contributions: contributionData,
             streaks: {
                 current: currentStreak,
@@ -97,8 +103,12 @@ export async function GET(req: NextRequest) {
                 daysActive: activeDays.size,
                 averagePerDay: activeDays.size > 0 ? parseFloat((totalHours / activeDays.size).toFixed(1)) : 0
             }
-        });
+        };
 
+        // Cache for 15 minutes (900 seconds)
+        await redis.set(cacheKey, result, { ex: 900 });
+
+        return NextResponse.json(result);
     } catch (error) {
         console.error("Contribution API error:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

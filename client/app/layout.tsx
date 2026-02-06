@@ -16,6 +16,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "DevMeter - Automatic Coding Time Tracker for Developers",
   description: "Track your coding time automatically with DevMeter. Analyze your development habits, boost productivity, and understand your coding patterns with our VS Code extension.",
+  icons: {
+    icon: '/icon.png'
+  },
   keywords: ["DevMeter", "coding time tracker", "developer productivity", "VS Code extension", "time tracking", "code metrics", "developer analytics"],
   authors: [{ name: "DevMeter Team" }],
   metadataBase: new URL("https://devmeter-v2.zaidcode.me"),

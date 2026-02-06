@@ -1,5 +1,6 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { redis } from "@/lib/redis";
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 import { calculateUserStats } from "@/lib/stats-service";
@@ -88,9 +89,20 @@ export async function GET(req: NextRequest) {
     }
 
     const timezone = user.timezone || "UTC";
+    const cacheKey = `stats:${userId}:${range || "default"}`;
 
     try {
+        // Try to get from cache first
+        const cacheData = await redis.get(cacheKey);
+        if (cacheData) {
+            return NextResponse.json(cacheData, { headers: getCorsHeaders(req.headers.get("origin")) });
+        }
+
         const stats = await calculateUserStats(userId, range || undefined, timezone);
+
+        // Cache the results for 5 minutes
+        await redis.set(cacheKey, stats, { ex: 300 });
+
         return NextResponse.json(stats, { headers: getCorsHeaders(req.headers.get("origin")) });
     } catch (error) {
         console.error("Stats API error:", error);
