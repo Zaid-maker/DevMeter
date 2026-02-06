@@ -7,22 +7,23 @@ datasource db {
 }
 
 model User {
-  id            String            @id @default(cuid())
-  email         String            @unique
-  name          String?
-  emailVerified Boolean           @default(false)
-  image         String?
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-  timezone      String?           @default("UTC")
-  accounts      Account[]
-  apiKeys       ApiKey[]
-  heartbeats    Heartbeat[]
-  sessions      Session[]
-  xp            Int               @default(0)
-  level         Int               @default(1)
-  achievements  UserAchievement[]
-  deletedAt     DateTime?
+  id             String            @id @default(cuid())
+  email          String            @unique
+  name           String?
+  emailVerified  Boolean           @default(false)
+  image          String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  timezone       String?           @default("UTC")
+  accounts       Account[]
+  apiKeys        ApiKey[]
+  heartbeats     Heartbeat[]
+  sessions       Session[]
+  xp             Int               @default(0)
+  level          Int               @default(1)
+  achievements   UserAchievement[]
+  deletedAt      DateTime?
+  spotifyEnabled Boolean           @default(false)
 
   @@index([deletedAt])
 }
@@ -111,10 +112,26 @@ model Heartbeat {
   timestamp DateTime
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  trackId   String?
+  track     Track?   @relation(fields: [trackId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([project])
   @@index([timestamp])
   @@index([editor])
   @@index([platform])
+}
+
+model Track {
+  id         String      @id @default(cuid())
+  spotifyId  String      @unique
+  name       String
+  artist     String
+  album      String?
+  durationMs Int?
+  previewUrl String?
+  uri        String?
+  imageUrl   String?
+  heartbeats Heartbeat[]
+  createdAt  DateTime    @default(now())
 }

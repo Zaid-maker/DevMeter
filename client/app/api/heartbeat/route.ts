@@ -33,6 +33,25 @@ export async function POST(req: NextRequest) {
         // Record the heartbeat
         console.log(`Recording heartbeat for user ${apiKey.userId}, project: ${project}, file: ${file}`);
 
+        // Handle Spotify Music Tracking
+        let trackId: string | undefined = undefined;
+        try {
+            const { getCurrentlyPlaying } = await import("@/lib/spotify");
+            const currentTrack = await getCurrentlyPlaying(apiKey.userId);
+
+            if (currentTrack) {
+                const track = await prisma.track.upsert({
+                    where: { spotifyId: currentTrack.spotifyId },
+                    update: {}, // No need to update metadata every time
+                    create: currentTrack
+                });
+                trackId = track.id;
+            }
+        } catch (spotifyError) {
+            console.error("Spotify tracking error:", spotifyError);
+            // Non-blocking: continue recording heartbeat even if Spotify fails
+        }
+
         const heartbeat = await prisma.heartbeat.create({
             data: {
                 userId: apiKey.userId,
@@ -44,6 +63,7 @@ export async function POST(req: NextRequest) {
                 editor: editor || null,
                 platform: platform || null,
                 timestamp: new Date(timestamp || Date.now()),
+                trackId: trackId || null
             }
         });
 

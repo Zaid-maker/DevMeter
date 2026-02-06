@@ -45,6 +45,16 @@ export interface Stats {
     };
     editors: { name: string; value: number; color: string; icon: string }[];
     platforms: { name: string; value: number; color: string; icon: string }[];
+    music: {
+        spotifyLinked: boolean;
+        topTracks: {
+            id: string;
+            name: string;
+            artist: string;
+            imageUrl: string | null;
+            count: number;
+        }[];
+    };
 }
 
 /**
@@ -331,6 +341,39 @@ export async function calculateUserStats(userId: string, range?: "today" | "all"
         unlockedAt: userUnlockedMap.get(a.slug)
     }));
 
+    // 9. Music Stats
+    const spotifyAccount = await prisma.account.findFirst({
+        where: { userId, providerId: 'spotify' }
+    });
+
+    const topTracksRaw = await prisma.heartbeat.groupBy({
+        by: ['trackId'],
+        where: {
+            userId,
+            trackId: { not: null },
+            timestamp: { gte: currentWeekStartLocal }
+        },
+        _count: { id: true },
+        orderBy: { _count: { id: 'desc' } },
+        take: 5
+    });
+
+    const trackIds = topTracksRaw.map(t => t.trackId as string);
+    const tracks = await prisma.track.findMany({
+        where: { id: { in: trackIds } }
+    });
+
+    const topTracks = topTracksRaw.map(tr => {
+        const track = tracks.find(t => t.id === tr.trackId);
+        return {
+            id: track?.id || '',
+            name: track?.name || 'Unknown',
+            artist: track?.artist || 'Unknown',
+            imageUrl: track?.imageUrl || null,
+            count: tr._count.id
+        };
+    }).filter(t => t.id !== '');
+
     return {
         activityByDay,
         languages,
@@ -338,6 +381,10 @@ export async function calculateUserStats(userId: string, range?: "today" | "all"
         recentActivity,
         editors,
         platforms,
+        music: {
+            spotifyLinked: !!spotifyAccount,
+            topTracks
+        },
         summary: {
             totalTime: `${totalHoursVal}h ${remainingMinutes}m`,
             totalTime24h: `${totalHours24h}h ${remainingMinutes24h}m`,
