@@ -119,8 +119,19 @@ export async function POST(req: NextRequest) {
                 });
                 if (languagesCount.length >= 3) await checkAndUnlock('languages-3');
 
+                // --- Cache Invalidation ---
+                // Invalidate user stats and contribution caches to ensure the dashboard reflects fresh data
+                const ranges = ["today", "all", "yesterday", "default"];
+                const keysToDelete = [
+                    `contributions:${apiKey.userId}`,
+                    ...ranges.map(r => `stats:${apiKey.userId}:${r}`)
+                ];
+
+                await redis.del(...keysToDelete);
+                console.log(`Cache invalidated for user ${apiKey.userId}`);
+
             } catch (err) {
-                console.error("Background gamification error:", err);
+                console.error("Background gamification/cache error:", err);
             }
         })();
 
