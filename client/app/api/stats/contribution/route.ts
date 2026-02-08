@@ -59,7 +59,11 @@ export async function GET(req: NextRequest) {
     try {
         // Try cache first
         const cached = await redis.get(cacheKey);
-        if (cached) return NextResponse.json(cached);
+        if (cached) {
+            return NextResponse.json(cached, {
+                headers: { "X-Cache": "HIT" }
+            });
+        }
 
         const heartbeats = await prisma.heartbeat.findMany({
             where: {
@@ -108,7 +112,9 @@ export async function GET(req: NextRequest) {
         // Cache for 15 minutes (900 seconds)
         await redis.set(cacheKey, result, { ex: 900 });
 
-        return NextResponse.json(result);
+        return NextResponse.json(result, {
+            headers: { "X-Cache": "MISS" }
+        });
     } catch (error) {
         console.error("Contribution API error:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });

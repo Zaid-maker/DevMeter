@@ -94,8 +94,12 @@ export async function GET(req: NextRequest) {
     try {
         // Try to get from cache first
         const cacheData = await redis.get(cacheKey);
+        const headers = getCorsHeaders(req.headers.get("origin"));
+
         if (cacheData) {
-            return NextResponse.json(cacheData, { headers: getCorsHeaders(req.headers.get("origin")) });
+            return NextResponse.json(cacheData, {
+                headers: { ...headers, "X-Cache": "HIT" }
+            });
         }
 
         const stats = await calculateUserStats(userId, range || undefined, timezone);
@@ -103,7 +107,9 @@ export async function GET(req: NextRequest) {
         // Cache the results for 5 minutes
         await redis.set(cacheKey, stats, { ex: 300 });
 
-        return NextResponse.json(stats, { headers: getCorsHeaders(req.headers.get("origin")) });
+        return NextResponse.json(stats, {
+            headers: { ...headers, "X-Cache": "MISS" }
+        });
     } catch (error) {
         console.error("Stats API error:", error);
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500, headers: getCorsHeaders(req.headers.get("origin")) });
