@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { startOfDay, subDays, format } from "date-fns";
 import { getLanguageColor } from "@/lib/stats-service";
+import { calculateDuration } from "@/lib/stats-utils";
 
 const ADMIN_SECRET = process.env.DEV_ADMIN_SECRET;
 
@@ -72,34 +73,47 @@ export async function GET(req: NextRequest) {
             return { name: dateStr, total: count };
         });
 
-        // 2. Top Projects by Request Volume
-        const projectCounts = new Map<string, number>();
+        // 2. Top Projects by Coding Hours
+        const projectGroups = new Map<string, typeof heartbeats>();
         heartbeats.forEach(h => {
-            projectCounts.set(h.project, (projectCounts.get(h.project) || 0) + 1);
+            if (!projectGroups.has(h.project)) projectGroups.set(h.project, []);
+            projectGroups.get(h.project)!.push(h);
         });
 
-        const totalHeartbeats = heartbeats.length;
-        const topProjects = Array.from(projectCounts.entries())
-            .map(([name, count]) => ({
-                name,
-                value: totalHeartbeats === 0 ? 0 : Math.round((count / totalHeartbeats) * 100),
-                requests: count
+        const projectDurations = Array.from(projectGroups.entries()).map(([name, hList]) => ({
+            name,
+            hours: calculateDuration(hList),
+            requests: hList.length
+        }));
+
+        const totalSystemHours = projectDurations.reduce((acc, p) => acc + p.hours, 0);
+
+        const topProjects = projectDurations
+            .map(pd => ({
+                name: pd.name,
+                value: totalSystemHours > 0 ? Math.round((pd.hours / totalSystemHours) * 100) : 0,
+                hours: parseFloat(pd.hours.toFixed(1)),
+                requests: pd.requests
             }))
-            .sort((a, b) => b.requests - a.requests)
+            .sort((a, b) => b.hours - a.hours)
             .slice(0, 5);
 
-        // 3. Language Distribution (System Wide)
-        const langCounts = new Map<string, number>();
+        // 3. Language Distribution (System Wide) — by coding hours
+        const langGroups = new Map<string, typeof heartbeats>();
         heartbeats.forEach(h => {
-            langCounts.set(h.language, (langCounts.get(h.language) || 0) + 1);
+            if (!langGroups.has(h.language)) langGroups.set(h.language, []);
+            langGroups.get(h.language)!.push(h);
         });
 
-        const languages = Array.from(langCounts.entries())
-            .map(([name, count]) => ({
-                name,
-                value: totalHeartbeats === 0 ? 0 : Math.round((count / totalHeartbeats) * 100),
-                color: getLanguageColor(name)
-            }))
+        const languages = Array.from(langGroups.entries())
+            .map(([name, hList]) => {
+                const hours = calculateDuration(hList);
+                return {
+                    name,
+                    value: totalSystemHours > 0 ? Math.round((hours / totalSystemHours) * 100) : 0,
+                    color: getLanguageColor(name)
+                };
+            })
             .sort((a, b) => b.value - a.value)
             .slice(0, 5);
 
@@ -191,7 +205,7 @@ export async function GET(req: NextRequest) {
                 totalRequests,
                 requests24h,
                 activeUsers: uniqueUsers,
-                activeProjects: projectCounts.size,
+                activeProjects: projectGroups.size,
                 growth,
                 isSystemOnline: true,
                 systemLoad: (requests24h / 1440).toFixed(2), // Requests per minute avg
@@ -212,4 +226,3 @@ export async function GET(req: NextRequest) {
         return NextResponse.json({ error: "Internal Server Error" }, { status: 500, headers: getCorsHeaders(origin) });
     }
 }
-
