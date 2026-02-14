@@ -88,9 +88,19 @@ export async function POST(req: NextRequest) {
                     if (unlockedSlugs.has(slug)) return;
                     const achievement = await prisma.achievement.findUnique({ where: { slug } });
                     if (!achievement) return;
-                    await prisma.userAchievement.create({
-                        data: { userId: apiKey.userId, achievementId: achievement.id }
-                    });
+
+                    try {
+                        await prisma.userAchievement.create({
+                            data: { userId: apiKey.userId, achievementId: achievement.id }
+                        });
+                    } catch (e: any) {
+                        // P2002 = unique constraint violation — another concurrent heartbeat already unlocked this
+                        if (e?.code === 'P2002') {
+                            console.log(`Duplicate achievement ignored: ${slug} for user ${apiKey.userId}`);
+                            return;
+                        }
+                        throw e; // Re-throw unexpected errors
+                    }
 
                     if (achievement.xpReward > 0) {
                         const afterXPUser = await prisma.user.update({
