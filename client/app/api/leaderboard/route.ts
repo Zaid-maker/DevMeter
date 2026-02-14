@@ -55,17 +55,19 @@ export async function GET(req: NextRequest) {
         const leaderboard = users.map(user => {
             const duration = calculateDuration(user.heartbeats);
 
-            // Find top language
-            const langCounts = new Map<string, number>();
+            // Find top language by coding duration (aligned with dashboard calculation)
+            const langGroups = new Map<string, typeof user.heartbeats>();
             user.heartbeats.forEach(h => {
-                langCounts.set(h.language, (langCounts.get(h.language) || 0) + 1);
+                if (!langGroups.has(h.language)) langGroups.set(h.language, []);
+                langGroups.get(h.language)!.push(h);
             });
 
             let topLanguage = "None";
-            let maxCount = 0;
-            langCounts.forEach((count, lang) => {
-                if (count > maxCount) {
-                    maxCount = count;
+            let maxDuration = 0;
+            langGroups.forEach((heartbeats, lang) => {
+                const langDuration = calculateDuration(heartbeats);
+                if (langDuration > maxDuration) {
+                    maxDuration = langDuration;
                     topLanguage = lang;
                 }
             });
