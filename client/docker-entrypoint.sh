@@ -2,10 +2,13 @@
 set -e
 
 echo "🔄 Running database migrations..."
-npx prisma migrate deploy 2>/dev/null || echo "⚠️  No migrations to apply or migration failed (database may already be up to date)"
+if ! npx prisma migrate deploy; then
+  echo "❌ Migration failed"
+  exit 1
+fi
 
 echo "🌱 Seeding achievements..."
-node -e "
+if ! node -e "
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
@@ -18,13 +21,22 @@ const achievements = [
 ];
 
 (async () => {
-  for (const a of achievements) {
-    await prisma.achievement.upsert({ where: { slug: a.slug }, update: a, create: a });
+  try {
+    for (const a of achievements) {
+      await prisma.achievement.upsert({ where: { slug: a.slug }, update: a, create: a });
+    }
+    console.log('✅ Achievements seeded');
+  } catch (e) {
+    console.error('❌ Seed error:', e);
+    process.exit(1);
+  } finally {
+    await prisma.\$disconnect();
   }
-  console.log('✅ Achievements seeded');
-  await prisma.\$disconnect();
-})().catch(e => { console.error('Seed error:', e); });
-" 2>/dev/null || echo "⚠️  Achievement seeding skipped"
+})();
+"; then
+  echo "❌ Achievement seeding failed"
+  exit 1
+fi
 
 echo "🚀 Starting DevMeter..."
 exec "$@"

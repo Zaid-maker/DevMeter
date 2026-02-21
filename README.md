@@ -509,6 +509,7 @@ cp client/.env.example client/.env
 #    - Set BETTER_AUTH_SECRET to a random string
 #    - Set RESEND_API_KEY to your Resend key
 #    - Set EMAIL_FROM to your verified sender address
+#    - (Optional) Override POSTGRES_USER, POSTGRES_PASSWORD, etc.
 
 # 4. Launch the full stack
 docker compose up -d
@@ -516,7 +517,11 @@ docker compose up -d
 # 5. Visit http://localhost:3000
 ```
 
-### Services Overview
+> [!WARNING]
+> By default, the database and Redis ports are NOT exposed to the host for security. The app communicates with them internally within the Docker network. If you need to access the database externally, you must add `ports` back to the `postgres` service in `docker-compose.yml`.
+
+> [!IMPORTANT]
+> Change the default `POSTGRES_PASSWORD` and `DEV_ADMIN_SECRET` in your `.env` file before deploying to a public server.
 
 | Service | Port | Description |
 |---------|------|-------------|
