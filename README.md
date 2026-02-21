@@ -29,6 +29,7 @@
 - [Technology Stack](#-technology-stack)
 - [Configuration](#-configuration)
 - [API Documentation](#-api-documentation)
+- [Self-Hosting with Docker](#-self-hosting-with-docker)
 - [Development](#-development)
 - [Contributing](#-contributing)
 - [Roadmap](#-roadmap)
@@ -482,6 +483,66 @@ GET    /api/leaderboard/user/:id   # Get user rank
 ```
 
 See [API Documentation](https://devmeter-v2.zaidcode.me/docs) for detailed endpoint specs.
+
+---
+
+## 🐳 Self-Hosting with Docker
+
+Deploy DevMeter on your own server or homelab with a single command. The Docker Compose stack includes everything you need: the app, PostgreSQL, Redis, and an Upstash-compatible REST proxy.
+
+### Prerequisites
+
+- [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/)
+- A [Resend](https://resend.com) API key (free tier) for email OTP login
+
+### Quick Start
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/Zaid-maker/DevMeter.git
+cd DevMeter
+
+# 2. Create your environment file
+cp client/.env.example client/.env
+
+# 3. Edit client/.env with your settings
+#    - Set BETTER_AUTH_SECRET to a random string
+#    - Set RESEND_API_KEY to your Resend key
+#    - Set EMAIL_FROM to your verified sender address
+
+# 4. Launch the full stack
+docker compose up -d
+
+# 5. Visit http://localhost:3000
+```
+
+### Services Overview
+
+| Service | Port | Description |
+|---------|------|-------------|
+| **devmeter** | `3000` | Next.js web app & API |
+| **postgres** | `5432` | PostgreSQL 16 database |
+| **redis** | `6379` | Redis 7 cache |
+| **redis-http** | `8079` | Upstash REST API proxy |
+
+### Data Persistence
+
+All data is stored in named Docker volumes:
+- `postgres_data` — your database
+- `redis_data` — cache data
+
+To back up your database:
+
+```bash
+docker exec devmeter-postgres pg_dump -U devmeter devmeter > backup.sql
+```
+
+### Updating
+
+```bash
+git pull
+docker compose up -d --build
+```
 
 ---
 

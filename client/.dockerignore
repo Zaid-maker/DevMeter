@@ -1,0 +1,9 @@
+node_modules
+.next
+.git
+.gitignore
+*.md
+.env
+.env.local
+prisma/dev.db
+tsconfig.tsbuildinfo
