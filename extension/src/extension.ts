@@ -5,7 +5,6 @@
 // FINAL TEST: Verifying Mergify auto-merge loop v0.2.x
 import * as vscode from 'vscode';
 import axios from 'axios';
-import * as path from 'path';
 import * as os from 'os';
 
 let statusBarItem: vscode.StatusBarItem;

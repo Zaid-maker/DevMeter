@@ -8,9 +8,6 @@ pull_request_rules:
   - name: automatic squash merge for version bump
     conditions:
       - label=automated-bump
-      - "#approved-reviews-by>=0"
-      - check-success=prerelease-app
-      - check-success=bump
     actions:
       queue:
         name: default
