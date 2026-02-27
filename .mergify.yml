@@ -3,12 +3,12 @@ pull_request_rules:
     conditions:
       - label=automated-bump
       - "#approved-reviews-by>=0"
-      - check-success=prerelease-app # Matches your workflow name
-      - check-success=bump # Matches extension auto-bump job
+      - check-success=prerelease-app
+      - check-success=bump
     actions:
-      - queue:
-          method: squash
-          name: default
-      - merge:
-          method: squash
-      - delete_head_branch: {}
+      queue:
+        method: squash
+        name: default
+      merge:
+        method: squash
+      delete_head_branch: {}
