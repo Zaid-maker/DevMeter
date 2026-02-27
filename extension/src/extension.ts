@@ -60,8 +60,13 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('devmeter.syncNow', async () => {
         log('Manual sync triggered');
         statusBarItem.text = '$(sync~spin) DevMeter: Syncing…';
-        await updateStatusBar();
-        vscode.window.showInformationMessage('DevMeter: Sync complete.');
+        try {
+            await updateStatusBar();
+            vscode.window.showInformationMessage('DevMeter: Sync complete.');
+        } catch (error) {
+            log(`Manual sync failed: ${error instanceof Error ? error.message : String(error)}`);
+            vscode.window.showErrorMessage('DevMeter: Sync failed. Check logs for details.');
+        }
     }));
 
     // Command to reveal the output channel for debugging
