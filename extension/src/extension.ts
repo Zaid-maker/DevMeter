@@ -56,12 +56,27 @@ export function activate(context: vscode.ExtensionContext) {
         openInBrowser('profile');
     }));
 
+    // Command to manually sync / refresh status
+    context.subscriptions.push(vscode.commands.registerCommand('devmeter.syncNow', async () => {
+        log('Manual sync triggered');
+        statusBarItem.text = '$(sync~spin) DevMeter: Syncing…';
+        await updateStatusBar();
+        vscode.window.showInformationMessage('DevMeter: Sync complete.');
+    }));
+
+    // Command to reveal the output channel for debugging
+    context.subscriptions.push(vscode.commands.registerCommand('devmeter.showLogs', () => {
+        outputChannel.show(true);
+    }));
+
     // Command to show Menu
     context.subscriptions.push(vscode.commands.registerCommand('devmeter.showMenu', async () => {
         const items = [
             { label: "$(layout) Open Private Dashboard", description: "View your personal stats", command: 'devmeter.dashboard' },
             { label: "$(person) View Public Profile", description: "View your shareable profile", command: 'devmeter.profile' },
             { label: "$(key) Update API Key", description: "Change your authentication key", command: 'devmeter.apiKey' },
+            { label: "$(sync) Sync Now", description: "Manually refresh your stats", command: 'devmeter.syncNow' },
+            { label: "$(output) Show Logs", description: "Open the DevMeter output channel", command: 'devmeter.showLogs' },
             { label: "$(settings) Extension Settings", description: "Configure visibility options", command: 'workbench.action.openSettings', args: '@ext:DevMitrza.devmeter' }
         ];
 
@@ -144,6 +159,7 @@ async function updateStatusBar() {
         }
 
         statusBarItem.text = statusText;
+        statusBarItem.backgroundColor = undefined;
         statusBarItem.tooltip = new vscode.MarkdownString(
             `### DevMeter Stats Today\n\n` +
             `**Time:** ${totalTime}\n\n` +
@@ -163,7 +179,9 @@ async function updateStatusBar() {
             statusBarItem.text = '$(key) DevMeter: Invalid API Key';
             statusBarItem.backgroundColor = undefined;
         } else {
-            statusBarItem.backgroundColor = undefined;
+            statusBarItem.text = '$(warning) DevMeter: Offline';
+            statusBarItem.tooltip = `DevMeter could not reach the server.\n\nError: ${error.message}\n\nUse "Sync Now" to retry or "Show Logs" for details.`;
+            statusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
         }
     }
 }
