@@ -1,6 +1,7 @@
 // DevMeter Extension - Automated coding time tracker
 // Triggering pre-release build v1.3.10 compatible format
 // Revised versioning scheme: Even minor = Stable, Odd minor = Pre-release
+// Triggering auto-bump verification v0.2.0 scheme
 import * as vscode from 'vscode';
 import axios from 'axios';
 import * as path from 'path';
