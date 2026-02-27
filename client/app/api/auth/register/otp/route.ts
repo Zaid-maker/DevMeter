@@ -71,7 +71,8 @@ export async function POST(req: Request) {
         });
 
         // 5. Send Email
-        const emailFrom = process.env.EMAIL_FROM || "onboarding@resend.dev";
+        const emailFrom = process.env.EMAIL_FROM;
+        if (!emailFrom) throw new Error("EMAIL_FROM is not configured");
 
         if (resend) {
             const { error } = await resend.emails.send({

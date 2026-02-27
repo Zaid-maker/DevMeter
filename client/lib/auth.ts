@@ -36,7 +36,7 @@ export const auth = betterAuth({
     },
     plugins: [
         emailOTP({
-            sendVerificationOnSignUp: true,
+            sendVerificationOnSignUp: false,
             async sendVerificationOTP({ email, otp, type }, request) {
                 if (!resend) {
                     console.warn("Resend client not initialized. Skipping OTP email.");
@@ -54,8 +54,9 @@ export const auth = betterAuth({
                     message = "use the code below to reset your password.";
                 }
 
+                if (!emailFrom) throw new Error("EMAIL_FROM is not configured");
                 const { error } = await resend.emails.send({
-                    from: emailFrom || "onboarding@resend.dev",
+                    from: emailFrom,
                     to: email,
                     subject: subject,
                     html: `
@@ -109,8 +110,9 @@ export const auth = betterAuth({
                 console.warn("Resend client not initialized. Skipping reset email.");
                 return;
             }
+            if (!emailFrom) throw new Error("EMAIL_FROM is not configured");
             const { error } = await resend.emails.send({
-                from: emailFrom || "onboarding@resend.dev",
+                from: emailFrom,
                 to: user.email,
                 subject: "Reset your password",
                 html: `
@@ -160,8 +162,9 @@ export const auth = betterAuth({
                 console.warn("Resend client not initialized. Skipping verification email.");
                 return;
             }
+            if (!emailFrom) throw new Error("EMAIL_FROM is not configured");
             const { error } = await resend.emails.send({
-                from: emailFrom || "onboarding@resend.dev",
+                from: emailFrom,
                 to: user.email,
                 subject: "Verify your email",
                 html: `

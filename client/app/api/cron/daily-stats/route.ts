@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
                 }
 
                 const { error } = await resend.emails.send({
-                    from: process.env.EMAIL_FROM || "onboarding@resend.dev",
+                    from: process.env.EMAIL_FROM!,
                     to: user.email,
                     subject: `Daily Productivity Report - ${yesterdayStr}`,
                     html: `
