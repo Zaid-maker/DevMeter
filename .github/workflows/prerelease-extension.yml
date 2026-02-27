@@ -39,16 +39,26 @@ jobs:
 
       - name: Bump Pre-Release Version
         working-directory: ./extension
-        # Bumps version using a timestamp as the patch version so it's always
-        # unique and higher than the stable release (e.g. 0.1.6 → 0.1.1700000000)
-        # VS Marketplace requires a standard X.Y.Z version for pre-releases.
+        # Implements Even/Odd minor versioning strategy:
+        # Stable releases use EVEN minor versions (e.g., 0.2.x).
+        # Pre-releases use ODD minor versions (e.g., 0.3.<timestamp>).
+        # This ensures pre-releases are mathematically newer than stable but clearly separated.
         run: |
           VERSION=$(node -p "require('./package.json').version")
-          # Strip any suffixes to get the base version
           BASE=$(echo "$VERSION" | sed 's/-.*//')
           IFS='.' read -r MAJOR MINOR PATCH <<< "$BASE"
+          
+          # If MINOR is EVEN, increment it to next ODD (e.g. 2 -> 3)
+          # If MINOR is already ODD, keep it.
+          if (( MINOR % 2 == 0 )); then
+            NEW_MINOR=$((MINOR + 1))
+          else
+            NEW_MINOR=$MINOR
+          fi
+          
           TIMESTAMP=$(date +%s)
-          PRE_VERSION="${MAJOR}.${MINOR}.${TIMESTAMP}"
+          PRE_VERSION="${MAJOR}.${NEW_MINOR}.${TIMESTAMP}"
+          
           npm version "$PRE_VERSION" --no-git-tag-version
           echo "PRE_VERSION=$PRE_VERSION" >> "$GITHUB_ENV"
 
