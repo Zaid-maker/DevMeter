@@ -40,4 +40,10 @@ jobs:
         run: |
           git add extension/package.json
           git commit -m "chore(ext): bump version [skip ci]" || echo "No changes to commit"
-          git push origin main
+          # Try using GITHUB_TOKEN first; if it fails, instructions are provided
+          # Note: If main is protected, you must use a PAT with bypass permissions
+          if [ -n "${{ secrets.AUTO_BUMP_TOKEN }}" ]; then
+            git push https://x-access-token:${{ secrets.AUTO_BUMP_TOKEN }}@github.com/${{ github.repository }}.git main
+          else
+            git push origin main
+          fi
