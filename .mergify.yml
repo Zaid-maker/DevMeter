@@ -1,14 +1,8 @@
-queue_rules:
-  - name: default
-    queue_conditions:
-      - label=automated-bump
-    merge_method: squash
-
 pull_request_rules:
   - name: automatic squash merge for version bump
     conditions:
       - label=automated-bump
     actions:
-      queue:
-        name: default
+      merge:
+        method: squash
       delete_head_branch: {}
