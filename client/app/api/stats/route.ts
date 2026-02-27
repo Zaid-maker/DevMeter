@@ -20,13 +20,18 @@ function isOriginAllowed(origin: string | null) {
     return allowedOrigins.includes(origin);
 }
 
-function getCorsHeaders(origin: string | null) {
+function getCorsHeaders(origin: string | null, allowAnyOrigin = false) {
     const h: Record<string, string> = {
         "Access-Control-Allow-Methods": "GET, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
     };
 
-    if (isOriginAllowed(origin)) {
+    if (allowAnyOrigin) {
+        // Safe for API-key-authenticated extension requests: Bearer tokens are not
+        // ambient credentials, so wildcard CORS does not expose user data to
+        // cross-site requests that rely on cookies / sessions.
+        h["Access-Control-Allow-Origin"] = "*";
+    } else if (isOriginAllowed(origin)) {
         h["Access-Control-Allow-Origin"] = origin!;
     }
 
@@ -35,10 +40,13 @@ function getCorsHeaders(origin: string | null) {
 
 export async function OPTIONS(req: NextRequest) {
     const origin = req.headers.get("origin");
-    if (!isOriginAllowed(origin)) {
-        return new NextResponse(null, { status: 403 });
+    // Requests from the web dashboard use the configured ALLOWED_ORIGINS.
+    if (origin && isOriginAllowed(origin)) {
+        return new NextResponse(null, { status: 204, headers: getCorsHeaders(origin) });
     }
-    return new NextResponse(null, { status: 204, headers: getCorsHeaders(origin) });
+    // Extension requests may come from any origin (VS Code forks, web environments).
+    // Use wildcard since they are authenticated via Bearer API key.
+    return new NextResponse(null, { status: 204, headers: getCorsHeaders(null, true) });
 }
 
 export async function GET(req: NextRequest) {
@@ -47,6 +55,8 @@ export async function GET(req: NextRequest) {
     });
 
     let userId: string;
+    // Track whether auth came from an API key (extension) so we can use open CORS
+    let isApiKeyAuth = false;
 
     if (session) {
         userId = session.user.id;
@@ -67,6 +77,7 @@ export async function GET(req: NextRequest) {
         }
 
         userId = apiKey.userId;
+        isApiKeyAuth = true;
     }
 
     // Check for range query parameter
@@ -85,7 +96,7 @@ export async function GET(req: NextRequest) {
     }
 
     if (user.deletedAt) {
-        return NextResponse.json({ error: "User account is deleted" }, { status: 401, headers: getCorsHeaders(req.headers.get("origin")) });
+        return NextResponse.json({ error: "User account is deleted" }, { status: 401, headers: getCorsHeaders(req.headers.get("origin"), isApiKeyAuth) });
     }
 
     const timezone = user.timezone || "UTC";
@@ -94,11 +105,11 @@ export async function GET(req: NextRequest) {
     try {
         // Try to get from cache first
         const cacheData = await redis.get(cacheKey);
-        const headers = getCorsHeaders(req.headers.get("origin"));
+        const corsHeaders = getCorsHeaders(req.headers.get("origin"), isApiKeyAuth);
 
         if (cacheData) {
             return NextResponse.json(cacheData, {
-                headers: { ...headers, "X-Cache": "HIT" }
+                headers: { ...corsHeaders, "X-Cache": "HIT" }
             });
         }
 
@@ -108,10 +119,10 @@ export async function GET(req: NextRequest) {
         await redis.set(cacheKey, stats, { ex: 300 });
 
         return NextResponse.json(stats, {
-            headers: { ...headers, "X-Cache": "MISS" }
+            headers: { ...corsHeaders, "X-Cache": "MISS" }
         });
     } catch (error) {
         console.error("Stats API error:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500, headers: getCorsHeaders(req.headers.get("origin")) });
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500, headers: getCorsHeaders(req.headers.get("origin"), isApiKeyAuth) });
     }
 }

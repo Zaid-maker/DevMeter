@@ -236,6 +236,9 @@ async function sendHeartbeat(document: vscode.TextDocument, isSave: boolean) {
     const project = vscode.workspace.name || 'Unknown Project';
     const language = document.languageId;
     const file = document.fileName;
+    // Use the actual editor name (e.g. "Cursor", "Code - OSS", "Visual Studio Code")
+    // so heartbeats are attributed correctly regardless of the VS Code fork in use.
+    const editorName = vscode.env.appName || 'unknown';
 
     const payload = {
         project,
@@ -245,7 +248,7 @@ async function sendHeartbeat(document: vscode.TextDocument, isSave: boolean) {
         is_save: isSave,
         entity: file,
         type: 'file',
-        editor: 'vscode',
+        editor: editorName,
         platform: process.platform
     };
 
@@ -255,7 +258,7 @@ async function sendHeartbeat(document: vscode.TextDocument, isSave: boolean) {
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
                 'Content-Type': 'application/json',
-                'User-Agent': 'DevMeter-VSCode-Extension'
+                'User-Agent': `DevMeter-VSCode-Extension/${editorName}`
             },
             timeout: 5000
         });

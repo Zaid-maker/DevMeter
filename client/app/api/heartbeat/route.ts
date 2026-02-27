@@ -2,10 +2,23 @@ import { prisma } from "@/lib/prisma";
 import { redis } from "@/lib/redis";
 import { NextRequest, NextResponse } from "next/server";
 
+// The heartbeat endpoint is consumed by the VS Code extension which may run in
+// a browser context (VS Code Web, code-server). Allow all origins because every
+// request is authenticated via a per-user Bearer API key.
+const CORS_HEADERS = {
+    "Access-Control-Allow-Origin": "*",
+    "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+};
+
+export async function OPTIONS() {
+    return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
+}
+
 export async function POST(req: NextRequest) {
     const authHeader = req.headers.get("authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: CORS_HEADERS });
     }
 
     const apiKeyStr = authHeader.split(" ")[1];
@@ -23,7 +36,7 @@ export async function POST(req: NextRequest) {
 
             if (!apiKey) {
                 console.error(`Invalid API Key attempt: ${apiKeyStr.substring(0, 8)}...`);
-                return NextResponse.json({ error: "Invalid API Key" }, { status: 401 });
+                return NextResponse.json({ error: "Invalid API Key" }, { status: 401, headers: CORS_HEADERS });
             }
 
             // Cache for 24 hours
@@ -33,7 +46,7 @@ export async function POST(req: NextRequest) {
         // Check if user is soft deleted
         if (apiKey.user.deletedAt) {
             console.warn(`Heartbeat rejected for deleted user: ${apiKey.userId}`);
-            return NextResponse.json({ error: "User account is deleted" }, { status: 401 });
+            return NextResponse.json({ error: "User account is deleted" }, { status: 401, headers: CORS_HEADERS });
         }
 
         const body = await req.json();
@@ -145,10 +158,10 @@ export async function POST(req: NextRequest) {
             }
         })();
 
-        return NextResponse.json({ status: "ok" });
+        return NextResponse.json({ status: "ok" }, { headers: CORS_HEADERS });
     } catch (error: any) {
         console.error("Heartbeat error:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500, headers: CORS_HEADERS });
     }
 }
 
@@ -156,5 +169,5 @@ export async function GET() {
     return NextResponse.json({
         status: "alive",
         message: "DevMeter Heartbeat API is reachable. Use POST to record activity."
-    });
+    }, { headers: CORS_HEADERS });
 }
