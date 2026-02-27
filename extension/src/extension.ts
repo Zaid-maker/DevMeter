@@ -2,6 +2,8 @@
 // Triggering pre-release build v1.3.10 compatible format
 import * as vscode from 'vscode';
 import axios from 'axios';
+import * as path from 'path';
+import * as os from 'os';
 
 let statusBarItem: vscode.StatusBarItem;
 let refreshInterval: NodeJS.Timeout | undefined;
@@ -243,9 +245,28 @@ async function sendHeartbeat(document: vscode.TextDocument, isSave: boolean) {
     const project = vscode.workspace.name || 'Unknown Project';
     const language = document.languageId;
     const file = document.fileName;
-    // Use the actual editor name (e.g. "Cursor", "Code - OSS", "Visual Studio Code")
-    // so heartbeats are attributed correctly regardless of the VS Code fork in use.
-    const editorName = vscode.env.appName || 'unknown';
+
+    // Level 2: Advanced detection using execution context (2026 standard)
+    let editorName = vscode.env.appName || 'unknown';
+    const execPath = process.execPath.toLowerCase();
+    const uriScheme = (vscode.env.uriScheme || '').toLowerCase();
+
+    // Check executable path for clues
+    if (execPath.includes('antigravity')) {
+        editorName = 'Antigravity';
+    } else if (execPath.includes('cursor')) {
+        editorName = 'Cursor';
+    } else if (execPath.includes('windsurf')) {
+        editorName = 'Windsurf';
+    } else if (execPath.includes('trae')) {
+        editorName = 'Trae';
+    } else if (execPath.includes('vscodium')) {
+        editorName = 'VSCodium';
+    } else if (uriScheme.includes('antigravity')) {
+        editorName = 'Antigravity';
+    } else if (uriScheme.includes('cursor')) {
+        editorName = 'Cursor';
+    }
 
     const payload = {
         project,
@@ -256,7 +277,9 @@ async function sendHeartbeat(document: vscode.TextDocument, isSave: boolean) {
         entity: file,
         type: 'file',
         editor: editorName,
-        platform: process.platform
+        platform: os.platform(), // More accurate platform from Node
+        release: os.release(),    // OS version
+        arch: os.arch()          // CPU architecture
     };
 
     try {
