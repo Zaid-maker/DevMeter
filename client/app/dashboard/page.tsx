@@ -153,7 +153,8 @@ function DashboardContent() {
         const lowerName = name.toLowerCase();
 
         if (type === 'editor') {
-            if (lowerName.includes('vscode')) {
+            // 2026 Elite Editor Support
+            if (lowerName.includes('vscode') || lowerName.includes('code')) {
                 return (
                     <img
                         src="/icons/vscode_nano.png"
@@ -163,7 +164,18 @@ function DashboardContent() {
                     />
                 );
             }
-            if (lowerName.includes('intellij')) {
+
+            // TODO: Implement custom icons for these 2026 powerhouses
+            if (lowerName.includes('cursor')) return <Code className="h-4 w-4 text-primary" />;
+            if (lowerName.includes('windsurf')) return <Code className="h-4 w-4 text-primary" />;
+            if (lowerName.includes('trae')) return <Code className="h-4 w-4 text-primary" />;
+            if (lowerName.includes('antigravity')) return <Zap className="h-4 w-4 text-primary animate-pulse" />;
+            if (lowerName.includes('cline')) return <Code className="h-4 w-4 text-primary" />;
+            if (lowerName.includes('aider')) return <Code className="h-4 w-4 text-primary" />;
+            if (lowerName.includes('vscodium')) return <Code className="h-4 w-4 text-primary" />;
+            if (lowerName.includes('zed')) return <Code className="h-4 w-4 text-primary" />;
+
+            if (lowerName.includes('intellij') || lowerName.includes('webstorm') || lowerName.includes('pycharm')) {
                 return (
                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full p-0.5">
                         <rect width="24" height="24" rx="4" fill="#000000" />
@@ -178,6 +190,7 @@ function DashboardContent() {
             }
             return <Code className="h-4 w-4 text-primary" />;
         } else {
+            // Platforms
             if (lowerName.includes('win')) {
                 return (
                     <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-full w-full">
@@ -201,6 +214,7 @@ function DashboardContent() {
                     </svg>
                 );
             }
+            if (lowerName.includes('android')) return <Activity className="h-4 w-4 text-green-500" />;
             return <Activity className="h-4 w-4 text-primary" />;
         }
     };
@@ -549,9 +563,10 @@ function DashboardContent() {
                                         <div key={editor.name} className="space-y-2">
                                             <div className="flex items-center justify-between text-sm">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted/40 p-1.5 border border-muted/50 overflow-hidden">
+                                                    {/* TODO: Add editor icons back once implemented */}
+                                                    {/* <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted/40 p-1.5 border border-muted/50 overflow-hidden">
                                                         {getIconComponent(editor.name, 'editor')}
-                                                    </div>
+                                                    </div> */}
                                                     <span className="font-bold text-base capitalize">{editor.name}</span>
                                                 </div>
                                                 <span className="text-muted-foreground font-medium">{editor.value}%</span>
@@ -574,9 +589,10 @@ function DashboardContent() {
                                         <div key={platform.name} className="space-y-2">
                                             <div className="flex items-center justify-between text-sm">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted/40 p-1.5 border border-muted/50 overflow-hidden">
+                                                    {/* TODO: Add platform icons back once implemented */}
+                                                    {/* <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-muted/40 p-1.5 border border-muted/50 overflow-hidden">
                                                         {getIconComponent(platform.name, 'platform')}
-                                                    </div>
+                                                    </div> */}
                                                     <span className="font-bold text-base uppercase">{platform.name === 'win32' ? 'Windows' : platform.name === 'darwin' ? 'macOS' : platform.name}</span>
                                                 </div>
                                                 <span className="text-muted-foreground font-medium">{platform.value}%</span>
