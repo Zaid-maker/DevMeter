@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
         // Fallback to API Key for extension
         const authHeader = req.headers.get("authorization");
         if (!authHeader || !authHeader.startsWith("Bearer ")) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: getCorsHeaders(req.headers.get("origin")) });
+            return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: getCorsHeaders(req.headers.get("origin"), true) });
         }
 
         const apiKeyStr = authHeader.split(" ")[1];
@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
         });
 
         if (!apiKey) {
-            return NextResponse.json({ error: "Invalid API Key" }, { status: 401, headers: getCorsHeaders(req.headers.get("origin")) });
+            return NextResponse.json({ error: "Invalid API Key" }, { status: 401, headers: getCorsHeaders(req.headers.get("origin"), true) });
         }
 
         userId = apiKey.userId;
@@ -92,7 +92,7 @@ export async function GET(req: NextRequest) {
     });
 
     if (!user) {
-        return NextResponse.json({ error: "User not found" }, { status: 404 });
+        return NextResponse.json({ error: "User not found" }, { status: 404, headers: getCorsHeaders(req.headers.get("origin"), isApiKeyAuth) });
     }
 
     if (user.deletedAt) {
