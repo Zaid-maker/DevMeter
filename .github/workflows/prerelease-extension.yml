@@ -85,4 +85,7 @@ jobs:
       - name: Publish to Open VSX (pre-release)
         if: ${{ github.event_name == 'push' || github.event.inputs.publish == 'yes' }}
         working-directory: ./extension
-        run: npx -y ovsx publish --pre-release -p ${{ secrets.OVSX_PAT }}
+        run: |
+          # Swap publisher to Zaid-maker for Open VSX
+          sed -i 's/"publisher": "DevMitrza"/"publisher": "Zaid-maker"/' package.json
+          npx -y ovsx publish --pre-release -p ${{ secrets.OVSX_PAT }}

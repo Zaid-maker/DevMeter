@@ -40,4 +40,7 @@ jobs:
 
       - name: Publish to Open VSX
         working-directory: ./extension
-        run: npx -y ovsx publish -p ${{ secrets.OVSX_PAT }}
+        run: |
+          # Robust JSON-safe publisher swap for Open VSX
+          node -e "let p=require('./package.json'); p.publisher='Zaid-maker'; require('fs').writeFileSync('./package.json', JSON.stringify(p, null, 2))"
+          npx -y ovsx publish -p ${{ secrets.OVSX_PAT }}
