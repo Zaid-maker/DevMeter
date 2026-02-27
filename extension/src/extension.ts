@@ -1,3 +1,5 @@
+// DevMeter Extension - Automated coding time tracker
+// Triggering pre-release build v1.3.10 compatible format
 import * as vscode from 'vscode';
 import axios from 'axios';
 
