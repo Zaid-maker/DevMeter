@@ -1,0 +1,42 @@
+name: Pre-Release App (Dashboard)
+
+on:
+  push:
+    branches:
+      - prerelease
+    paths:
+      - 'client/**'
+  workflow_dispatch:
+
+jobs:
+  prerelease-app:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.10
+
+      - name: Install Dependencies
+        working-directory: ./client
+        run: bun install
+
+      - name: Lint
+        working-directory: ./client
+        run: bun run lint
+
+      - name: Build
+        working-directory: ./client
+        run: bun run build
+
+      - name: Deploy to Vercel (Prerelease)
+        working-directory: ./client
+        run: |
+          npx vercel pull --yes --environment=preview --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel build --token=${{ secrets.VERCEL_TOKEN }}
+          npx vercel deploy --prebuilt --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
