@@ -24,26 +24,19 @@ jobs:
         with:
           node-version: 20
 
-      - name: Configure Git
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
       - name: Bump Version
         working-directory: ./extension
         run: |
-          # Use --no-git-tag-version to avoid npm's internal git handling
-          # which often fails in subdirectories in CI
           npm version patch --no-git-tag-version
 
-      - name: Commit and Push changes
-        run: |
-          git add extension/package.json
-          git commit -m "chore(ext): bump version [skip ci]" || echo "No changes to commit"
-          # Try using GITHUB_TOKEN first; if it fails, instructions are provided
-          # Note: If main is protected, you must use a PAT with bypass permissions
-          if [ -n "${{ secrets.AUTO_BUMP_TOKEN }}" ]; then
-            git push https://x-access-token:${{ secrets.AUTO_BUMP_TOKEN }}@github.com/${{ github.repository }}.git main
-          else
-            git push origin main
-          fi
+      - name: Create Pull Request for Version Bump
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.AUTO_BUMP_TOKEN || secrets.GITHUB_TOKEN }}
+          commit-message: "chore(ext): bump version"
+          branch: "auto-bump-extension"
+          delete-branch: true
+          title: "chore(ext): bump version"
+          body: "Automated version bump for the extension."
+          labels: "automated-bump"
+          add-paths: extension/package.json
