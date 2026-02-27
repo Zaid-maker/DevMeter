@@ -44,6 +44,14 @@
       {
         "command": "devmeter.showMenu",
         "title": "DevMeter: Show Menu"
+      },
+      {
+        "command": "devmeter.syncNow",
+        "title": "DevMeter: Sync Now"
+      },
+      {
+        "command": "devmeter.showLogs",
+        "title": "DevMeter: Show Logs"
       }
     ],
     "configuration": {
