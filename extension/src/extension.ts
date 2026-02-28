@@ -2,7 +2,7 @@
 // Triggering pre-release build v1.3.10 compatible format
 // Revised versioning scheme: Even minor = Stable, Odd minor = Pre-release
 // Triggering auto-bump verification v0.2.0 PR-strategy final
-// FINAL TEST: Verifying Mergify auto-merge loop v0.2.x
+// FINAL TEST: Verifying Mergify auto-merge loop and URL migration v0.2.x
 import * as vscode from 'vscode';
 import axios from 'axios';
 import * as path from 'path';
@@ -37,6 +37,9 @@ export function activate(context: vscode.ExtensionContext) {
     statusBarItem.text = '$(clock) DevMeter: ...';
     statusBarItem.show();
     context.subscriptions.push(statusBarItem);
+
+    // Call migration logic
+    migrateObsoleteUrl(log);
 
     // Command to set API Key
     context.subscriptions.push(vscode.commands.registerCommand('devmeter.apiKey', async () => {
@@ -122,6 +125,26 @@ export function activate(context: vscode.ExtensionContext) {
     refreshInterval = setInterval(() => {
         updateStatusBar();
     }, 5 * 60 * 1000);
+}
+
+async function migrateObsoleteUrl(logFunc: (m: string) => void) {
+    const config = vscode.workspace.getConfiguration('devmeter');
+    const apiUrl = config.get<string>('apiUrl');
+    const OLD_DOMAIN = "dev-meter.vercel.app";
+    const NEW_API_URL = "https://devmeter-v2.zaidcode.me/api";
+
+    if (apiUrl && apiUrl.includes(OLD_DOMAIN)) {
+        logFunc(`Migrating obsolete API URL: ${apiUrl} -> ${NEW_API_URL}`);
+        try {
+            await config.update('apiUrl', NEW_API_URL, vscode.ConfigurationTarget.Global);
+            vscode.window.showInformationMessage(
+                "DevMeter: We've automatically updated your API URL to the new domain to keep your stats syncing!",
+                "Got it"
+            );
+        } catch (err) {
+            logFunc(`Failed to migrate API URL: ${err}`);
+        }
+    }
 }
 
 function openInBrowser(page: string) {
