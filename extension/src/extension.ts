@@ -130,7 +130,7 @@ export function activate(context: vscode.ExtensionContext) {
 async function migrateObsoleteUrl(logFunc: (m: string) => void) {
     const config = vscode.workspace.getConfiguration('devmeter');
     const apiUrl = config.get<string>('apiUrl');
-    const OLD_DOMAIN = "dev-meter.vercel.app";
+    const OLD_DOMAIN = "https://dev-meter.vercel.app/api";
     const NEW_API_URL = "https://devmeter-v2.zaidcode.me/api";
 
     if (apiUrl && apiUrl.includes(OLD_DOMAIN)) {
