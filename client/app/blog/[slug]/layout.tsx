@@ -2,6 +2,14 @@ import { Metadata } from "next";
 import { use } from "react";
 
 const blogArticles: Record<string, { title: string; description: string; category: string; date: string; author: string; readTime: number }> = {
+  "devmeter-now-stable-on-open-vsx": {
+    title: "DevMeter Is Now Officially Stable on Open VSX",
+    description: "DevMeter is now fully stable and up-to-date on the Open VSX Registry. Install DevMeter on VSCodium, Gitpod, Eclipse Theia, and any Open VSX-compatible editor with confidence.",
+    category: "News",
+    date: "2026-03-01",
+    author: "Zaid Code",
+    readTime: 3,
+  },
   "how-to-improve-coding-productivity": {
     title: "How to Improve Your Coding Productivity in 2026",
     description: "Discover proven strategies to boost your development speed and maintain focus while coding. Learn about time tracking, breaks, and productivity techniques used by top developers.",

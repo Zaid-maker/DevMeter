@@ -21,6 +21,75 @@ interface BlogArticle {
 }
 
 const blogArticles: Record<string, BlogArticle> = {
+  "devmeter-now-stable-on-open-vsx": {
+    id: "devmeter-now-stable-on-open-vsx",
+    title: "DevMeter Is Now Officially Stable on Open VSX",
+    description: "Great news! DevMeter is now fully stable and up-to-date on the Open VSX Registry.",
+    author: "Zaid Code",
+    date: "2026-03-01",
+    readTime: 3,
+    category: "News",
+    content: `
+# DevMeter Is Now Officially Stable on Open VSX
+
+We're excited to announce that **DevMeter is now fully stable and up-to-date on the [Open VSX Registry](https://open-vsx.org/extension/DevMitrza/devmeter)**! 🎉
+
+If you've been using Open VSX-compatible editors like **VSCodium**, **Gitpod**, **Eclipse Theia**, or any other editor that pulls from the Open VSX marketplace — you can now install DevMeter and get the exact same experience as users on the official VS Code Marketplace.
+
+## What Happened?
+
+Some of you may have noticed that the version on Open VSX was stuck at **v0.0.6** while the VS Code Marketplace was already on **v0.2.x**. This was caused by a **namespace verification issue** on the Open VSX Registry — our publisher identity wasn't properly linked, which meant new versions weren't being accepted.
+
+We've since:
+
+1. ✅ **Claimed and verified** the \`DevMitrza\` namespace on Open VSX
+2. ✅ **Fixed our CI/CD pipeline** to publish to both marketplaces simultaneously
+3. ✅ **Published v0.2.5** — fully in sync with the VS Code Marketplace
+
+## What This Means for You
+
+- **Same extension, everywhere.** Whether you install from VS Code Marketplace or Open VSX, you get the identical DevMeter experience.
+- **Automatic updates.** Future updates will land on both marketplaces at the same time — no more version lag.
+- **Open source commitment.** We believe in open ecosystems. Supporting Open VSX means supporting editor choice and freedom.
+
+## For Existing Open VSX Users
+
+If you installed DevMeter from Open VSX before this fix, your extension was running an outdated version (v0.0.6). Here's what to do:
+
+1. **Update your extension** — Open your editor's extension panel and check for updates. You should see v0.2.5 available.
+2. **Re-enter your API key** if prompted — The update includes significant improvements to how we connect to the DevMeter API.
+3. **Enjoy the new features** — You'll now have access to everything: the improved status bar, smart editor detection, streak tracking, and more.
+
+## What's New in v0.2.5?
+
+Since v0.0.6, we've shipped a ton of improvements:
+
+- 🧠 **Smart Editor Detection** — DevMeter now correctly identifies Cursor, Windsurf, Antigravity, VSCodium, and more
+- 📊 **Enhanced Status Bar** — See your daily coding time, streak, and top project at a glance
+- 🔄 **Automatic URL Migration** — If you were using an old API endpoint, the extension now updates it automatically
+- 🛡️ **Maintenance Mode Support** — Graceful handling when we need to do server maintenance
+- ⚡ **Performance Improvements** — Faster heartbeats, smarter retry logic
+
+## Install DevMeter
+
+Ready to track your coding time? Install DevMeter from your preferred marketplace:
+
+- [**VS Code Marketplace**](https://marketplace.visualstudio.com/items?itemName=DevMitrza.devmeter)
+- [**Open VSX Registry**](https://open-vsx.org/extension/DevMitrza/devmeter)
+
+Or install directly from your editor's extension search — just search for **"DevMeter"**.
+
+## Thank You
+
+A huge thank you to everyone who reported the outdated Open VSX version. Your feedback directly led to this fix. DevMeter is built for the community, and we're committed to making it available everywhere developers code.
+
+Happy tracking! 🚀
+
+---
+
+**Questions or feedback? Find us on [GitHub](https://github.com/Zaid-maker/DevMeter) or reach out on [X/Twitter](https://x.com/devmeter_stroke).**
+    `,
+  },
   "how-to-improve-coding-productivity": {
     id: "how-to-improve-coding-productivity",
     title: "How to Improve Your Coding Productivity in 2026",

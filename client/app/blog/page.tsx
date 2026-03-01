@@ -19,6 +19,16 @@ interface BlogPost {
 
 const blogPosts: BlogPost[] = [
   {
+    id: "devmeter-now-stable-on-open-vsx",
+    title: "DevMeter Is Now Officially Stable on Open VSX",
+    description: "Great news! DevMeter is now fully stable and up-to-date on the Open VSX Registry. Whether you use VS Code, VSCodium, or any compatible editor, you can now install DevMeter with confidence.",
+    author: "Zaid Code",
+    date: "2026-03-01",
+    readTime: 3,
+    category: "News",
+    featured: true,
+  },
+  {
     id: "how-to-improve-coding-productivity",
     title: "How to Improve Your Coding Productivity in 2026",
     description: "Discover proven strategies to boost your development speed and maintain focus while coding. Learn about time tracking, breaks, and productivity techniques used by top developers.",
