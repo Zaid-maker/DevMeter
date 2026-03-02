@@ -2,7 +2,7 @@
 // Triggering pre-release build v1.3.10 compatible format
 // Revised versioning scheme: Even minor = Stable, Odd minor = Pre-release
 // Triggering auto-bump verification v0.2.0 PR-strategy final
-// Open VSX namespace claimed — triggering v0.2.5 publish to both marketplaces
+// Open VSX namespace claimed — triggering v0.2.6 publish to both marketplaces (v2)
 import * as vscode from 'vscode';
 import axios from 'axios';
 import * as path from 'path';
