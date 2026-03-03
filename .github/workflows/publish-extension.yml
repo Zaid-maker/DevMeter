@@ -36,7 +36,7 @@ jobs:
 
       - name: Package Extension (.vsix)
         working-directory: ./extension
-        run: npx -y @vscode/vsce package --target universal --out devmeter.vsix
+        run: npx -y @vscode/vsce package --out devmeter.vsix
 
       - name: Publish to VS Marketplace
         working-directory: ./extension
