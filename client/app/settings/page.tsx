@@ -19,7 +19,9 @@ import {
     RefreshCw,
     ShieldCheck,
     Trash2,
-    Lock
+    Lock,
+    Zap,
+    ExternalLink
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
@@ -227,13 +229,41 @@ function SettingsContent() {
                             ) : (
                                 <div className="grid gap-4">
                                     {hasKey && (
-                                        <div className="bg-yellow-500/5 border border-yellow-500/20 px-4 py-3 rounded-xl flex items-start gap-3 mb-2">
-                                            <Lock className="h-4 w-4 text-yellow-500 mt-0.5 shrink-0" />
-                                            <p className="text-xs text-yellow-500/80 leading-relaxed">
-                                                To ensure maximum account stability, we currently limit each account to one active API key.
-                                                If you need to rotate your key, please revoke the current one first.
-                                            </p>
-                                        </div>
+                                        <>
+                                            <div className="bg-yellow-500/5 border border-yellow-500/20 px-4 py-3 rounded-xl flex items-start gap-3 mb-2">
+                                                <Lock className="h-4 w-4 text-yellow-500 mt-0.5 shrink-0" />
+                                                <p className="text-xs text-yellow-500/80 leading-relaxed">
+                                                    To ensure maximum account stability, we currently limit each account to one active API key.
+                                                    If you need to rotate your key, please revoke the current one first.
+                                                </p>
+                                            </div>
+                                            <div className="bg-indigo-500/10 border border-indigo-500/40 px-4 py-3 rounded-xl flex items-start gap-3 mb-2 shadow-[0_0_20px_rgba(99,102,241,0.05)]">
+                                                <Zap className="h-4 w-4 text-indigo-400 mt-0.5 shrink-0 animate-pulse" />
+                                                <div className="space-y-2">
+                                                    <p className="text-xs text-indigo-100/90 leading-relaxed">
+                                                        Using <strong>Cursor</strong>, <strong>Antigravity</strong>, or another VS Code fork?
+                                                        Open VSX may be outdated. To ensure your stats sync correctly:
+                                                    </p>
+                                                    <ol className="text-[11px] text-indigo-200/80 space-y-1 list-decimal ml-4 font-medium">
+                                                        <li>Press <kbd className="bg-indigo-500/20 px-1 rounded text-[10px] text-indigo-300">Ctrl + Shift + P</kbd> and type <strong>"DevMeter: Show Menu"</strong></li>
+                                                        <li>Select <strong>Show Extension Settings</strong></li>
+                                                        <li>Ensure <strong>API URL</strong> is set to <code>https://devmeter-v2.zaidcode.me/api</code></li>
+                                                    </ol>
+                                                    <p className="text-[10px] text-indigo-300/60 leading-relaxed pt-1">
+                                                        We also recommend
+                                                        <a
+                                                            href="https://github.com/Zaid-maker/DevMeter/releases"
+                                                            target="_blank"
+                                                            rel="noopener noreferrer"
+                                                            className="underline decoration-indigo-500/50 underline-offset-2 hover:text-indigo-400 transition-colors ml-1 inline-flex items-center gap-0.5"
+                                                        >
+                                                            downloading the latest .vsix manually
+                                                            <ExternalLink className="h-2.5 w-2.5" />
+                                                        </a> if you encounter any issues.
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </>
                                     )}
                                     {keys?.map(apiKey => (
                                         <div key={apiKey.id} className="group relative flex flex-col space-y-3 p-5 border rounded-2xl bg-card hover:border-primary/30 transition-all shadow-sm">
