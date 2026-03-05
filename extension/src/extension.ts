@@ -7,6 +7,7 @@ import * as vscode from 'vscode';
 import axios from 'axios';
 import * as path from 'path';
 import * as os from 'os';
+import * as semver from 'semver';
 
 let statusBarItem: vscode.StatusBarItem;
 let refreshInterval: NodeJS.Timeout | undefined;
@@ -144,13 +145,25 @@ async function checkForUpdates(context: vscode.ExtensionContext) {
         });
 
         const latestVersion = response.data.version;
+        if (!latestVersion) return;
 
-        if (latestVersion && isOlderVersion(currentVersion, latestVersion)) {
+        // Check if the user has already skipped this version
+        const skippedVersion = context.globalState.get<string>('skippedUpdateVersion');
+        if (skippedVersion === latestVersion) {
+            log(`Update v${latestVersion} already skipped by user.`);
+            return;
+        }
+
+        if (isOlderVersion(currentVersion, latestVersion)) {
             const message = `DevMeter update available (v${latestVersion}). You are using v${currentVersion}.`;
             const selection = await vscode.window.showInformationMessage(message, "Update", "Later");
 
             if (selection === "Update") {
                 vscode.commands.executeCommand("workbench.extensions.search", `@id:${extensionId}`);
+            } else if (selection === "Later") {
+                // Save the skipped version to persistent state
+                await context.globalState.update('skippedUpdateVersion', latestVersion);
+                log(`User chose to skip update v${latestVersion} for now.`);
             }
         } else {
             log(`DevMeter is up to date (v${currentVersion})`);
@@ -162,16 +175,21 @@ async function checkForUpdates(context: vscode.ExtensionContext) {
 }
 
 function isOlderVersion(current: string, latest: string): boolean {
-    const c = current.split('.').map(n => parseInt(n) || 0);
-    const l = latest.split('.').map(n => parseInt(n) || 0);
-
-    for (let i = 0; i < Math.max(c.length, l.length); i++) {
-        const curr = c[i] || 0;
-        const lat = l[i] || 0;
-        if (lat > curr) return true;
-        if (lat < curr) return false;
+    try {
+        if (!semver.valid(current) || !semver.valid(latest)) {
+            // Fallback to basic numeric compare if not valid semver
+            const c = current.split('.').map(n => parseInt(n) || 0);
+            const l = latest.split('.').map(n => parseInt(n) || 0);
+            for (let i = 0; i < Math.max(c.length, l.length); i++) {
+                if ((l[i] || 0) > (c[i] || 0)) return true;
+                if ((l[i] || 0) < (c[i] || 0)) return false;
+            }
+            return false;
+        }
+        return semver.gt(latest, current);
+    } catch (e) {
+        return false;
     }
-    return false;
 }
 
 async function migrateObsoleteUrl(logFunc: (m: string) => void) {
