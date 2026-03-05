@@ -120,11 +120,58 @@ export function activate(context: vscode.ExtensionContext) {
     // Initial check for API Key
     checkApiKey();
     updateStatusBar();
+    checkForUpdates(context);
 
     // Refresh status bar every 5 minutes
     refreshInterval = setInterval(() => {
         updateStatusBar();
     }, 5 * 60 * 1000);
+}
+
+async function checkForUpdates(context: vscode.ExtensionContext) {
+    const publisherId = "DevMitrza";
+    const extensionName = "devmeter";
+    const extensionId = `${publisherId}.${extensionName}`;
+    const extension = vscode.extensions.getExtension(extensionId);
+    if (!extension) return;
+
+    const currentVersion = extension.packageJSON.version;
+
+    try {
+        log(`Checking for updates on OpenVSX...`);
+        const response = await axios.get(`https://open-vsx.org/api/${publisherId}/${extensionName}/latest`, {
+            timeout: 5000
+        });
+
+        const latestVersion = response.data.version;
+
+        if (latestVersion && isOlderVersion(currentVersion, latestVersion)) {
+            const message = `DevMeter update available (v${latestVersion}). You are using v${currentVersion}.`;
+            const selection = await vscode.window.showInformationMessage(message, "Update", "Later");
+
+            if (selection === "Update") {
+                vscode.commands.executeCommand("workbench.extensions.search", `@id:${extensionId}`);
+            }
+        } else {
+            log(`DevMeter is up to date (v${currentVersion})`);
+        }
+    } catch (error: any) {
+        log(`Update check failed: ${error.message}`);
+        // Handle gracefully, do not crash
+    }
+}
+
+function isOlderVersion(current: string, latest: string): boolean {
+    const c = current.split('.').map(n => parseInt(n) || 0);
+    const l = latest.split('.').map(n => parseInt(n) || 0);
+
+    for (let i = 0; i < Math.max(c.length, l.length); i++) {
+        const curr = c[i] || 0;
+        const lat = l[i] || 0;
+        if (lat > curr) return true;
+        if (lat < curr) return false;
+    }
+    return false;
 }
 
 async function migrateObsoleteUrl(logFunc: (m: string) => void) {
