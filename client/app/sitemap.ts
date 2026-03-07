@@ -3,18 +3,15 @@ import { MetadataRoute } from "next";
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = "https://devmeter-v2.zaidcode.me";
 
-  // Blog posts
+  // Blog posts - Only include posts that actually exist
   const blogPosts = [
+    "devmeter-now-stable-on-open-vsx",
     "how-to-improve-coding-productivity",
-    "why-wakatime-alternative-devmeter",
     "understanding-developer-metrics",
     "productivity-metrics-lines-of-code-meaningless",
     "developer-burnout-early-detection",
     "best-vs-code-extensions-developers",
     "building-coding-habits-data-driven",
-    "remote-work-productivity-guide",
-    "time-tracking-accuracy",
-    "devmeter-setup-guide",
     "open-source-vs-paid-tools",
   ];
 
