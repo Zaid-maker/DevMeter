@@ -26,9 +26,9 @@ function parseIntervalMs(value: string | undefined): number {
     return Math.max(30_000, parsed);
 }
 
-function parseRoleRules(raw: string | undefined): RoleRule[] {
+function parseRoleRules(raw: string | undefined): RoleRule[] | null {
     if (!raw) {
-        throw new Error("DISCORD_ROLE_RULES is required. Provide a JSON array of role rule objects.");
+        return null; // Return null to indicate rules should be fetched from API
     }
 
     let parsed: unknown;
@@ -38,8 +38,13 @@ function parseRoleRules(raw: string | undefined): RoleRule[] {
         throw new Error("DISCORD_ROLE_RULES must be valid JSON.");
     }
 
-    if (!Array.isArray(parsed) || parsed.length === 0) {
-        throw new Error("DISCORD_ROLE_RULES must be a non-empty JSON array.");
+    if (!Array.isArray(parsed)) {
+        throw new Error("DISCORD_ROLE_RULES must be a JSON array.");
+    }
+
+    // Empty array means fetch from API (same as null)
+    if (parsed.length === 0) {
+        return null;
     }
 
     return parsed.map((item, index) => {
@@ -80,3 +85,44 @@ export const config = {
     dryRun: process.env.DISCORD_DRY_RUN === "true",
     roleRules: parseRoleRules(process.env.DISCORD_ROLE_RULES),
 };
+
+export async function fetchRoleRules(): Promise<RoleRule[]> {
+    // If rules are configured in env, use them (for local testing)
+    if (config.roleRules !== null) {
+        return config.roleRules;
+    }
+
+    // Otherwise fetch from API
+    const endpoint = new URL("/api/discord/role-rules", config.appUrl);
+    endpoint.searchParams.set("guildId", config.guildId);
+
+    const response = await fetch(endpoint, {
+        headers: {
+            "x-admin-secret": config.adminSecret,
+        },
+    });
+
+    if (!response.ok) {
+        throw new Error(`Failed to fetch role rules: ${response.status} ${response.statusText}`);
+    }
+
+    const data = (await response.json()) as { rules: Array<{
+        id: string;
+        name: string;
+        roleId: string;
+        minHours: number | null;
+        minXp: number | null;
+        minLevel: number | null;
+        minHeartbeats: number | null;
+        priority: number;
+    }> };
+
+    return data.rules.map((rule) => ({
+        name: rule.name,
+        roleId: rule.roleId,
+        minHours: rule.minHours ?? undefined,
+        minXp: rule.minXp ?? undefined,
+        minLevel: rule.minLevel ?? undefined,
+        minHeartbeats: rule.minHeartbeats ?? undefined,
+    }));
+}

@@ -1,5 +1,5 @@
 import { GuildMember, type Client } from "discord.js";
-import { config } from "./config.js";
+import { config, fetchRoleRules } from "./config.js";
 import type { CandidateResponse, RoleCandidate, RoleRule } from "./types.js";
 
 function isEligible(candidate: RoleCandidate, rule: RoleRule): boolean {
@@ -10,14 +10,14 @@ function isEligible(candidate: RoleCandidate, rule: RoleRule): boolean {
     return true;
 }
 
-function getManagedRoleIds(): Set<string> {
-    return new Set(config.roleRules.map((rule) => rule.roleId));
+function getManagedRoleIds(rules: RoleRule[]): Set<string> {
+    return new Set(rules.map((rule) => rule.roleId));
 }
 
-function getDesiredRoleIds(candidate: RoleCandidate): Set<string> {
+function getDesiredRoleIds(candidate: RoleCandidate, rules: RoleRule[]): Set<string> {
     const desired = new Set<string>();
 
-    for (const rule of config.roleRules) {
+    for (const rule of rules) {
         if (isEligible(candidate, rule)) {
             desired.add(rule.roleId);
         }
@@ -43,9 +43,13 @@ async function fetchCandidates(): Promise<CandidateResponse> {
     return (await response.json()) as CandidateResponse;
 }
 
-async function applyMemberRoles(member: GuildMember, candidate: RoleCandidate): Promise<{ added: string[]; removed: string[] }> {
-    const managedRoleIds = getManagedRoleIds();
-    const desiredRoleIds = getDesiredRoleIds(candidate);
+async function applyMemberRoles(
+    member: GuildMember,
+    candidate: RoleCandidate,
+    rules: RoleRule[]
+): Promise<{ added: string[]; removed: string[] }> {
+    const managedRoleIds = getManagedRoleIds(rules);
+    const desiredRoleIds = getDesiredRoleIds(candidate, rules);
 
     const currentManagedRoles = new Set(
         member.roles.cache
@@ -74,6 +78,16 @@ async function applyMemberRoles(member: GuildMember, candidate: RoleCandidate): 
 export async function runRoleSync(client: Client<true>): Promise<void> {
     const guild = await client.guilds.fetch(config.guildId);
 
+    // Fetch fresh role rules from API or env
+    const rules = await fetchRoleRules();
+
+    if (rules.length === 0) {
+        console.warn("[role-sync] no role rules configured; skipping sync");
+        return;
+    }
+
+    console.log(`[role-sync] loaded ${rules.length} role rules`);
+
     const payload = await fetchCandidates();
     const candidates = payload.candidates.filter((c) => Boolean(c.discordUserId));
 
@@ -84,7 +98,7 @@ export async function runRoleSync(client: Client<true>): Promise<void> {
     for (const candidate of candidates) {
         try {
             const member = await guild.members.fetch(candidate.discordUserId);
-            const result = await applyMemberRoles(member, candidate);
+            const result = await applyMemberRoles(member, candidate, rules);
 
             processed += 1;
             console.log(

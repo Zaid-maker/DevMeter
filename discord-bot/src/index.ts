@@ -1,6 +1,8 @@
+import "dotenv/config";
 import { Client, GatewayIntentBits } from "discord.js";
 import { config } from "./config.js";
 import { runRoleSync } from "./role-sync.js";
+import { initializeRoles } from "./role-init.js";
 
 const client = new Client({
     intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildMembers],
@@ -28,6 +30,15 @@ async function runSyncSafely() {
 client.once("ready", async () => {
     console.log(`[bot] logged in as ${client.user?.tag}`);
     console.log(`[bot] sync interval ms=${config.syncIntervalMs}, windowDays=${config.windowDays}, dryRun=${config.dryRun}`);
+
+    // Initialize roles first (create missing roles from DISCORD_ROLES env)
+    const roleMap = await initializeRoles(client as Client<true>);
+    if (roleMap.size > 0) {
+        console.log("[bot] role IDs for configuration:");
+        for (const [name, id] of roleMap) {
+            console.log(`  - ${name}: ${id}`);
+        }
+    }
 
     await runSyncSafely();
 

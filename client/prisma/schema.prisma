@@ -49,6 +49,25 @@ model DiscordRoleSync {
   @@index([guildId])
 }
 
+model DiscordRoleRule {
+  id            String   @id @default(cuid())
+  guildId       String
+  name          String
+  roleId        String
+  minHours      Float?
+  minXp         Int?
+  minLevel      Int?
+  minHeartbeats Int?
+  priority      Int      @default(0)
+  enabled       Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([guildId, roleId])
+  @@index([guildId])
+  @@index([enabled])
+}
+
 model Achievement {
   id          String            @id @default(cuid())
   slug        String            @unique
