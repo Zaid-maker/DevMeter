@@ -1,21 +1,14 @@
 import { prisma } from "@/lib/prisma";
 import { calculateDuration } from "@/lib/stats-utils";
+import { validateAdminAuth } from "@/lib/admin-auth";
 import { subDays } from "date-fns";
 import { NextRequest, NextResponse } from "next/server";
 
-const ADMIN_SECRET = process.env.DEV_ADMIN_SECRET;
-
-function getAdminSecret() {
-    const isDev = process.env.NODE_ENV === "development";
-
-    if (!ADMIN_SECRET) {
-        if (isDev) return "dev-secret-123";
-        throw new Error("DEV_ADMIN_SECRET is not configured in production environment.");
-    }
-
-    return ADMIN_SECRET;
-}
-
+/**
+ * Parses and validates the windowDays query parameter
+ * @param value - The raw query parameter value
+ * @returns A number between 1 and 90, defaulting to 7
+ */
 function parseWindowDays(value: string | null) {
     if (!value) return 7;
 
@@ -25,15 +18,16 @@ function parseWindowDays(value: string | null) {
     return Math.max(1, Math.min(parsed, 90));
 }
 
+/**
+ * GET /api/admin/discord-role-candidates
+ * Fetches all Discord-linked users with their activity metrics
+ * @param req - Request with x-admin-secret header and optional windowDays query param
+ */
 export async function GET(req: NextRequest) {
-    const secret = req.headers.get("x-admin-secret");
+    const authError = validateAdminAuth(req);
+    if (authError) return authError;
 
     try {
-        const activeSecret = getAdminSecret();
-        if (secret !== activeSecret) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-        }
-
         const windowDays = parseWindowDays(req.nextUrl.searchParams.get("windowDays"));
         const since = subDays(new Date(), windowDays);
 

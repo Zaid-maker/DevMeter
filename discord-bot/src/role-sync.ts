@@ -2,6 +2,12 @@ import { GuildMember, type Client } from "discord.js";
 import { config, fetchRoleRules } from "./config.js";
 import type { CandidateResponse, RoleCandidate, RoleRule } from "./types.js";
 
+/**
+ * Checks if a candidate meets the eligibility criteria for a role
+ * @param candidate - The user candidate to evaluate
+ * @param rule - The role rule with criteria
+ * @returns True if candidate meets all defined criteria
+ */
 function isEligible(candidate: RoleCandidate, rule: RoleRule): boolean {
     if (typeof rule.minHours === "number" && candidate.totalHours < rule.minHours) return false;
     if (typeof rule.minXp === "number" && candidate.xp < rule.minXp) return false;
@@ -10,10 +16,21 @@ function isEligible(candidate: RoleCandidate, rule: RoleRule): boolean {
     return true;
 }
 
+/**
+ * Extracts role IDs from all rules that this bot manages
+ * @param rules - Array of role rules
+ * @returns Set of role IDs that bot is responsible for
+ */
 function getManagedRoleIds(rules: RoleRule[]): Set<string> {
     return new Set(rules.map((rule) => rule.roleId));
 }
 
+/**
+ * Determines which roles a candidate should have based on eligibility
+ * @param candidate - The user candidate to evaluate
+ * @param rules - Array of role rules to check against
+ * @returns Set of role IDs the candidate is eligible for
+ */
 function getDesiredRoleIds(candidate: RoleCandidate, rules: RoleRule[]): Set<string> {
     const desired = new Set<string>();
 
@@ -26,6 +43,10 @@ function getDesiredRoleIds(candidate: RoleCandidate, rules: RoleRule[]): Set<str
     return desired;
 }
 
+/**
+ * Fetches Discord-linked users with activity metrics from API
+ * @returns Response with candidates and metadata
+ */
 async function fetchCandidates(): Promise<CandidateResponse> {
     const endpoint = new URL("/api/admin/discord-role-candidates", config.appUrl);
     endpoint.searchParams.set("windowDays", String(config.windowDays));
@@ -43,6 +64,13 @@ async function fetchCandidates(): Promise<CandidateResponse> {
     return (await response.json()) as CandidateResponse;
 }
 
+/**
+ * Applies role changes to a guild member based on their activity
+ * @param member - The Discord guild member to update
+ * @param candidate - The candidate data with activity metrics
+ * @param rules - Array of role rules to evaluate
+ * @returns Object with arrays of added and removed role IDs
+ */
 async function applyMemberRoles(
     member: GuildMember,
     candidate: RoleCandidate,
@@ -61,21 +89,39 @@ async function applyMemberRoles(
     const rolesToRemove = [...currentManagedRoles].filter((roleId) => !desiredRoleIds.has(roleId));
 
     if (config.dryRun) {
+        console.log(
+            `[role-sync] [DRY-RUN] ${candidate.discordUserId} would add=${rolesToAdd.length} remove=${rolesToRemove.length}`
+        );
         return { added: rolesToAdd, removed: rolesToRemove };
     }
 
     for (const roleId of rolesToAdd) {
-        await member.roles.add(roleId, "DevMeter activity role sync");
+        try {
+            await member.roles.add(roleId, "DevMeter activity role sync");
+        } catch (error) {
+            console.error(`[role-sync] failed to add role ${roleId} to ${member.id}:`, error);
+        }
     }
 
     for (const roleId of rolesToRemove) {
-        await member.roles.remove(roleId, "DevMeter activity role sync");
+        try {
+            await member.roles.remove(roleId, "DevMeter activity role sync");
+        } catch (error) {
+            console.error(`[role-sync] failed to remove role ${roleId} from ${member.id}:`, error);
+        }
     }
 
     return { added: rolesToAdd, removed: rolesToRemove };
 }
 
+/**
+ * Main role sync function - evaluates all Discord-linked users and updates their roles
+ * @param client - Authenticated Discord client
+ */
 export async function runRoleSync(client: Client<true>): Promise<void> {
+    const startTime = Date.now();
+    console.log("[role-sync] starting sync cycle");
+
     const guild = await client.guilds.fetch(config.guildId);
 
     // Fetch fresh role rules from API or env
@@ -101,9 +147,11 @@ export async function runRoleSync(client: Client<true>): Promise<void> {
             const result = await applyMemberRoles(member, candidate, rules);
 
             processed += 1;
-            console.log(
-                `[role-sync] ${candidate.discordUserId} processed; added=${result.added.length} removed=${result.removed.length}`
-            );
+            if (result.added.length > 0 || result.removed.length > 0) {
+                console.log(
+                    `[role-sync] ${candidate.discordUserId} updated; added=${result.added.length} removed=${result.removed.length}`
+                );
+            }
         } catch (error) {
             skipped += 1;
 
@@ -118,7 +166,8 @@ export async function runRoleSync(client: Client<true>): Promise<void> {
         }
     }
 
+    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
     console.log(
-        `[role-sync] completed candidates=${candidates.length} processed=${processed} skipped=${skipped} failures=${failures} windowDays=${payload.meta.windowDays}`
+        `[role-sync] completed in ${duration}s: candidates=${candidates.length} processed=${processed} skipped=${skipped} failures=${failures} windowDays=${payload.meta.windowDays}`
     );
 }

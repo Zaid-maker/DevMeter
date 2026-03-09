@@ -11,6 +11,9 @@ const client = new Client({
 let syncTimer: NodeJS.Timeout | null = null;
 let running = false;
 
+/**
+ * Safely runs role sync with error handling and concurrency protection
+ */
 async function runSyncSafely() {
     if (running) {
         console.log("[role-sync] previous run still in progress; skipping tick");
@@ -25,6 +28,23 @@ async function runSyncSafely() {
     } finally {
         running = false;
     }
+}
+
+/**
+ * Gracefully shuts down the bot
+ */
+async function shutdown(signal: string) {
+    console.log(`[bot] shutting down (${signal})`);
+    if (syncTimer) {
+        clearInterval(syncTimer);
+        syncTimer = null;
+    }
+    try {
+        await client.destroy();
+    } catch (error) {
+        console.error("[bot] error during shutdown:", error);
+    }
+    process.exit(0);
 }
 
 client.once("ready", async () => {
@@ -47,18 +67,15 @@ client.once("ready", async () => {
     }, config.syncIntervalMs);
 });
 
-process.on("SIGINT", async () => {
-    console.log("[bot] shutting down");
-    if (syncTimer) clearInterval(syncTimer);
-    await client.destroy();
-    process.exit(0);
+client.on("error", (error) => {
+    console.error("[bot] discord client error:", error);
 });
 
-process.on("SIGTERM", async () => {
-    console.log("[bot] shutting down");
-    if (syncTimer) clearInterval(syncTimer);
-    await client.destroy();
-    process.exit(0);
+process.on("SIGINT", () => void shutdown("SIGINT"));
+process.on("SIGTERM", () => void shutdown("SIGTERM"));
+
+process.on("unhandledRejection", (reason, promise) => {
+    console.error("[bot] unhandled rejection at:", promise, "reason:", reason);
 });
 
 void client.login(config.discordToken);

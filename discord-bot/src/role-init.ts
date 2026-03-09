@@ -1,4 +1,4 @@
-import type { Client, Guild } from "discord.js";
+import type { Client } from "discord.js";
 import { config } from "./config.js";
 
 export interface RoleDefinition {
@@ -11,6 +11,7 @@ export interface RoleDefinition {
 /**
  * Parse role definitions from DISCORD_ROLES env var
  * Format: [{"name":"Bronze","color":"#CD7F32"},{"name":"Silver","color":"#C0C0C0"}]
+ * @returns Array of validated role definitions
  */
 function parseRoleDefinitions(): RoleDefinition[] {
     const raw = process.env.DISCORD_ROLES;
@@ -39,8 +40,27 @@ function parseRoleDefinitions(): RoleDefinition[] {
 }
 
 /**
+ * Parses a hex color string to a Discord-compatible integer
+ * @param hexColor - Hex color string (e.g., "#CD7F32" or "CD7F32")
+ * @returns Discord color integer or undefined if invalid
+ */
+function parseColor(hexColor: string): number | undefined {
+    const cleaned = hexColor.replace("#", "");
+    const parsed = parseInt(cleaned, 16);
+    
+    if (Number.isNaN(parsed) || cleaned.length !== 6) {
+        console.warn(`[role-init] invalid color format: ${hexColor}`);
+        return undefined;
+    }
+    
+    return parsed;
+}
+
+/**
  * Initialize roles in the guild - create missing roles from DISCORD_ROLES env
  * Returns a map of role name -> role ID for created/existing roles
+ * @param client - Authenticated Discord client
+ * @returns Map of role name to role ID
  */
 export async function initializeRoles(client: Client<true>): Promise<Map<string, string>> {
     const roleMap = new Map<string, string>();
@@ -73,7 +93,7 @@ export async function initializeRoles(client: Client<true>): Promise<Map<string,
             try {
                 const created = await guild.roles.create({
                     name: def.name,
-                    color: def.color ? parseInt(def.color.replace("#", ""), 16) : undefined,
+                    color: def.color ? parseColor(def.color) : undefined,
                     hoist: def.hoist ?? false,
                     mentionable: def.mentionable ?? false,
                     reason: "DevMeter auto-role creation",

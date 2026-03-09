@@ -1,5 +1,11 @@
 import type { RoleRule } from "./types.js";
 
+/**
+ * Gets a required environment variable or throws an error
+ * @param name - The environment variable name
+ * @returns The environment variable value
+ * @throws {Error} If the environment variable is not set
+ */
 function getRequiredEnv(name: string): string {
     const value = process.env[name];
     if (!value) {
@@ -8,6 +14,11 @@ function getRequiredEnv(name: string): string {
     return value;
 }
 
+/**
+ * Parses and validates the window days parameter
+ * @param value - The raw string value
+ * @returns A number between 1 and 90, defaulting to 7
+ */
 function parseWindowDays(value: string | undefined): number {
     if (!value) return 7;
 
@@ -17,6 +28,11 @@ function parseWindowDays(value: string | undefined): number {
     return Math.max(1, Math.min(parsed, 90));
 }
 
+/**
+ * Parses and validates the sync interval in milliseconds
+ * @param value - The raw string value
+ * @returns A number >= 30000, defaulting to 5 minutes
+ */
 function parseIntervalMs(value: string | undefined): number {
     if (!value) return 5 * 60 * 1000;
 
@@ -26,6 +42,12 @@ function parseIntervalMs(value: string | undefined): number {
     return Math.max(30_000, parsed);
 }
 
+/**
+ * Parses role rules from environment variable JSON
+ * @param raw - The raw JSON string from DISCORD_ROLE_RULES env var
+ * @returns Array of role rules, or null to indicate API fetch needed
+ * @throws {Error} If JSON is malformed or rules are invalid
+ */
 function parseRoleRules(raw: string | undefined): RoleRule[] | null {
     if (!raw) {
         return null; // Return null to indicate rules should be fetched from API
@@ -35,7 +57,7 @@ function parseRoleRules(raw: string | undefined): RoleRule[] | null {
     try {
         parsed = JSON.parse(raw);
     } catch {
-        throw new Error("DISCORD_ROLE_RULES must be valid JSON.");
+        throw new Error("DISCORD_ROLE_RULES must be valid JSON. Check for syntax errors.");
     }
 
     if (!Array.isArray(parsed)) {
@@ -75,6 +97,7 @@ function parseRoleRules(raw: string | undefined): RoleRule[] | null {
     });
 }
 
+/** Bot configuration loaded from environment variables */
 export const config = {
     discordToken: getRequiredEnv("DISCORD_BOT_TOKEN"),
     guildId: getRequiredEnv("DISCORD_GUILD_ID"),
@@ -84,15 +107,22 @@ export const config = {
     syncIntervalMs: parseIntervalMs(process.env.DISCORD_SYNC_INTERVAL_MS),
     dryRun: process.env.DISCORD_DRY_RUN === "true",
     roleRules: parseRoleRules(process.env.DISCORD_ROLE_RULES),
-};
+} as const;
 
+/**
+ * Fetches role rules from API endpoint or returns env-configured rules
+ * @returns Array of role rules for the configured guild
+ * @throws {Error} If API request fails
+ */
 export async function fetchRoleRules(): Promise<RoleRule[]> {
     // If rules are configured in env, use them (for local testing)
     if (config.roleRules !== null) {
+        console.log("[config] using role rules from DISCORD_ROLE_RULES env var");
         return config.roleRules;
     }
 
     // Otherwise fetch from API
+    console.log("[config] fetching role rules from API");
     const endpoint = new URL("/api/discord/role-rules", config.appUrl);
     endpoint.searchParams.set("guildId", config.guildId);
 
@@ -103,7 +133,10 @@ export async function fetchRoleRules(): Promise<RoleRule[]> {
     });
 
     if (!response.ok) {
-        throw new Error(`Failed to fetch role rules: ${response.status} ${response.statusText}`);
+        const errorText = await response.text().catch(() => "");
+        throw new Error(
+            `Failed to fetch role rules: ${response.status} ${response.statusText}${errorText ? ` - ${errorText}` : ""}`
+        );
     }
 
     const data = (await response.json()) as { rules: Array<{

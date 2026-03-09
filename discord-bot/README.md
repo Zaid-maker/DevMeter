@@ -63,6 +63,7 @@ Define roles to create automatically on bot startup:
 ```
 
 On startup, the bot will:
+
 - Check if each role exists (by name)
 - Create missing roles with specified color/settings
 - Log the role IDs for you to use in `DISCORD_ROLE_RULES`

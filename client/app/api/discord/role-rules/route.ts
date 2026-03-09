@@ -1,24 +1,15 @@
 import { prisma } from "@/lib/prisma";
+import { validateAdminAuth } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
 
-const ADMIN_SECRET = process.env.DEV_ADMIN_SECRET;
-
-function getAdminSecret() {
-    const isDev = process.env.NODE_ENV === "development";
-    if (!ADMIN_SECRET) {
-        if (isDev) return "dev-secret-123";
-        throw new Error("DEV_ADMIN_SECRET is not configured in production environment.");
-    }
-    return ADMIN_SECRET;
-}
-
+/**
+ * GET /api/discord/role-rules
+ * Public endpoint for Discord bot to fetch active role rules for a guild
+ * @param req - Request with x-admin-secret header and guildId query param
+ */
 export async function GET(req: NextRequest) {
-    const secret = req.headers.get("x-admin-secret");
-    const activeSecret = getAdminSecret();
-
-    if (secret !== activeSecret) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const authError = validateAdminAuth(req);
+    if (authError) return authError;
 
     try {
         const guildId = req.nextUrl.searchParams.get("guildId");
