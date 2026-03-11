@@ -30,7 +30,7 @@ The bot will log created role IDs on startup - use these in your `DISCORD_ROLE_R
 - `DISCORD_BOT_TOKEN`: Discord bot token
 - `DISCORD_GUILD_ID`: Discord server ID
 - `DEVMETER_APP_URL`: Base URL of website API
-- `DEV_ADMIN_SECRET`: Must match server `DEV_ADMIN_SECRET`
+- `DISCORD_SYNC_SECRET`: Dedicated secret for Discord sync endpoints (must match server `DISCORD_SYNC_SECRET`)
 - `DISCORD_SYNC_WINDOW_DAYS`: Lookback window for activity metrics
 - `DISCORD_SYNC_INTERVAL_MS`: Sync frequency in milliseconds
 - `DISCORD_DRY_RUN`: `true` to log actions without changing roles

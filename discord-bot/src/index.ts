@@ -48,23 +48,28 @@ async function shutdown(signal: string) {
 }
 
 client.once("ready", async () => {
-    console.log(`[bot] logged in as ${client.user?.tag}`);
-    console.log(`[bot] sync interval ms=${config.syncIntervalMs}, windowDays=${config.windowDays}, dryRun=${config.dryRun}`);
+    try {
+        console.log(`[bot] logged in as ${client.user?.tag}`);
+        console.log(`[bot] sync interval ms=${config.syncIntervalMs}, windowDays=${config.windowDays}, dryRun=${config.dryRun}`);
 
-    // Initialize roles first (create missing roles from DISCORD_ROLES env)
-    const roleMap = await initializeRoles(client as Client<true>);
-    if (roleMap.size > 0) {
-        console.log("[bot] role IDs for configuration:");
-        for (const [name, id] of roleMap) {
-            console.log(`  - ${name}: ${id}`);
+        // Initialize roles first (create missing roles from DISCORD_ROLES env)
+        const roleMap = await initializeRoles(client as Client<true>);
+        if (roleMap.size > 0) {
+            console.log("[bot] role IDs for configuration:");
+            for (const [name, id] of roleMap) {
+                console.log(`  - ${name}: ${id}`);
+            }
         }
+
+        await runSyncSafely();
+
+        syncTimer = setInterval(() => {
+            void runSyncSafely();
+        }, config.syncIntervalMs);
+    } catch (error) {
+        console.error("[bot] startup sequence failed:", error);
+        await shutdown("startup-error");
     }
-
-    await runSyncSafely();
-
-    syncTimer = setInterval(() => {
-        void runSyncSafely();
-    }, config.syncIntervalMs);
 });
 
 client.on("error", (error) => {
@@ -78,4 +83,7 @@ process.on("unhandledRejection", (reason, promise) => {
     console.error("[bot] unhandled rejection at:", promise, "reason:", reason);
 });
 
-void client.login(config.discordToken);
+client.login(config.discordToken).catch((error) => {
+    console.error("[bot] Discord login failed:", error);
+    process.exit(1);
+});

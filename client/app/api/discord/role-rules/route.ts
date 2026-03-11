@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { validateAdminAuth } from "@/lib/admin-auth";
+import { validateDiscordSyncAuth } from "@/lib/admin-auth";
 import { NextRequest, NextResponse } from "next/server";
 
 /**
@@ -8,7 +8,7 @@ import { NextRequest, NextResponse } from "next/server";
  * @param req - Request with x-admin-secret header and guildId query param
  */
 export async function GET(req: NextRequest) {
-    const authError = validateAdminAuth(req);
+    const authError = validateDiscordSyncAuth(req);
     if (authError) return authError;
 
     try {

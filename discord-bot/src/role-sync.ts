@@ -32,9 +32,10 @@ function getManagedRoleIds(rules: RoleRule[]): Set<string> {
  * @returns Set of role IDs the candidate is eligible for
  */
 function getDesiredRoleIds(candidate: RoleCandidate, rules: RoleRule[]): Set<string> {
+    const orderedRules = [...rules].sort((a, b) => b.priority - a.priority);
     const desired = new Set<string>();
 
-    for (const rule of rules) {
+    for (const rule of orderedRules) {
         if (isEligible(candidate, rule)) {
             desired.add(rule.roleId);
         }
@@ -51,11 +52,21 @@ async function fetchCandidates(): Promise<CandidateResponse> {
     const endpoint = new URL("/api/admin/discord-role-candidates", config.appUrl);
     endpoint.searchParams.set("windowDays", String(config.windowDays));
 
-    const response = await fetch(endpoint, {
-        headers: {
-            "x-admin-secret": config.adminSecret,
-        },
-    });
+    let response: Response;
+    try {
+        response = await fetch(endpoint, {
+            headers: {
+                "x-admin-secret": config.syncSecret,
+            },
+            signal: AbortSignal.timeout(10_000),
+        });
+    } catch (error) {
+        const timedOut = error instanceof Error && error.name === "TimeoutError";
+        if (timedOut) {
+            throw new Error("Failed to fetch role candidates: request timed out after 10s");
+        }
+        throw error;
+    }
 
     if (!response.ok) {
         throw new Error(`Failed to fetch role candidates: ${response.status} ${response.statusText}`);
@@ -153,10 +164,9 @@ export async function runRoleSync(client: Client<true>): Promise<void> {
                 );
             }
         } catch (error) {
-            skipped += 1;
-
             const message = error instanceof Error ? error.message : "unknown error";
             if (message.includes("Unknown Member") || message.includes("10007")) {
+                skipped += 1;
                 console.warn(`[role-sync] ${candidate.discordUserId} not in guild; skipping`);
                 continue;
             }

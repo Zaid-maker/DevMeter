@@ -1,8 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { calculateDuration } from "@/lib/stats-utils";
-import { validateAdminAuth } from "@/lib/admin-auth";
+import { validateDiscordSyncAuth } from "@/lib/admin-auth";
 import { subDays } from "date-fns";
 import { NextRequest, NextResponse } from "next/server";
+
+const USER_BATCH_SIZE = 200;
 
 /**
  * Parses and validates the windowDays query parameter
@@ -24,55 +26,81 @@ function parseWindowDays(value: string | null) {
  * @param req - Request with x-admin-secret header and optional windowDays query param
  */
 export async function GET(req: NextRequest) {
-    const authError = validateAdminAuth(req);
+    const authError = validateDiscordSyncAuth(req);
     if (authError) return authError;
 
     try {
         const windowDays = parseWindowDays(req.nextUrl.searchParams.get("windowDays"));
         const since = subDays(new Date(), windowDays);
 
-        const users = await prisma.user.findMany({
-            where: {
-                deletedAt: null,
-                emailVerified: true,
-                discordUserId: { not: null },
-            },
-            select: {
-                id: true,
-                email: true,
-                name: true,
-                xp: true,
-                level: true,
-                discordUserId: true,
-                discordUsername: true,
-                discordLinkedAt: true,
-                heartbeats: {
-                    where: {
-                        timestamp: { gte: since },
-                    },
-                    select: {
-                        timestamp: true,
+        const candidates: Array<{
+            userId: string;
+            email: string;
+            name: string | null;
+            discordUserId: string | null;
+            discordUsername: string | null;
+            discordLinkedAt: Date | null;
+            xp: number;
+            level: number;
+            heartbeatCount: number;
+            totalHours: number;
+        }> = [];
+
+        let cursorId: string | undefined;
+
+        while (true) {
+            const users = await prisma.user.findMany({
+                where: {
+                    deletedAt: null,
+                    emailVerified: true,
+                    discordUserId: { not: null },
+                },
+                orderBy: { id: "asc" },
+                take: USER_BATCH_SIZE,
+                ...(cursorId ? { cursor: { id: cursorId }, skip: 1 } : {}),
+                select: {
+                    id: true,
+                    email: true,
+                    name: true,
+                    xp: true,
+                    level: true,
+                    discordUserId: true,
+                    discordUsername: true,
+                    discordLinkedAt: true,
+                    heartbeats: {
+                        where: {
+                            timestamp: { gte: since },
+                        },
+                        select: {
+                            timestamp: true,
+                        },
                     },
                 },
-            },
-        });
+            });
 
-        const candidates = users.map((user) => {
-            const totalHours = calculateDuration(user.heartbeats);
+            if (users.length === 0) {
+                break;
+            }
 
-            return {
-                userId: user.id,
-                email: user.email,
-                name: user.name,
-                discordUserId: user.discordUserId,
-                discordUsername: user.discordUsername,
-                discordLinkedAt: user.discordLinkedAt,
-                xp: user.xp,
-                level: user.level,
-                heartbeatCount: user.heartbeats.length,
-                totalHours: Number(totalHours.toFixed(2)),
-            };
-        });
+            for (const user of users) {
+                const totalHours = calculateDuration(user.heartbeats);
+
+                candidates.push({
+                    userId: user.id,
+                    email: user.email,
+                    name: user.name,
+                    discordUserId: user.discordUserId,
+                    discordUsername: user.discordUsername,
+                    discordLinkedAt: user.discordLinkedAt,
+                    xp: user.xp,
+                    level: user.level,
+                    heartbeatCount: user.heartbeats.length,
+                    totalHours: Number(totalHours.toFixed(2)),
+                });
+            }
+
+            cursorId = users[users.length - 1]?.id;
+        }
 
         return NextResponse.json({
             meta: {

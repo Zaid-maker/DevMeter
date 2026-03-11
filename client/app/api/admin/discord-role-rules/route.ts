@@ -89,8 +89,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        const message = error instanceof Error ? error.message : "Internal Server Error";
-        return NextResponse.json({ error: message }, { status: 500 });
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }
 
@@ -133,8 +132,7 @@ export async function PUT(req: NextRequest) {
             return NextResponse.json({ error: "Role rule not found" }, { status: 404 });
         }
 
-        const message = error instanceof Error ? error.message : "Internal Server Error";
-        return NextResponse.json({ error: message }, { status: 500 });
+        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
     }
 }
 

@@ -3,19 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { startOfDay, subDays, format } from "date-fns";
 import { getLanguageColor } from "@/lib/stats-service";
 import { calculateDuration } from "@/lib/stats-utils";
-
-const ADMIN_SECRET = process.env.DEV_ADMIN_SECRET;
-
-// SECURITY: Ensure the admin secret is configured.
-// Fallback to a development default ONLY if NODE_ENV is "development".
-const getAdminSecret = () => {
-    const isDev = process.env.NODE_ENV === "development";
-    if (!ADMIN_SECRET) {
-        if (isDev) return "dev-secret-123";
-        throw new Error("DEV_ADMIN_SECRET is not configured in production environment.");
-    }
-    return ADMIN_SECRET;
-};
+import { validateAdminAuth } from "@/lib/admin-auth";
 
 function isOriginAllowed(origin: string | null) {
     if (!origin) return false;
@@ -43,10 +31,9 @@ export async function OPTIONS(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
     const origin = req.headers.get("origin");
-    const secret = req.headers.get("X-Admin-Secret");
 
-    const activeSecret = getAdminSecret();
-    if (secret !== activeSecret) {
+    const authError = validateAdminAuth(req);
+    if (authError) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: getCorsHeaders(origin) });
     }
 

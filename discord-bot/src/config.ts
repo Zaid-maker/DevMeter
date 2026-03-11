@@ -77,6 +77,7 @@ function parseRoleRules(raw: string | undefined): RoleRule[] | null {
         const candidate = item as Record<string, unknown>;
         const name = candidate.name;
         const roleId = candidate.roleId;
+        const priority = typeof candidate.priority === "number" ? candidate.priority : 0;
 
         if (typeof name !== "string" || !name.trim()) {
             throw new Error(`Role rule at index ${index} must include a non-empty string 'name'.`);
@@ -89,19 +90,21 @@ function parseRoleRules(raw: string | undefined): RoleRule[] | null {
         return {
             name,
             roleId,
+            priority,
             minHours: typeof candidate.minHours === "number" ? candidate.minHours : undefined,
             minXp: typeof candidate.minXp === "number" ? candidate.minXp : undefined,
             minLevel: typeof candidate.minLevel === "number" ? candidate.minLevel : undefined,
             minHeartbeats: typeof candidate.minHeartbeats === "number" ? candidate.minHeartbeats : undefined,
         } satisfies RoleRule;
-    });
+    }).sort((a, b) => b.priority - a.priority);
 }
 
 /** Bot configuration loaded from environment variables */
 export const config = {
     discordToken: getRequiredEnv("DISCORD_BOT_TOKEN"),
     guildId: getRequiredEnv("DISCORD_GUILD_ID"),
-    adminSecret: getRequiredEnv("DEV_ADMIN_SECRET"),
+    // Must be a least-privilege credential used only for Discord sync endpoints.
+    syncSecret: getRequiredEnv("DISCORD_SYNC_SECRET"),
     appUrl: getRequiredEnv("DEVMETER_APP_URL"),
     windowDays: parseWindowDays(process.env.DISCORD_SYNC_WINDOW_DAYS),
     syncIntervalMs: parseIntervalMs(process.env.DISCORD_SYNC_INTERVAL_MS),
@@ -126,11 +129,21 @@ export async function fetchRoleRules(): Promise<RoleRule[]> {
     const endpoint = new URL("/api/discord/role-rules", config.appUrl);
     endpoint.searchParams.set("guildId", config.guildId);
 
-    const response = await fetch(endpoint, {
-        headers: {
-            "x-admin-secret": config.adminSecret,
-        },
-    });
+    let response: Response;
+    try {
+        response = await fetch(endpoint, {
+            headers: {
+                "x-admin-secret": config.syncSecret,
+            },
+            signal: AbortSignal.timeout(10_000),
+        });
+    } catch (error) {
+        const timedOut = error instanceof Error && error.name === "TimeoutError";
+        if (timedOut) {
+            throw new Error("Failed to fetch role rules: request timed out after 10s");
+        }
+        throw error;
+    }
 
     if (!response.ok) {
         const errorText = await response.text().catch(() => "");
@@ -153,9 +166,10 @@ export async function fetchRoleRules(): Promise<RoleRule[]> {
     return data.rules.map((rule) => ({
         name: rule.name,
         roleId: rule.roleId,
+        priority: rule.priority,
         minHours: rule.minHours ?? undefined,
         minXp: rule.minXp ?? undefined,
         minLevel: rule.minLevel ?? undefined,
         minHeartbeats: rule.minHeartbeats ?? undefined,
-    }));
+    })).sort((a, b) => b.priority - a.priority);
 }

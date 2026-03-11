@@ -6,6 +6,8 @@ export interface RoleRule {
     name: string;
     /** Discord role ID (snowflake) */
     roleId: string;
+    /** Rule precedence (higher number = higher priority) */
+    priority: number;
     /** Minimum coding hours required (optional) */
     minHours?: number;
     /** Minimum XP points required (optional) */
