@@ -21,10 +21,12 @@ import {
     Trash2,
     Lock,
     Zap,
-    ExternalLink
+    ExternalLink,
+    Link2,
+    Unlink2
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import useSWR, { mutate } from "swr";
 
 interface ApiKey {
@@ -32,6 +34,13 @@ interface ApiKey {
     key: string;
     name: string;
     createdAt: string;
+}
+
+interface DiscordLinkStatus {
+    linked: boolean;
+    discordUserId: string | null;
+    discordUsername: string | null;
+    discordLinkedAt: string | null;
 }
 
 const fetcher = (url: string) => fetch(url).then(async (res) => {
@@ -58,10 +67,48 @@ function SettingsContent() {
         session ? "/api/keys" : null,
         fetcher
     );
+    const { data: discordLink, isLoading: discordLoading } = useSWR<DiscordLinkStatus>(
+        session ? "/api/user/discord" : null,
+        fetcher
+    );
     const [generating, setGenerating] = useState(false);
     const [revokingId, setRevokingId] = useState<string | null>(null);
     const [showKeyId, setShowKeyId] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
+    const [unlinkingDiscord, setUnlinkingDiscord] = useState(false);
+
+    useEffect(() => {
+        const status = searchParams.get("discord");
+        if (!status) return;
+
+        if (status === "linked") {
+            toast.success("Discord linked successfully", {
+                description: "Your account is now connected and eligible for role sync.",
+            });
+            mutate("/api/user/discord");
+        } else if (status === "already_linked") {
+            toast.error("Discord account already linked", {
+                description: "That Discord account is already linked to another DevMeter user.",
+            });
+        } else if (status === "state_error") {
+            toast.error("Link verification failed", {
+                description: "Please try linking Discord again.",
+            });
+        } else if (status === "misconfigured") {
+            toast.error("Discord linking is not configured", {
+                description: "Please ask an admin to configure Discord OAuth environment variables.",
+            });
+        } else {
+            toast.error("Failed to link Discord", {
+                description: "Please try again.",
+            });
+        }
+
+        const params = new URLSearchParams(searchParams.toString());
+        params.delete("discord");
+        const nextUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
+        router.replace(nextUrl, { scroll: false });
+    }, [pathname, router, searchParams]);
 
     async function generateKey() {
         setGenerating(true);
@@ -117,6 +164,29 @@ function SettingsContent() {
         }
     };
 
+    function connectDiscord() {
+        window.location.href = "/api/user/discord/connect";
+    }
+
+    async function unlinkDiscord() {
+        if (!confirm("Unlink your Discord account from DevMeter?")) return;
+
+        setUnlinkingDiscord(true);
+        try {
+            const res = await fetch("/api/user/discord", { method: "DELETE" });
+            if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
+                throw new Error(data.error || "Failed to unlink Discord");
+            }
+            await mutate("/api/user/discord");
+            toast.success("Discord account unlinked");
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Failed to unlink Discord");
+        } finally {
+            setUnlinkingDiscord(false);
+        }
+    }
+
     if (!session) return null;
 
     const hasKey = keys && keys.length > 0;
@@ -131,7 +201,7 @@ function SettingsContent() {
             </div>
 
             <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-                <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
+                <TabsList className="grid w-full grid-cols-3 lg:w-100">
                     <TabsTrigger value="profile">Profile</TabsTrigger>
                     <TabsTrigger value="keys">API Keys</TabsTrigger>
                     <TabsTrigger value="security">Security</TabsTrigger>
@@ -167,6 +237,58 @@ function SettingsContent() {
                         </CardContent>
                         <CardFooter className="border-t px-6 py-4">
                             <Button size="sm">Save Changes</Button>
+                        </CardFooter>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Discord Link</CardTitle>
+                            <CardDescription>Connect your Discord account to receive activity-based roles automatically.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {discordLoading ? (
+                                <p className="text-sm text-muted-foreground">Checking Discord link status...</p>
+                            ) : discordLink?.linked ? (
+                                <div className="space-y-3">
+                                    <div className="rounded-lg border bg-muted/30 p-4">
+                                        <p className="text-sm font-medium">Connected as {discordLink.discordUsername || "Unknown"}</p>
+                                        <p className="text-xs text-muted-foreground mt-1">Discord ID: {discordLink.discordUserId}</p>
+                                        {discordLink.discordLinkedAt ? (
+                                            <p className="text-xs text-muted-foreground mt-1">
+                                                Linked on {new Date(discordLink.discordLinkedAt).toLocaleString()}
+                                            </p>
+                                        ) : null}
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="rounded-lg border border-dashed p-4">
+                                    <p className="text-sm text-muted-foreground">
+                                        No Discord account linked yet. Link your account to become eligible for Discord role sync.
+                                    </p>
+                                </div>
+                            )}
+                        </CardContent>
+                        <CardFooter className="border-t px-6 py-4 flex items-center gap-2">
+                            {discordLink?.linked ? (
+                                <Button variant="destructive" size="sm" onClick={unlinkDiscord} disabled={unlinkingDiscord}>
+                                    {unlinkingDiscord ? (
+                                        <>
+                                            <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                                            Unlinking...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Unlink2 className="mr-2 h-4 w-4" />
+                                            Unlink Discord
+                                        </>
+                                    )}
+                                </Button>
+                            ) : (
+                                <Button size="sm" onClick={connectDiscord}>
+                                    <Link2 className="mr-2 h-4 w-4" />
+                                    Link Discord
+                                </Button>
+                            )}
                         </CardFooter>
                     </Card>
 
@@ -413,7 +535,7 @@ function SettingsContent() {
 export default function SettingsPage() {
     return (
         <Suspense fallback={
-            <div className="flex items-center justify-center min-h-[400px]">
+            <div className="flex items-center justify-center min-h-100">
                 <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
             </div>
         }>
