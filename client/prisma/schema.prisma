@@ -15,6 +15,9 @@ model User {
   createdAt     DateTime          @default(now())
   updatedAt     DateTime          @updatedAt
   timezone      String?           @default("UTC")
+  discordUserId String?           @unique
+  discordUsername String?
+  discordLinkedAt DateTime?
   accounts      Account[]
   apiKeys       ApiKey[]
   heartbeats    Heartbeat[]
@@ -22,9 +25,48 @@ model User {
   xp            Int               @default(0)
   level         Int               @default(1)
   achievements  UserAchievement[]
+  roleSyncStates DiscordRoleSync[]
   deletedAt     DateTime?
 
   @@index([deletedAt])
+}
+
+model DiscordRoleSync {
+  id             String   @id @default(cuid())
+  userId         String
+  guildId        String
+  awardedRoles   String[] @default([])
+  statsWindowDays Int     @default(7)
+  totalHours     Float    @default(0)
+  heartbeatCount Int      @default(0)
+  lastEvaluatedAt DateTime @default(now())
+  lastSyncedAt   DateTime?
+  lastError      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, guildId])
+  @@index([guildId])
+}
+
+model DiscordRoleRule {
+  id            String   @id @default(cuid())
+  guildId       String
+  name          String
+  roleId        String
+  minHours      Float?
+  minXp         Int?
+  minLevel      Int?
+  minHeartbeats Int?
+  priority      Int      @default(0)
+  enabled       Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([guildId, roleId])
+  @@index([guildId])
+  @@index([guildId, enabled])
 }
 
 model Achievement {

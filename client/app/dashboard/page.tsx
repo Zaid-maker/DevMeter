@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from "recharts";
-import { Activity, Clock, Code, Layout, Key, Copy, Plus, RefreshCw, Loader2, Zap, ArrowUpRight, TrendingUp } from "lucide-react";
+import { Activity, Clock, Code, Layout, Key, Copy, Plus, RefreshCw, Loader2, Zap, ArrowUpRight, TrendingUp, Link2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
@@ -227,7 +227,7 @@ function DashboardContent() {
 
     if (isAuthPending) {
         return (
-            <div className="flex items-center justify-center min-h-[600px]">
+            <div className="flex items-center justify-center min-h-150">
                 <div className="flex flex-col items-center space-y-4">
                     <Loader2 className="h-10 w-10 animate-spin text-primary" />
                     <p className="text-muted-foreground animate-pulse text-sm">Synchronizing your statistics...</p>
@@ -240,11 +240,14 @@ function DashboardContent() {
         return null;
     }
 
+    const discordLinked = Boolean((session.user as any).discordUserId);
+    const discordUsername = (session.user as any).discordUsername as string | undefined;
+
     const isDeleted = (session.user as any).deletedAt;
 
     if (isDeleted) {
         return (
-            <div className="flex items-center justify-center min-h-[600px] p-4">
+            <div className="flex items-center justify-center min-h-150 p-4">
                 <Card className="max-w-md w-full border-primary/20 bg-primary/5 backdrop-blur-sm shadow-2xl">
                     <CardHeader className="text-center space-y-4">
                         <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
@@ -339,6 +342,27 @@ function DashboardContent() {
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 md:gap-3">
+                    {discordLinked ? (
+                        <Badge
+                            variant="secondary"
+                            className="px-3 py-1.5 border border-indigo-500/20 bg-indigo-500/10 text-indigo-400 text-[10px] md:text-xs"
+                        >
+                            <Link2 className="mr-2 h-4 w-4" />
+                            Discord Linked{discordUsername ? `: ${discordUsername}` : ""}
+                        </Badge>
+                    ) : (
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="rounded-lg h-9 border-indigo-500/20 hover:bg-indigo-500/10 hover:text-indigo-400 px-4"
+                            asChild
+                        >
+                            <a href="/api/user/discord/connect">
+                                <Link2 className="mr-2 h-4 w-4" />
+                                Link Discord
+                            </a>
+                        </Button>
+                    )}
                     <Badge
                         variant="secondary"
                         className={`px-3 py-1.5 border transition-all duration-500 text-[10px] md:text-xs ${stats?.summary.isLive
@@ -413,7 +437,7 @@ function DashboardContent() {
                             </CardHeader>
                             <CardContent>
                                 {isLoading ? (
-                                    <Skeleton className="h-[350px] w-full" />
+                                    <Skeleton className="h-87.5 w-full" />
                                 ) : (
                                     <ResponsiveContainer width="100%" height={350}>
                                         <BarChart data={stats?.activityByDay || []}>
@@ -449,7 +473,7 @@ function DashboardContent() {
                                         {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-12 w-full" />)}
                                     </div>
                                 ) : (
-                                    <ScrollArea className="h-[350px] pr-4">
+                                    <ScrollArea className="h-87.5 pr-4">
                                         <div className="space-y-6">
                                             {stats?.recentActivity.map((activity) => (
                                                 <div key={activity.id} className="flex items-start space-x-4">
@@ -753,7 +777,7 @@ function DashboardContent() {
 export default function DashboardPage() {
     return (
         <Suspense fallback={
-            <div className="flex items-center justify-center min-h-[600px]">
+            <div className="flex items-center justify-center min-h-150">
                 <div className="flex flex-col items-center space-y-4">
                     <Loader2 className="h-10 w-10 animate-spin text-primary" />
                     <p className="text-muted-foreground animate-pulse text-sm">Synchronizing your statistics...</p>
