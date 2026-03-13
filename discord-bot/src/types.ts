@@ -24,8 +24,6 @@ export interface RoleRule {
 export interface RoleCandidate {
     /** User ID from DevMeter database */
     userId: string;
-    /** User's email address */
-    email: string;
     /** User's display name (optional) */
     name: string | null;
     /** Discord user ID (snowflake) */

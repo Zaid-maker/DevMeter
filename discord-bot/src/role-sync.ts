@@ -106,9 +106,13 @@ async function applyMemberRoles(
         return { added: rolesToAdd, removed: rolesToRemove };
     }
 
+    const addedSucceeded: string[] = [];
+    const removedSucceeded: string[] = [];
+
     for (const roleId of rolesToAdd) {
         try {
             await member.roles.add(roleId, "DevMeter activity role sync");
+            addedSucceeded.push(roleId);
         } catch (error) {
             console.error(`[role-sync] failed to add role ${roleId} to ${member.id}:`, error);
         }
@@ -117,12 +121,13 @@ async function applyMemberRoles(
     for (const roleId of rolesToRemove) {
         try {
             await member.roles.remove(roleId, "DevMeter activity role sync");
+            removedSucceeded.push(roleId);
         } catch (error) {
             console.error(`[role-sync] failed to remove role ${roleId} from ${member.id}:`, error);
         }
     }
 
-    return { added: rolesToAdd, removed: rolesToRemove };
+    return { added: addedSucceeded, removed: removedSucceeded };
 }
 
 /**

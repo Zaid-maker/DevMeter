@@ -4,8 +4,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 /**
  * GET /api/discord/role-rules
- * Public endpoint for Discord bot to fetch active role rules for a guild
- * @param req - Request with x-admin-secret header and guildId query param
+ * Authenticated endpoint for Discord bot to fetch active role rules for a guild.
+ * Requires x-admin-secret header and validates it via validateDiscordSyncAuth.
+ * @param req - Request including x-admin-secret header and guildId query param
  */
 export async function GET(req: NextRequest) {
     const authError = validateDiscordSyncAuth(req);

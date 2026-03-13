@@ -6,6 +6,22 @@ import { NextRequest, NextResponse } from "next/server";
 
 const USER_BATCH_SIZE = 200;
 
+const NO_STORE_HEADERS = {
+    "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+    Pragma: "no-cache",
+    Expires: "0",
+} as const;
+
+function jsonNoStore(body: unknown, init?: ResponseInit) {
+    return NextResponse.json(body, {
+        ...init,
+        headers: {
+            ...NO_STORE_HEADERS,
+            ...(init?.headers ?? {}),
+        },
+    });
+}
+
 /**
  * Parses and validates the windowDays query parameter
  * @param value - The raw query parameter value
@@ -26,8 +42,18 @@ function parseWindowDays(value: string | null) {
  * @param req - Request with x-admin-secret header and optional windowDays query param
  */
 export async function GET(req: NextRequest) {
+    // Enforce strict bot-scoped auth for this endpoint.
+    if (!process.env.DISCORD_SYNC_SECRET) {
+        return jsonNoStore({ error: "Server Misconfigured" }, { status: 500 });
+    }
+
     const authError = validateDiscordSyncAuth(req);
-    if (authError) return authError;
+    if (authError) {
+        for (const [key, value] of Object.entries(NO_STORE_HEADERS)) {
+            authError.headers.set(key, value);
+        }
+        return authError;
+    }
 
     try {
         const windowDays = parseWindowDays(req.nextUrl.searchParams.get("windowDays"));
@@ -35,7 +61,6 @@ export async function GET(req: NextRequest) {
 
         const candidates: Array<{
             userId: string;
-            email: string;
             name: string | null;
             discordUserId: string | null;
             discordUsername: string | null;
@@ -60,7 +85,6 @@ export async function GET(req: NextRequest) {
                 ...(cursorId ? { cursor: { id: cursorId }, skip: 1 } : {}),
                 select: {
                     id: true,
-                    email: true,
                     name: true,
                     xp: true,
                     level: true,
@@ -87,7 +111,6 @@ export async function GET(req: NextRequest) {
 
                 candidates.push({
                     userId: user.id,
-                    email: user.email,
                     name: user.name,
                     discordUserId: user.discordUserId,
                     discordUsername: user.discordUsername,
@@ -102,7 +125,7 @@ export async function GET(req: NextRequest) {
             cursorId = users[users.length - 1]?.id;
         }
 
-        return NextResponse.json({
+        return jsonNoStore({
             meta: {
                 windowDays,
                 since,
@@ -112,6 +135,6 @@ export async function GET(req: NextRequest) {
         });
     } catch (error) {
         console.error("GET /api/admin/discord-role-candidates error:", error);
-        return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+        return jsonNoStore({ error: "Internal Server Error" }, { status: 500 });
     }
 }
