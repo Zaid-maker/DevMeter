@@ -1,4 +1,5 @@
 "use client";
+"use i18n";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,6 +42,7 @@ interface DiscordLinkStatus {
     discordUserId: string | null;
     discordUsername: string | null;
     discordLinkedAt: string | null;
+    discordJoinStatus: "joined" | "failed" | "pending" | null;
 }
 
 const fetcher = (url: string) => fetch(url).then(async (res) => {
@@ -86,6 +88,23 @@ function SettingsContent() {
                 description: "Your account is now connected and eligible for role sync.",
             });
             mutate("/api/user/discord");
+        } else if (status === "linked_join_failed") {
+            toast.warning("Discord linked, but server join failed", {
+                description: "Your account is connected. Ask an admin to check bot token, guild ID, and bot permissions.",
+            });
+            (async () => {
+                try {
+                    await fetch("/api/user/discord", {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ joinStatus: "failed" }),
+                    });
+                } catch (error) {
+                    console.error("Failed to persist Discord join status:", error);
+                } finally {
+                    mutate("/api/user/discord");
+                }
+            })();
         } else if (status === "already_linked") {
             toast.error("Discord account already linked", {
                 description: "That Discord account is already linked to another DevMeter user.",
@@ -259,6 +278,14 @@ function SettingsContent() {
                                             </p>
                                         ) : null}
                                     </div>
+                                    {discordLink.discordJoinStatus === "failed" ? (
+                                        <div className="rounded-lg border border-amber-400/40 bg-amber-500/10 p-4">
+                                            <p className="text-sm font-medium text-amber-300">Server join needs attention</p>
+                                            <p className="text-xs text-amber-200/90 mt-1">
+                                                Discord account is linked, but auto-join to the server failed. Use Re-authenticate, then ask an admin to verify bot permissions.
+                                            </p>
+                                        </div>
+                                    ) : null}
                                 </div>
                             ) : (
                                 <div className="rounded-lg border border-dashed p-4">
@@ -270,19 +297,25 @@ function SettingsContent() {
                         </CardContent>
                         <CardFooter className="border-t px-6 py-4 flex items-center gap-2">
                             {discordLink?.linked ? (
-                                <Button variant="destructive" size="sm" onClick={unlinkDiscord} disabled={unlinkingDiscord}>
-                                    {unlinkingDiscord ? (
-                                        <>
-                                            <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                                            Unlinking...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Unlink2 className="mr-2 h-4 w-4" />
-                                            Unlink Discord
-                                        </>
-                                    )}
-                                </Button>
+                                <>
+                                    <Button variant="outline" size="sm" onClick={connectDiscord} disabled={unlinkingDiscord}>
+                                        <RefreshCw className="mr-2 h-4 w-4" />
+                                        Re-authenticate
+                                    </Button>
+                                    <Button variant="destructive" size="sm" onClick={unlinkDiscord} disabled={unlinkingDiscord}>
+                                        {unlinkingDiscord ? (
+                                            <>
+                                                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                                                Unlinking...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Unlink2 className="mr-2 h-4 w-4" />
+                                                Unlink Discord
+                                            </>
+                                        )}
+                                    </Button>
+                                </>
                             ) : (
                                 <Button size="sm" onClick={connectDiscord}>
                                     <Link2 className="mr-2 h-4 w-4" />

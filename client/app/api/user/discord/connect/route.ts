@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
     discordUrl.searchParams.set("client_id", clientId);
     discordUrl.searchParams.set("response_type", "code");
     discordUrl.searchParams.set("redirect_uri", redirectUri);
-    discordUrl.searchParams.set("scope", "identify");
+    discordUrl.searchParams.set("scope", "identify guilds.join");
     discordUrl.searchParams.set("state", state);
     discordUrl.searchParams.set("prompt", "consent");
 
