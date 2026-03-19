@@ -1,4 +1,5 @@
 "use client";
+"use i18n";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -84,6 +85,11 @@ function SettingsContent() {
         if (status === "linked") {
             toast.success("Discord linked successfully", {
                 description: "Your account is now connected and eligible for role sync.",
+            });
+            mutate("/api/user/discord");
+        } else if (status === "linked_join_failed") {
+            toast.warning("Discord linked, but server join failed", {
+                description: "Your account is connected. Ask an admin to check bot token, guild ID, and bot permissions.",
             });
             mutate("/api/user/discord");
         } else if (status === "already_linked") {
@@ -270,19 +276,25 @@ function SettingsContent() {
                         </CardContent>
                         <CardFooter className="border-t px-6 py-4 flex items-center gap-2">
                             {discordLink?.linked ? (
-                                <Button variant="destructive" size="sm" onClick={unlinkDiscord} disabled={unlinkingDiscord}>
-                                    {unlinkingDiscord ? (
-                                        <>
-                                            <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                                            Unlinking...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Unlink2 className="mr-2 h-4 w-4" />
-                                            Unlink Discord
-                                        </>
-                                    )}
-                                </Button>
+                                <>
+                                    <Button variant="outline" size="sm" onClick={connectDiscord} disabled={unlinkingDiscord}>
+                                        <RefreshCw className="mr-2 h-4 w-4" />
+                                        Re-authenticate
+                                    </Button>
+                                    <Button variant="destructive" size="sm" onClick={unlinkDiscord} disabled={unlinkingDiscord}>
+                                        {unlinkingDiscord ? (
+                                            <>
+                                                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                                                Unlinking...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Unlink2 className="mr-2 h-4 w-4" />
+                                                Unlink Discord
+                                            </>
+                                        )}
+                                    </Button>
+                                </>
                             ) : (
                                 <Button size="sm" onClick={connectDiscord}>
                                     <Link2 className="mr-2 h-4 w-4" />

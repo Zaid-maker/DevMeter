@@ -22,6 +22,38 @@ function settingsRedirect(req: NextRequest, status: string) {
     return new URL(`/settings?tab=profile&discord=${status}`, req.url);
 }
 
+async function addUserToDiscordGuild(params: {
+    discordUserId: string;
+    userAccessToken: string;
+}): Promise<boolean> {
+    const guildId = process.env.DISCORD_GUILD_ID;
+    const botToken = process.env.DISCORD_BOT_TOKEN;
+
+    if (!guildId || !botToken) {
+        console.warn("Discord auto-join skipped: DISCORD_GUILD_ID or DISCORD_BOT_TOKEN is missing.");
+        return false;
+    }
+
+    const joinRes = await fetch(`https://discord.com/api/guilds/${guildId}/members/${params.discordUserId}`, {
+        method: "PUT",
+        headers: {
+            Authorization: `Bot ${botToken}`,
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+            access_token: params.userAccessToken,
+        }),
+    });
+
+    if (!joinRes.ok && joinRes.status !== 201 && joinRes.status !== 204) {
+        const body = await joinRes.text().catch(() => "");
+        console.error("Discord guild join failed:", joinRes.status, body);
+        return false;
+    }
+
+    return true;
+}
+
 export async function GET(req: NextRequest) {
     const session = await auth.api.getSession({
         headers: await headers(),
@@ -110,7 +142,12 @@ export async function GET(req: NextRequest) {
             },
         });
 
-        const res = NextResponse.redirect(settingsRedirect(req, "linked"));
+        const joinedGuild = await addUserToDiscordGuild({
+            discordUserId: discordUser.id,
+            userAccessToken: tokenData.access_token,
+        });
+
+        const res = NextResponse.redirect(settingsRedirect(req, joinedGuild ? "linked" : "linked_join_failed"));
         res.cookies.set("discord_link_state", "", { path: "/", maxAge: 0 });
         return res;
     } catch (error) {
