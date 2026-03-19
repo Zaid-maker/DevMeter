@@ -42,6 +42,7 @@ interface DiscordLinkStatus {
     discordUserId: string | null;
     discordUsername: string | null;
     discordLinkedAt: string | null;
+    discordJoinStatus: "joined" | "failed" | "pending" | null;
 }
 
 const fetcher = (url: string) => fetch(url).then(async (res) => {
@@ -91,7 +92,19 @@ function SettingsContent() {
             toast.warning("Discord linked, but server join failed", {
                 description: "Your account is connected. Ask an admin to check bot token, guild ID, and bot permissions.",
             });
-            mutate("/api/user/discord");
+            (async () => {
+                try {
+                    await fetch("/api/user/discord", {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ joinStatus: "failed" }),
+                    });
+                } catch (error) {
+                    console.error("Failed to persist Discord join status:", error);
+                } finally {
+                    mutate("/api/user/discord");
+                }
+            })();
         } else if (status === "already_linked") {
             toast.error("Discord account already linked", {
                 description: "That Discord account is already linked to another DevMeter user.",
@@ -265,6 +278,14 @@ function SettingsContent() {
                                             </p>
                                         ) : null}
                                     </div>
+                                    {discordLink.discordJoinStatus === "failed" ? (
+                                        <div className="rounded-lg border border-amber-400/40 bg-amber-500/10 p-4">
+                                            <p className="text-sm font-medium text-amber-300">Server join needs attention</p>
+                                            <p className="text-xs text-amber-200/90 mt-1">
+                                                Discord account is linked, but auto-join to the server failed. Use Re-authenticate, then ask an admin to verify bot permissions.
+                                            </p>
+                                        </div>
+                                    ) : null}
                                 </div>
                             ) : (
                                 <div className="rounded-lg border border-dashed p-4">

@@ -18,6 +18,7 @@ model User {
   discordUserId String?           @unique
   discordUsername String?
   discordLinkedAt DateTime?
+  discordJoinStatus String?
   accounts      Account[]
   apiKeys       ApiKey[]
   heartbeats    Heartbeat[]

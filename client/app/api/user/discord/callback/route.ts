@@ -34,24 +34,48 @@ async function addUserToDiscordGuild(params: {
         return false;
     }
 
-    const joinRes = await fetch(`https://discord.com/api/guilds/${guildId}/members/${params.discordUserId}`, {
-        method: "PUT",
-        headers: {
-            Authorization: `Bot ${botToken}`,
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            access_token: params.userAccessToken,
-        }),
-    });
+    const controller = new AbortController();
+    const timeoutMs = 5000;
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-    if (!joinRes.ok && joinRes.status !== 201 && joinRes.status !== 204) {
-        const body = await joinRes.text().catch(() => "");
-        console.error("Discord guild join failed:", joinRes.status, body);
+    try {
+        const joinRes = await fetch(`https://discord.com/api/guilds/${guildId}/members/${params.discordUserId}`, {
+            method: "PUT",
+            headers: {
+                Authorization: `Bot ${botToken}`,
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                access_token: params.userAccessToken,
+            }),
+            signal: controller.signal,
+        });
+
+        if (!joinRes.ok && joinRes.status !== 201 && joinRes.status !== 204) {
+            const body = await joinRes.text().catch(() => "");
+            console.error("Discord guild join failed:", {
+                status: joinRes.status,
+                body,
+                guildId,
+                discordUserId: params.discordUserId,
+            });
+            return false;
+        }
+
+        return true;
+    } catch (error) {
+        const isAbort = error instanceof Error && error.name === "AbortError";
+        console.error("Discord guild join request error:", {
+            error: error instanceof Error ? error.message : String(error),
+            aborted: isAbort,
+            timeoutMs,
+            guildId,
+            discordUserId: params.discordUserId,
+        });
         return false;
+    } finally {
+        clearTimeout(timeoutId);
     }
-
-    return true;
 }
 
 export async function GET(req: NextRequest) {
@@ -145,6 +169,13 @@ export async function GET(req: NextRequest) {
         const joinedGuild = await addUserToDiscordGuild({
             discordUserId: discordUser.id,
             userAccessToken: tokenData.access_token,
+        });
+
+        await prisma.user.update({
+            where: { id: session.user.id },
+            data: {
+                discordJoinStatus: joinedGuild ? "joined" : "failed",
+            },
         });
 
         const res = NextResponse.redirect(settingsRedirect(req, joinedGuild ? "linked" : "linked_join_failed"));
