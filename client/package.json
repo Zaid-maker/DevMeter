@@ -45,6 +45,7 @@
     "tailwind-merge": "^3.4.0"
   },
   "devDependencies": {
+    "@lingo.dev/compiler": "^0.4.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^25",
     "@types/pg": "^8.16.0",

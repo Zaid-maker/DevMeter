@@ -1,4 +1,5 @@
 "use client";
+"use i18n";
 
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";

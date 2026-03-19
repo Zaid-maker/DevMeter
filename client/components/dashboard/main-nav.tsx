@@ -1,10 +1,12 @@
 "use client";
+"use i18n";
 
 import Link from "next/link";
 import { useState } from "react";
 import { Activity, LogOut, Settings, User, Menu, X } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
 import { useRouter, usePathname } from "next/navigation";
+import { LocaleSwitcher } from "@lingo.dev/compiler/react";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -50,6 +52,13 @@ export function MainNav() {
         { name: "Docs", href: "/docs" },
     ];
 
+    const locales = [
+        { code: "en", label: "EN" },
+        { code: "es", label: "ES" },
+        { code: "fr", label: "FR" },
+        { code: "de", label: "DE" },
+    ] as const;
+
     return (
         <header className="sticky top-0 z-50 w-full border-b border-white/5 bg-background/40 backdrop-blur-xl supports-[backdrop-filter]:bg-background/20">
             <div className="flex h-16 items-center px-4 md:px-8 max-w-7xl mx-auto">
@@ -93,6 +102,10 @@ export function MainNav() {
                 </div>
 
                 <div className="flex items-center space-x-2 md:space-x-4 ml-auto">
+                    <LocaleSwitcher
+                        locales={[...locales]}
+                        className="h-9 rounded-xl border border-white/10 bg-white/5 px-2 text-xs font-semibold text-muted-foreground hover:text-foreground focus:outline-none"
+                    />
                     <a
                         href="https://discord.com/invite/TRKa2PSBcS"
                         target="_blank"

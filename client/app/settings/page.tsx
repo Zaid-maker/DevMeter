@@ -1,4 +1,5 @@
 "use client";
+"use i18n";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

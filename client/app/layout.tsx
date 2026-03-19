@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { MainNav } from "@/components/dashboard/main-nav";
+import { LingoProvider } from "@lingo.dev/compiler/react/next";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -96,22 +97,24 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="en" className="dark">
-      <head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
-        />
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppSchema) }}
-        />
-      </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background`}>
-        <MainNav />
-        <main>{children}</main>
-        <Toaster position="bottom-right" closeButton richColors expand={false} />
-      </body>
-    </html>
+    <LingoProvider initialLocale="en">
+      <html lang="en" className="dark">
+        <head>
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+          />
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppSchema) }}
+          />
+        </head>
+        <body className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen bg-background`}>
+          <MainNav />
+          <main>{children}</main>
+          <Toaster position="bottom-right" closeButton richColors expand={false} />
+        </body>
+      </html>
+    </LingoProvider>
   );
 }
