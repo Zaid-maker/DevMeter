@@ -11,11 +11,19 @@ const CORS_HEADERS = {
     "Access-Control-Allow-Headers": "Content-Type, Authorization",
 };
 
+const HEARTBEAT_DISABLED_RESPONSE = {
+    status: "temporarily_unavailable",
+    message: "Heartbeat tracking is temporarily disabled while we restore database capacity. Please try again shortly.",
+};
+
 export async function OPTIONS() {
     return new NextResponse(null, { status: 204, headers: CORS_HEADERS });
 }
 
 export async function POST(req: NextRequest) {
+    void req;
+    return NextResponse.json(HEARTBEAT_DISABLED_RESPONSE, { status: 503, headers: CORS_HEADERS });
+
     const authHeader = req.headers.get("authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: CORS_HEADERS });
@@ -166,8 +174,5 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
-    return NextResponse.json({
-        status: "alive",
-        message: "DevMeter Heartbeat API is reachable. Use POST to record activity."
-    }, { headers: CORS_HEADERS });
+    return NextResponse.json(HEARTBEAT_DISABLED_RESPONSE, { status: 503, headers: CORS_HEADERS });
 }
