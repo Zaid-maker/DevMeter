@@ -7,6 +7,11 @@ import { startOfDay, subDays, format } from "date-fns";
 import { calculateDuration, calculateStreaks } from "@/lib/stats-utils";
 import { TZDate } from "@date-fns/tz";
 
+const STATS_MAINTENANCE_RESPONSE = {
+    status: "temporarily_unavailable",
+    message: "Stats are temporarily unavailable while we restore database capacity. Please try again shortly.",
+};
+
 /**
  * Handle GET requests to return a user's daily contribution data, streaks, and summary for the past year.
  *
@@ -15,6 +20,9 @@ import { TZDate } from "@date-fns/tz";
  * - an error object `{ error: string }` with an appropriate HTTP status (401 for unauthorized/invalid API key, 404 for missing user, 500 for internal errors).
  */
 export async function GET(req: NextRequest) {
+    void req;
+    return NextResponse.json(STATS_MAINTENANCE_RESPONSE, { status: 503 });
+
     const session = await auth.api.getSession({
         headers: await headers(),
     });

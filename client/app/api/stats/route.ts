@@ -38,6 +38,11 @@ function getCorsHeaders(origin: string | null, allowAnyOrigin = false) {
     return h;
 }
 
+const STATS_MAINTENANCE_RESPONSE = {
+    status: "temporarily_unavailable",
+    message: "Stats are temporarily unavailable while we restore database capacity. Please try again shortly.",
+};
+
 export async function OPTIONS(req: NextRequest) {
     const origin = req.headers.get("origin");
     // Requests from the web dashboard use the configured ALLOWED_ORIGINS.
@@ -50,6 +55,11 @@ export async function OPTIONS(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+    return NextResponse.json(STATS_MAINTENANCE_RESPONSE, {
+        status: 503,
+        headers: getCorsHeaders(req.headers.get("origin"), true),
+    });
+
     const session = await auth.api.getSession({
         headers: await headers(),
     });
