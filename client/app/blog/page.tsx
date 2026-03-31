@@ -19,6 +19,16 @@ interface BlogPost {
 
 const blogPosts: BlogPost[] = [
   {
+    id: "devmeter-downtime-update-april-2026",
+    title: "DevMeter Downtime Update: We Hit Our Neon Compute Hour Limit",
+    description: "A transparent update on the current DevMeter downtime caused by reaching our Neon database compute hour limit, what it affected, and what we are doing next.",
+    author: "Zaid Code",
+    date: "2026-04-01",
+    readTime: 4,
+    category: "News",
+    featured: true,
+  },
+  {
     id: "devmeter-now-stable-on-open-vsx",
     title: "DevMeter Is Now Officially Stable on Open VSX",
     description: "Great news! DevMeter is now fully stable and up-to-date on the Open VSX Registry. Whether you use VS Code, VSCodium, or any compatible editor, you can now install DevMeter with confidence.",

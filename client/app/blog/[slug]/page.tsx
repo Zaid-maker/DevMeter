@@ -21,6 +21,90 @@ interface BlogArticle {
 }
 
 const blogArticles: Record<string, BlogArticle> = {
+  "devmeter-downtime-update-april-2026": {
+    id: "devmeter-downtime-update-april-2026",
+    title: "DevMeter Downtime Update: We Hit Our Neon Compute Hour Limit",
+    description: "A transparent update on the current DevMeter downtime caused by reaching our Neon database compute hour limit, what it affected, and what we are doing next.",
+    author: "Zaid Code",
+    date: "2026-04-01",
+    readTime: 4,
+    category: "News",
+    content: `
+# DevMeter Downtime Update: We Hit Our Neon Compute Hour Limit
+
+DevMeter is currently experiencing an ongoing downtime issue, and we want to explain clearly what is happening.
+
+Right now, some users may see the extension show **Offline**, stats may fail to refresh, and dashboard data may load slowly or not at all. The direct cause is that we reached the **compute hour limit on Neon**, the database provider we currently use for DevMeter.
+
+## The Real Cause
+
+DevMeter depends on Neon for database access. Once our compute hour limit was exhausted, database-backed parts of the product could no longer respond normally. That disrupted the core flow between the extension, the API, and the dashboard.
+
+In practical terms, that means:
+
+- Heartbeats may fail to reach the server
+- Dashboard stats may appear delayed or temporarily unavailable
+- Some users may see repeated sync failures inside the extension
+- Public pages and account features can feel slower than normal
+
+This is not caused by a broken extension release on your machine. It is an infrastructure limit on our side, and we are actively working through it.
+
+## Why This Has Taken Longer Than Expected
+
+This outage has been harder to resolve because the database sits in the middle of the core product path. DevMeter relies on multiple moving parts working together consistently:
+
+- The API that receives coding activity heartbeats
+- The database layer that stores activity safely
+- The stats endpoints that turn raw heartbeats into dashboard summaries
+- The frontend services that surface everything in real time
+
+When the database becomes unavailable because of a compute limit, all of these layers are affected at once. Fixes need to be rolled out carefully so we do not introduce data inconsistencies or make recovery worse.
+
+## What We’re Doing Right Now
+
+Our current focus is on restoring stability before shipping anything new.
+
+- Restoring database availability after hitting the Neon compute cap
+- Verifying heartbeat writes and stats reads across affected endpoints
+- Reviewing our infrastructure limits so this does not happen again
+- Monitoring the service closely while fixes are rolled out
+
+We are treating this as the top priority.
+
+## What Users Should Expect
+
+Until the issue is fully resolved, you may continue to see intermittent downtime. That means DevMeter may work normally for a period of time and then briefly fail again while we continue recovery work.
+
+If you are affected, the most common symptoms are:
+
+- The status bar showing **Offline**
+- Manual sync not completing successfully
+- Missing or delayed activity on the dashboard
+- Slower-than-usual page loads in the web app
+
+## What You Do Not Need To Do
+
+In most cases, you do not need to reinstall the extension or change your API key. If your DevMeter setup was working before this outage began, this issue is most likely unrelated to your local configuration.
+
+If you want to check your setup anyway, make sure:
+
+- Your API key is still configured
+- Your API URL is set correctly
+- You are using the latest DevMeter extension version
+
+## Our Commitment
+
+We know DevMeter is most useful when it quietly works in the background. Downtime breaks that trust, and we take that seriously.
+
+We would rather be direct than vague: on April 1, 2026, the service became unstable because we exhausted the compute hour limit on our Neon database. The issue is still ongoing, and we are continuing to work on it until normal reliability is restored.
+
+Thank you for sticking with us while we fix it.
+
+---
+
+**We’ll share another update as soon as service is fully stable again.**
+    `,
+  },
   "devmeter-now-stable-on-open-vsx": {
     id: "devmeter-now-stable-on-open-vsx",
     title: "DevMeter Is Now Officially Stable on Open VSX",
