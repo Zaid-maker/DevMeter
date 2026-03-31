@@ -20,7 +20,7 @@ interface BlogPost {
 const blogPosts: BlogPost[] = [
   {
     id: "devmeter-service-restore-eta-april-2026",
-    title: "DevMeter Service Restore ETA: April 2, 2026 at 12:00 AM UTC",
+    title: "DevMeter Service Restore ETA: April 1, 2026 at 12:00 AM UTC",
     description: "An update on when DevMeter service is expected to return after the Neon compute hour limit reset, with the restore time shown in both UTC and Pakistan time.",
     author: "Zaid Code",
     date: "2026-04-01",

@@ -23,14 +23,14 @@ interface BlogArticle {
 const blogArticles: Record<string, BlogArticle> = {
   "devmeter-service-restore-eta-april-2026": {
     id: "devmeter-service-restore-eta-april-2026",
-    title: "DevMeter Service Restore ETA: April 2, 2026 at 12:00 AM UTC",
+    title: "DevMeter Service Restore ETA: April 1, 2026 at 12:00 AM UTC",
     description: "An update on when DevMeter service is expected to return after the Neon compute hour limit reset, with the restore time shown in both UTC and Pakistan time.",
     author: "Zaid Code",
     date: "2026-04-01",
     readTime: 3,
     category: "News",
     content: `
-# DevMeter Service Restore ETA: April 2, 2026 at 12:00 AM UTC
+# DevMeter Service Restore ETA: April 1, 2026 at 12:00 AM UTC
 
 We want to share a clearer expectation for when DevMeter service should return.
 
@@ -40,10 +40,10 @@ Because the outage was caused by hitting our Neon database compute hour limit, s
 
 Our current expectation is:
 
-- **April 2, 2026 at 12:00 AM UTC**
-- **April 2, 2026 at 5:00 AM PKT** for users in Pakistan
+- **April 1, 2026 at 12:00 AM UTC**
+- **April 1, 2026 at 5:00 AM PKT** for users in Pakistan
 
-This means that even if it is already **12:00 PM on April 1, 2026** in Pakistan, the reset we are waiting for is based on **UTC time**, not local time.
+This means the expected recovery window is still on **April 1, 2026** for users in Pakistan, just later in the morning because the reset is based on **UTC time**.
 
 ## Why The Date Looks Different
 
@@ -51,11 +51,11 @@ This is the part that can feel confusing:
 
 - Pakistan time is **UTC+5**
 - A reset that happens at **12:00 AM UTC** will happen at **5:00 AM PKT**
-- So the expected recovery time is **early April 2, 2026 in Pakistan**, not midday on April 1
+- So the expected recovery time is **April 1, 2026 in Pakistan**, not a different calendar day
 
 ## Important Note
 
-This is our **expected** restore window based on the Neon compute limit reset timing. If recovery takes a little longer after the reset, we will share another update as soon as service is fully stable again.
+This is our **expected** restore window based on the Neon compute limit reset timing. We are using **April 1, 2026 at 12:00 AM UTC / 5:00 AM PKT** as the target restore window. If recovery takes a little longer after the reset, we will share another update as soon as service is fully stable again.
 
 ## What Happens Next
 
