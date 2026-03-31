@@ -2,6 +2,14 @@ import { Metadata } from "next";
 import { use } from "react";
 
 const blogArticles: Record<string, { title: string; description: string; category: string; date: string; author: string; readTime: number }> = {
+  "devmeter-service-restore-eta-april-2026": {
+    title: "DevMeter Service Restore ETA: April 2, 2026 at 12:00 AM UTC",
+    description: "An update on when DevMeter service is expected to return after the Neon compute hour limit reset, with the restore time shown in both UTC and Pakistan time.",
+    category: "News",
+    date: "2026-04-01",
+    author: "Zaid Code",
+    readTime: 3,
+  },
   "devmeter-downtime-update-april-2026": {
     title: "DevMeter Downtime Update: We Hit Our Neon Compute Hour Limit",
     description: "A transparent update on the current DevMeter downtime caused by reaching our Neon database compute hour limit, what it affected, and what we are doing next.",

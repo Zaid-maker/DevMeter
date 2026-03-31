@@ -21,6 +21,54 @@ interface BlogArticle {
 }
 
 const blogArticles: Record<string, BlogArticle> = {
+  "devmeter-service-restore-eta-april-2026": {
+    id: "devmeter-service-restore-eta-april-2026",
+    title: "DevMeter Service Restore ETA: April 2, 2026 at 12:00 AM UTC",
+    description: "An update on when DevMeter service is expected to return after the Neon compute hour limit reset, with the restore time shown in both UTC and Pakistan time.",
+    author: "Zaid Code",
+    date: "2026-04-01",
+    readTime: 3,
+    category: "News",
+    content: `
+# DevMeter Service Restore ETA: April 2, 2026 at 12:00 AM UTC
+
+We want to share a clearer expectation for when DevMeter service should return.
+
+Because the outage was caused by hitting our Neon database compute hour limit, service is expected to recover when that usage window resets.
+
+## Expected Restore Time
+
+Our current expectation is:
+
+- **April 2, 2026 at 12:00 AM UTC**
+- **April 2, 2026 at 5:00 AM PKT** for users in Pakistan
+
+This means that even if it is already **12:00 PM on April 1, 2026** in Pakistan, the reset we are waiting for is based on **UTC time**, not local time.
+
+## Why The Date Looks Different
+
+This is the part that can feel confusing:
+
+- Pakistan time is **UTC+5**
+- A reset that happens at **12:00 AM UTC** will happen at **5:00 AM PKT**
+- So the expected recovery time is **early April 2, 2026 in Pakistan**, not midday on April 1
+
+## Important Note
+
+This is our **expected** restore window based on the Neon compute limit reset timing. If recovery takes a little longer after the reset, we will share another update as soon as service is fully stable again.
+
+## What Happens Next
+
+Once the reset is available, we will:
+
+- Bring database-backed features back online
+- Verify heartbeat ingestion is working again
+- Confirm dashboard stats are loading normally
+- Continue monitoring the service for stability
+
+Thank you for your patience while we work through this.
+    `,
+  },
   "devmeter-downtime-update-april-2026": {
     id: "devmeter-downtime-update-april-2026",
     title: "DevMeter Downtime Update: We Hit Our Neon Compute Hour Limit",
