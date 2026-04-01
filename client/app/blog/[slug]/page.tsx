@@ -21,6 +21,51 @@ interface BlogArticle {
 }
 
 const blogArticles: Record<string, BlogArticle> = {
+  "devmeter-service-restored-april-2026": {
+    id: "devmeter-service-restored-april-2026",
+    title: "DevMeter Service Restored: Stable Again and Data Is Flowing",
+    description: "DevMeter service is now stable again. Heartbeats and dashboard data are flowing through the server, and recovery monitoring is ongoing.",
+    author: "Zaid Code",
+    date: "2026-04-01",
+    readTime: 3,
+    category: "News",
+    content: `
+# DevMeter Service Restored: Stable Again and Data Is Flowing
+
+DevMeter service is now stable again, and data has started flowing through the server normally.
+
+After the earlier downtime caused by reaching our Neon database compute hour limit, the platform has recovered and core features are coming back online as expected.
+
+## What’s Working Again
+
+We are seeing normal activity return across the main product flow:
+
+- Heartbeats are reaching the server again
+- Dashboard data is loading again
+- Stats are being processed normally
+- Extension sync activity is recovering
+
+## Current Status
+
+At this point, the service is stable and recovery is in progress in the best possible way: live usage is moving through the system again.
+
+That means users should start seeing:
+
+- New coding activity syncing successfully
+- Updated dashboard stats appearing again
+- Fewer or no offline warnings in the extension
+
+## What To Expect
+
+If some stats appear slightly delayed right after recovery, that can happen while systems settle and fresh activity continues to process. The important part is that data is now moving through the server again and the platform is back in a healthy state.
+
+## Thank You
+
+Thank you for your patience while we worked through this issue. We know service interruptions are frustrating, and we appreciate everyone who stayed with DevMeter while we restored stability.
+
+We’ll keep monitoring the platform closely, but this update is the good one: **DevMeter is back, stable, and data is flowing again.**
+    `,
+  },
   "devmeter-service-restore-eta-april-2026": {
     id: "devmeter-service-restore-eta-april-2026",
     title: "DevMeter Service Restore ETA: April 1, 2026 at 12:00 AM UTC",

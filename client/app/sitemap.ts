@@ -5,6 +5,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   // Blog posts - Only include posts that actually exist
   const blogPosts = [
+    "devmeter-service-restored-april-2026",
     "devmeter-service-restore-eta-april-2026",
     "devmeter-downtime-update-april-2026",
     "devmeter-now-stable-on-open-vsx",

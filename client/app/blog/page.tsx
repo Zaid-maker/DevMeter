@@ -19,6 +19,16 @@ interface BlogPost {
 
 const blogPosts: BlogPost[] = [
   {
+    id: "devmeter-service-restored-april-2026",
+    title: "DevMeter Service Restored: Stable Again and Data Is Flowing",
+    description: "DevMeter service is now stable again. Heartbeats and dashboard data are flowing through the server, and recovery monitoring is ongoing.",
+    author: "Zaid Code",
+    date: "2026-04-01",
+    readTime: 3,
+    category: "News",
+    featured: true,
+  },
+  {
     id: "devmeter-service-restore-eta-april-2026",
     title: "DevMeter Service Restore ETA: April 1, 2026 at 12:00 AM UTC",
     description: "An update on when DevMeter service is expected to return after the Neon compute hour limit reset, with the restore time shown in both UTC and Pakistan time.",
