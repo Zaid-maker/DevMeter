@@ -1,4 +1,5 @@
 "use client";
+"use i18n";
 
 import { useState, memo } from "react";
 import useSWR from "swr";

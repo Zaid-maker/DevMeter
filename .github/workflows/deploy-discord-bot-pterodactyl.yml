@@ -1,0 +1,56 @@
+name: Deploy Discord Bot to Pterodactyl
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "discord-bot/**"
+      - ".github/workflows/deploy-discord-bot-pterodactyl.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-discord-bot-pterodactyl
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare SSH key
+        shell: bash
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.PTERO_SFTP_PRIVATE_KEY }}" > ~/.ssh/ptero_key
+          chmod 600 ~/.ssh/ptero_key
+
+      - name: Add SFTP host to known_hosts
+        shell: bash
+        run: |
+          ssh-keyscan -p "${{ secrets.PTERO_SFTP_PORT }}" "${{ secrets.PTERO_SFTP_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Sync discord-bot files
+        shell: bash
+        run: |
+          rsync -az --delete \
+            --exclude '.env' \
+            --exclude 'node_modules' \
+            --exclude 'dist' \
+            --exclude '*.log' \
+            -e "ssh -i ~/.ssh/ptero_key -p ${{ secrets.PTERO_SFTP_PORT }}" \
+            discord-bot/ \
+            "${{ secrets.PTERO_SFTP_USER }}@${{ secrets.PTERO_SFTP_HOST }}:${{ secrets.PTERO_SFTP_PATH }}/"
+
+      - name: Restart Pterodactyl server (optional)
+        if: ${{ secrets.PTERO_PANEL_URL != '' && secrets.PTERO_SERVER_ID != '' && secrets.PTERO_CLIENT_API_KEY != '' }}
+        shell: bash
+        run: |
+          curl -fsSL -X POST \
+            "${{ secrets.PTERO_PANEL_URL }}/api/client/servers/${{ secrets.PTERO_SERVER_ID }}/power" \
+            -H "Authorization: Bearer ${{ secrets.PTERO_CLIENT_API_KEY }}" \
+            -H "Accept: Application/vnd.pterodactyl.v1+json" \
+            -H "Content-Type: application/json" \
+            --data '{"signal":"restart"}'

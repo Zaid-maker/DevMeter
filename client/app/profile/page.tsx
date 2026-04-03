@@ -1,4 +1,5 @@
 "use client";
+"use i18n";
 
 import { authClient } from "@/lib/auth-client";
 import { format, subDays, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";

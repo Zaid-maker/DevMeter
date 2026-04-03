@@ -1,4 +1,5 @@
 "use client";
+"use i18n";
 
 import { useState, Suspense } from "react";
 import { authClient } from "@/lib/auth-client";

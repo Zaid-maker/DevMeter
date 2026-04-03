@@ -1,4 +1,5 @@
 "use client";
+"use i18n";
 
 import { useParams, useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
