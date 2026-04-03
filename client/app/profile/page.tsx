@@ -128,7 +128,10 @@ export default function ProfilePage() {
 
     const handleShare = () => {
         setIsSharing(true);
-        const url = window.location.href;
+        const userId = (user as any).id as string | undefined;
+        const profileSlug = (user as any).profileSlug as string | undefined;
+        const handle = profileSlug || userId;
+        const url = handle ? `${window.location.origin}/u/${handle}` : window.location.href;
         navigator.clipboard.writeText(url);
         toast.success("Profile link copied!", {
             description: "Anyone with this link can view your coding activity."

@@ -78,6 +78,15 @@ function SettingsContent() {
     const [showKeyId, setShowKeyId] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
     const [unlinkingDiscord, setUnlinkingDiscord] = useState(false);
+    const [displayName, setDisplayName] = useState("");
+    const [profileSlug, setProfileSlug] = useState("");
+    const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+    useEffect(() => {
+        if (!session?.user) return;
+        setDisplayName(session.user.name || "");
+        setProfileSlug(((session.user as any).profileSlug as string | undefined) || "");
+    }, [session?.user]);
 
     useEffect(() => {
         const status = searchParams.get("discord");
@@ -206,6 +215,45 @@ function SettingsContent() {
         }
     }
 
+    async function saveProfile() {
+        setIsSavingProfile(true);
+        try {
+            const normalizedSlug = profileSlug
+                .toLowerCase()
+                .replace(/[^a-z0-9-]/g, "")
+                .replace(/--+/g, "-")
+                .replace(/^-+|-+$/g, "");
+
+            const res = await fetch("/api/user/profile", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    name: displayName,
+                    profileSlug: normalizedSlug,
+                }),
+            });
+
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.error || "Failed to save profile");
+            }
+
+            setDisplayName(data.user.name || "");
+            setProfileSlug(data.user.profileSlug || "");
+            await authClient.getSession();
+
+            toast.success("Profile updated", {
+                description: data.user.profileSlug
+                    ? `Your public profile is now available at /u/${data.user.profileSlug}`
+                    : "Profile saved. You can add a vanity slug anytime.",
+            });
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : "Failed to save profile");
+        } finally {
+            setIsSavingProfile(false);
+        }
+    }
+
     if (!session) return null;
 
     const hasKey = keys && keys.length > 0;
@@ -246,16 +294,37 @@ function SettingsContent() {
                             <div className="grid gap-4 sm:grid-cols-2">
                                 <div className="grid gap-2">
                                     <Label htmlFor="name">Display Name</Label>
-                                    <Input id="name" defaultValue={session.user.name} />
+                                    <Input id="name" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
                                 </div>
                                 <div className="grid gap-2">
                                     <Label htmlFor="email">Email Address</Label>
                                     <Input id="email" defaultValue={session.user.email} disabled />
                                 </div>
                             </div>
+                            <div className="grid gap-2">
+                                <Label htmlFor="profileSlug">Public Profile URL</Label>
+                                <div className="flex items-center rounded-md border border-input bg-background pl-3">
+                                    <span className="text-xs text-muted-foreground whitespace-nowrap">/u/</span>
+                                    <Input
+                                        id="profileSlug"
+                                        value={profileSlug}
+                                        onChange={(e) => setProfileSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/--+/g, "-").replace(/^-+|-+$/g, ""))}
+                                        className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
+                                        placeholder="your-handle"
+                                    />
+                                </div>
+                                <p className="text-xs text-muted-foreground">Use 3-32 chars: lowercase letters, numbers, and hyphens.</p>
+                            </div>
                         </CardContent>
                         <CardFooter className="border-t px-6 py-4">
-                            <Button size="sm">Save Changes</Button>
+                            <Button size="sm" onClick={saveProfile} disabled={isSavingProfile}>
+                                {isSavingProfile ? (
+                                    <>
+                                        <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                                        Saving...
+                                    </>
+                                ) : "Save Changes"}
+                            </Button>
                         </CardFooter>
                     </Card>
 
