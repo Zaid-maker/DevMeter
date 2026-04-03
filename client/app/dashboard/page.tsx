@@ -127,6 +127,35 @@ function DashboardContent() {
         }
     }, [session?.user?.emailVerified, hasDismissed, session]);
 
+    useEffect(() => {
+        if (isAuthPending || !session?.user) return;
+
+        const profileSlug = (session.user as any).profileSlug as string | undefined;
+        if (profileSlug) return;
+
+        const storageKey = "devmeter:profile-slug-toast-dismissed";
+        if (typeof window !== "undefined" && window.localStorage.getItem(storageKey) === "1") {
+            return;
+        }
+
+        toast("NEW: CLAIM YOUR PUBLIC PROFILE URL", {
+            description: "Set your custom profile slug now so people can discover you on leaderboard and public profile pages.",
+            duration: 15000,
+            action: {
+                label: "Set Slug",
+                onClick: () => router.push("/settings?tab=profile"),
+            },
+            cancel: {
+                label: "Later",
+                onClick: () => {
+                    if (typeof window !== "undefined") {
+                        window.localStorage.setItem(storageKey, "1");
+                    }
+                },
+            },
+        });
+    }, [isAuthPending, router, session?.user]);
+
     const handleSendVerification = async () => {
         if (!session?.user.email) return;
 
