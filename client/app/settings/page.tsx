@@ -314,6 +314,7 @@ function SettingsContent() {
                                     />
                                 </div>
                                 <p className="text-xs text-muted-foreground">Use 3-32 chars: lowercase letters, numbers, and hyphens.</p>
+                                <p className="text-xs text-muted-foreground">Profile slug needs 24 hours to propagate.</p>
                             </div>
                         </CardContent>
                         <CardFooter className="border-t px-6 py-4">
