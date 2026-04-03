@@ -138,21 +138,41 @@ function DashboardContent() {
             return;
         }
 
-        toast("NEW: CLAIM YOUR PUBLIC PROFILE URL", {
-            description: "Set your custom profile slug now so people can discover you on leaderboard and public profile pages.",
+        toast.custom((toastItem) => (
+            <div className="w-90 rounded-2xl border border-white/10 bg-black/90 p-4 text-white shadow-2xl backdrop-blur-xl">
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-primary">New Feature</p>
+                <h4 className="mt-1 text-base font-black tracking-tight">Claim Your Public Profile URL</h4>
+                <p className="mt-2 text-sm text-muted-foreground">
+                    Set your custom profile slug now so people can discover you on leaderboard and public profile pages.
+                </p>
+                <div className="mt-4 flex items-center gap-2">
+                    <Button
+                        size="sm"
+                        className="font-bold"
+                        onClick={() => {
+                            toast.dismiss(toastItem);
+                            router.push("/settings?tab=profile");
+                        }}
+                    >
+                        Set Slug
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-white/10 bg-white/5 hover:bg-white/10"
+                        onClick={() => {
+                            if (typeof window !== "undefined") {
+                                window.localStorage.setItem(storageKey, "1");
+                            }
+                            toast.dismiss(toastItem);
+                        }}
+                    >
+                        Later
+                    </Button>
+                </div>
+            </div>
+        ), {
             duration: 15000,
-            action: {
-                label: "Set Slug",
-                onClick: () => router.push("/settings?tab=profile"),
-            },
-            cancel: {
-                label: "Later",
-                onClick: () => {
-                    if (typeof window !== "undefined") {
-                        window.localStorage.setItem(storageKey, "1");
-                    }
-                },
-            },
         });
     }, [isAuthPending, router, session?.user]);
 
