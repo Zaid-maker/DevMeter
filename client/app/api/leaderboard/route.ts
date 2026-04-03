@@ -37,6 +37,7 @@ export async function GET(req: NextRequest) {
             select: {
                 id: true,
                 name: true,
+                profileSlug: true,
                 image: true,
                 heartbeats: {
                     where: startDate ? {
@@ -75,6 +76,7 @@ export async function GET(req: NextRequest) {
             return {
                 id: user.id,
                 name: user.name || "Anonymous",
+                profileSlug: user.profileSlug,
                 image: user.image,
                 totalHours: parseFloat(duration.toFixed(1)),
                 topLanguage: {

@@ -28,6 +28,10 @@ export const auth = betterAuth({
                 type: "string",
                 defaultValue: "UTC",
             },
+            profileSlug: {
+                type: "string",
+                required: false,
+            },
             discordUserId: {
                 type: "string",
                 required: false,

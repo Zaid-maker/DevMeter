@@ -12,6 +12,7 @@ import {
     Users
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ import { cn } from "@/lib/utils";
 interface LeaderboardEntry {
     id: string;
     name: string;
+    profileSlug?: string | null;
     image: string | null;
     totalHours: number;
     topLanguage: {
@@ -267,7 +269,7 @@ const LeaderboardRow = memo(({ entry, index }: { entry: LeaderboardEntry; index:
             </span>
         </td>
         <td className="px-10 py-8">
-            <div className="flex items-center gap-5">
+            <Link href={`/u/${entry.profileSlug || entry.id}`} className="flex items-center gap-5 hover:opacity-90 transition-opacity">
                 <div className="relative group/avatar">
                     <div className="absolute -inset-0.5 bg-gradient-to-tr from-primary to-blue-500 rounded-full blur opacity-0 group-hover/avatar:opacity-40 transition duration-500" />
                     <Avatar className="h-14 w-14 border-2 border-white/10 relative p-0.5 bg-black">
@@ -279,7 +281,7 @@ const LeaderboardRow = memo(({ entry, index }: { entry: LeaderboardEntry; index:
                     <span className="font-black text-xl tracking-tighter group-hover:text-primary transition-colors">{entry.name}</span>
                     <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground/60">Verified Developer</span>
                 </div>
-            </div>
+            </Link>
         </td>
         <td className="px-10 py-8">
             <div className="flex items-center gap-3 bg-white/5 w-fit px-5 py-2.5 rounded-2xl border border-white/10 group-hover:bg-primary/5 group-hover:border-primary/20 transition-all duration-300">
@@ -373,7 +375,9 @@ const PodiumCard = memo(({ entry, rank }: { entry: LeaderboardEntry; rank: numbe
                         "text-[10px] font-black uppercase tracking-[0.4em] mb-2",
                         isFirst ? "text-primary" : "text-muted-foreground"
                     )}>{config.label}</p>
-                    <h3 className="text-3xl font-black tracking-tighter truncate w-56 group-hover:scale-105 transition-transform duration-500">{entry.name}</h3>
+                    <Link href={`/u/${entry.profileSlug || entry.id}`} className="inline-block w-56 group-hover:scale-105 transition-transform duration-500">
+                        <h3 className="text-3xl font-black tracking-tighter truncate">{entry.name}</h3>
+                    </Link>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 w-full relative z-10">
