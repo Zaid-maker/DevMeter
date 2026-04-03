@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
+import { Prisma } from "@prisma/client";
 
 const RESERVED_SLUGS = new Set([
   "api",
@@ -67,6 +68,15 @@ export async function POST(req: NextRequest) {
     }
 
     if (hasSlug) {
+      const userWithIdAsSlug = await prisma.user.findFirst({
+        where: { id: profileSlug },
+        select: { id: true },
+      });
+
+      if (userWithIdAsSlug) {
+        return NextResponse.json({ error: "This vanity slug is invalid" }, { status: 400 });
+      }
+
       const duplicate = await prisma.user.findFirst({
         where: {
           profileSlug,
@@ -80,18 +90,28 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const updatedUser = await prisma.user.update({
-      where: { id: session.user.id },
-      data: {
-        name,
-        profileSlug: hasSlug ? profileSlug : null,
-      },
-      select: {
-        id: true,
-        name: true,
-        profileSlug: true,
-      },
-    });
+    let updatedUser;
+
+    try {
+      updatedUser = await prisma.user.update({
+        where: { id: session.user.id },
+        data: {
+          name,
+          profileSlug: hasSlug ? profileSlug : null,
+        },
+        select: {
+          id: true,
+          name: true,
+          profileSlug: true,
+        },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        return NextResponse.json({ error: "This vanity slug is already taken" }, { status: 409 });
+      }
+
+      throw error;
+    }
 
     return NextResponse.json({
       success: true,

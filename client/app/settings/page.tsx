@@ -218,12 +218,18 @@ function SettingsContent() {
     async function saveProfile() {
         setIsSavingProfile(true);
         try {
+            const normalizedSlug = profileSlug
+                .toLowerCase()
+                .replace(/[^a-z0-9-]/g, "")
+                .replace(/--+/g, "-")
+                .replace(/^-+|-+$/g, "");
+
             const res = await fetch("/api/user/profile", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     name: displayName,
-                    profileSlug,
+                    profileSlug: normalizedSlug,
                 }),
             });
 
@@ -302,7 +308,7 @@ function SettingsContent() {
                                     <Input
                                         id="profileSlug"
                                         value={profileSlug}
-                                        onChange={(e) => setProfileSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/--+/g, "-"))}
+                                        onChange={(e) => setProfileSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, "").replace(/--+/g, "-").replace(/^-+|-+$/g, ""))}
                                         className="border-0 focus-visible:ring-0 focus-visible:ring-offset-0"
                                         placeholder="your-handle"
                                     />

@@ -9,6 +9,15 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "cdn.jsdelivr.net",
+        pathname: "/gh/devicons/devicon/icons/**",
+      },
+    ],
+  },
   turbopack: {
     root: configDir,
   },

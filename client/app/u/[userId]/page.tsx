@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { format } from "date-fns";
 import { subDays } from "date-fns";
@@ -47,7 +48,6 @@ async function getPublicProfile(userId: string) {
       image: true,
       createdAt: true,
       timezone: true,
-      deletedAt: true,
       heartbeats: {
         where: {
           timestamp: {
@@ -66,7 +66,7 @@ async function getPublicProfile(userId: string) {
     },
   });
 
-  if (!user || user.deletedAt) {
+  if (!user) {
     return null;
   }
 
@@ -242,7 +242,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
                 <div key={language.name} className="space-y-2">
                   <div className="flex items-center justify-between gap-4">
                     <div className="inline-flex items-center gap-2 min-w-0">
-                      <img src={language.icon} alt={language.name} className="h-4 w-4 object-contain" />
+                      <Image src={language.icon} alt={language.name} width={16} height={16} className="h-4 w-4 object-contain" />
                       <span className="font-semibold truncate">{language.name}</span>
                     </div>
                     <span className="text-sm text-muted-foreground">{language.hours.toFixed(1)}h ({language.percent}%)</span>
