@@ -25,6 +25,15 @@ import Link from "next/link";
 
 const DONATE_URL = "https://github.com/sponsors/DevMitrza";
 
+/**
+ * Render the public marketing landing page and redirect authenticated users to the dashboard.
+ *
+ * The component checks the current authentication session and, if present, navigates to `/dashboard`
+ * and renders nothing. If no session exists, it renders the full public landing UI (hero, features,
+ * support, CTA, and footer).
+ *
+ * @returns The landing page JSX element; renders nothing while redirecting authenticated users to `/dashboard`.
+ */
 export default function LandingPage() {
   const router = useRouter();
   const { data: session } = authClient.useSession();
