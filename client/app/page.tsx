@@ -3,25 +3,14 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import {
-  Activity,
-  Clock,
-  Code,
-  Zap,
-  Shield,
-  Globe,
-  BarChart3,
-  Github,
-  ArrowRight,
-  MousePointer2,
-  Terminal,
-  Cpu,
-  Download
-} from "lucide-react";
-import Link from "next/link";
+import { LandingBackground } from "@/components/landing/landing-background";
+import { LandingNavbar } from "@/components/landing/landing-navbar";
+import { LandingHeroSection } from "@/components/landing/landing-hero-section";
+import { LandingFeaturesSection } from "@/components/landing/landing-features-section";
+import { LandingStackHighlightsSection } from "@/components/landing/landing-stack-highlights-section";
+import { LandingSupportSection } from "@/components/landing/landing-support-section";
+import { LandingCtaSection } from "@/components/landing/landing-cta-section";
+import { LandingFooter } from "@/components/landing/landing-footer";
 
 const DONATE_URL = "https://github.com/sponsors/DevMitrza";
 
@@ -49,249 +38,21 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-black text-white selection:bg-primary/30 selection:text-primary overflow-x-hidden">
-      {/* Background gradients */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none opacity-40">
-        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] animate-pulse" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-500/10 rounded-full blur-[120px]" />
-      </div>
+      <LandingBackground />
 
       <main className="relative z-10">
-        {/* Navbar */}
-        <nav className="flex items-center justify-between p-6 max-w-7xl mx-auto border-b border-white/5 backdrop-blur-md sticky top-0 bg-black/50">
-          <div className="flex items-center gap-2 group cursor-pointer" onClick={() => router.push("/")}>
-            <div className="bg-primary p-1.5 rounded-lg rotate-3 group-hover:rotate-12 transition-transform duration-300">
-              <Activity className="h-6 w-6 text-black" />
-            </div>
-            <span className="text-xl font-black tracking-tighter">DevMeter</span>
-          </div>
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => router.push("/auth/sign-in")} className="text-sm font-medium hover:text-primary transition-colors">
-              Sign In
-            </Button>
-            <Button onClick={() => router.push("/auth/sign-up")} className="bg-white text-black hover:bg-white/90 font-bold rounded-full px-6">
-              Get Started
-            </Button>
-          </div>
-        </nav>
-
-        {/* Hero Section */}
-        <section className="pt-10 md:pt-16 pb-12 md:pb-20 px-4 md:px-6 max-w-7xl mx-auto text-center overflow-hidden">
-          <Badge variant="outline" className="mb-6 py-1 px-4 border-primary/20 bg-primary/5 text-primary animate-bounce text-[10px] md:text-sm">
-            <Zap className="h-3 w-3 mr-2" /> 100% Open Source
-          </Badge>
-          <h1 className="text-5xl md:text-8xl font-black tracking-tighter mb-6 md:mb-8 leading-[1.05] md:leading-[1.1]">
-            Master your <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-blue-400 to-primary bg-[length:200%_auto] animate-gradient">craft.</span><br className="hidden md:block" />
-            Track every <span className="text-primary/90 italic">stroke.</span>
-          </h1>
-          <p className="text-muted-foreground text-lg md:text-2xl max-w-2xl mx-auto mb-10 md:mb-12 font-medium leading-relaxed px-2">
-            The ultimate automated coding time tracker for elite developers. Get deep insights into your productivity without lifting a finger.
-          </p>
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
-            <Button size="lg" asChild className="h-14 px-10 text-lg bg-primary text-black hover:bg-primary/90 font-black rounded-full w-full sm:w-auto shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)]">
-              <a href="https://marketplace.visualstudio.com/items?itemName=DevMitrza.devmeter" target="_blank" rel="noopener noreferrer">
-                Install Extension <Download className="ml-2 h-5 w-5" />
-              </a>
-            </Button>
-            <Button variant="outline" size="lg" asChild className="h-14 px-10 text-lg border-white/10 hover:bg-white/5 rounded-full w-full sm:w-auto font-bold text-white">
-              <Link href="/auth/sign-up">
-                Start Tracking <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
-          </div>
-
-          {/* Code Visual Mockup */}
-          <div className="relative max-w-4xl mx-auto group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-primary/50 to-blue-500/50 rounded-2xl blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
-            <Card className="relative bg-[#0d0d0d] border-white/10 overflow-hidden rounded-2xl flex flex-col items-center justify-center p-8 md:p-12">
-              <div className="w-full flex items-center justify-between mb-8 border-b border-white/5 pb-4">
-                <div className="flex gap-1.5">
-                  <div className="h-3 w-3 rounded-full bg-red-500/50" />
-                  <div className="h-3 w-3 rounded-full bg-yellow-500/50" />
-                  <div className="h-3 w-3 rounded-full bg-green-500/50" />
-                </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono bg-white/5 px-3 py-1 rounded-full">
-                  <Terminal className="h-3 w-3" /> dev-meter heartbeat_v1.sh
-                </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full">
-                <div className="space-y-1 text-left">
-                  <p className="text-[10px] text-primary font-mono uppercase tracking-widest opacity-70">Tracking Live</p>
-                  <p className="text-3xl md:text-4xl font-black">4h 32m</p>
-                  <p className="text-[10px] text-muted-foreground">Recorded today</p>
-                </div>
-                <div className="space-y-1 text-left">
-                  <p className="text-[10px] text-blue-400 font-mono uppercase tracking-widest opacity-70">Top Stack</p>
-                  <p className="text-3xl md:text-4xl font-black">Typescript</p>
-                  <p className="text-[10px] text-muted-foreground">84% of workload</p>
-                </div>
-                <div className="space-y-1 text-left">
-                  <p className="text-[10px] text-green-400 font-mono uppercase tracking-widest opacity-70">Weekly Growth</p>
-                  <p className="text-3xl md:text-4xl font-black text-green-400">+12%</p>
-                  <p className="text-[10px] text-muted-foreground">Up from last week</p>
-                </div>
-              </div>
-            </Card>
-          </div>
-        </section>
-
-        {/* Features Section */}
-        <section className="py-32 px-6 max-w-7xl mx-auto">
-          <div className="text-center mb-20 space-y-4">
-            <h2 className="text-4xl md:text-5xl font-black tracking-tighter">Engineered for Transparency.</h2>
-            <p className="text-muted-foreground text-lg max-w-xl mx-auto">
-              DevMeter isn't just a tool; it's a statement. Open source, privacy-focused, and developer-first.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <FeatureCard
-              icon={Zap}
-              title="Automated Precision"
-              description="Record your focus time without lifting a finger. Our extension handles everything silently."
-              color="text-primary"
-            />
-            <FeatureCard
-              icon={BarChart3}
-              title="Deep Visuals"
-              description="Understand your habits with vibrant charts, language breakdowns, and project intensity stats."
-              color="text-blue-400"
-            />
-            <FeatureCard
-              icon={Shield}
-              title="Audit-Ready"
-              description="100% open-source software. Verify exactly how your data is handled from heartbeats to dashboard."
-              color="text-green-400"
-            />
-          </div>
-        </section>
-
-        {/* Stack Highlights */}
-        <section className="py-24 border-t border-white/5 bg-white/[0.02]">
-          <div className="max-w-7xl mx-auto px-6 overflow-hidden">
-            <p className="text-center text-xs font-mono text-muted-foreground uppercase tracking-widest mb-12">Universal Language Support</p>
-            <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-30 grayscale hover:grayscale-0 transition-all duration-700">
-              <Cpu className="h-10 w-10" />
-              <MousePointer2 className="h-10 w-10" />
-              <Code className="h-10 w-10" />
-              <Globe className="h-10 w-10" />
-              <Activity className="h-10 w-10" />
-              <Clock className="h-10 w-10" />
-            </div>
-          </div>
-        </section>
-
-        {/* Support Section */}
-        <section className="py-16 px-6 border-t border-white/5">
-          <div className="max-w-4xl mx-auto rounded-3xl border border-primary/20 bg-linear-to-r from-primary/10 via-blue-500/10 to-transparent p-8 md:p-10">
-            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
-              <div className="space-y-2">
-                <Badge variant="outline" className="border-primary/40 text-primary bg-primary/10 w-fit">Open-Source Community</Badge>
-                <h3 className="text-2xl md:text-3xl font-black tracking-tight">Support community-driven DevMeter</h3>
-                <p className="text-muted-foreground max-w-2xl">
-                  If DevMeter helps your workflow, consider donating. Your support helps us maintain the project, ship improvements, and keep DevMeter healthy for the open-source community.
-                </p>
-              </div>
-              <Button asChild size="lg" className="bg-primary text-black hover:bg-primary/90 font-black rounded-full px-8 w-full md:w-auto">
-                <a href={DONATE_URL} target="_blank" rel="noopener noreferrer">
-                  Support Project <Github className="ml-2 h-5 w-5" />
-                </a>
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        {/* CTA Section */}
-        <section className="py-32 px-6 text-center">
-          <div className="max-w-4xl mx-auto bg-primary rounded-[3rem] p-12 md:p-20 text-black relative overflow-hidden group">
-            <div className="absolute top-0 right-0 h-40 w-40 bg-white/20 rounded-full blur-3xl -mr-20 -mt-20 group-hover:scale-150 transition-transform duration-1000" />
-            <h2 className="text-4xl md:text-6xl font-black tracking-tighter mb-8 leading-tight">Ready to verify<br /> your intensity?</h2>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Button size="lg" asChild className="bg-black text-white hover:bg-black/90 font-black px-10 h-16 text-xl rounded-full w-full sm:w-auto">
-                <Link href="/auth/sign-up">Join DevMeter Free</Link>
-              </Button>
-              <Button size="lg" variant="outline" asChild className="border-black/20 hover:bg-black/5 font-black px-10 h-16 text-xl rounded-full w-full sm:w-auto">
-                <a href="https://discord.com/invite/TRKa2PSBcS" target="_blank" rel="noopener noreferrer">
-                  <svg viewBox="0 0 24 24" fill="currentColor" className="mr-2 h-6 w-6" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.419-2.157 2.419zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.419-2.157 2.419z" />
-                  </svg>
-                  Discord Server
-                </a>
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        {/* Footer */}
-        <footer className="py-12 px-6 border-t border-white/5">
-          <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-              {/* Product */}
-              <div>
-                <h4 className="font-bold mb-4">Product</h4>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li><Link href="/docs" className="hover:text-primary transition-colors">Documentation</Link></li>
-                  <li><Link href="/blog" className="hover:text-primary transition-colors">Blog</Link></li>
-                  <li><Link href="/leaderboard" className="hover:text-primary transition-colors">Leaderboard</Link></li>
-                  <li><a href="https://marketplace.visualstudio.com/items?itemName=DevMitrza.devmeter" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">VS Code Extension</a></li>
-                </ul>
-              </div>
-
-              {/* Resources */}
-              <div>
-                <h4 className="font-bold mb-4">Resources</h4>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li><Link href="/docs" className="hover:text-primary transition-colors">Getting Started</Link></li>
-                  <li><Link href="/blog/why-wakatime-alternative-devmeter" className="hover:text-primary transition-colors">Why DevMeter?</Link></li>
-                  <li><Link href="/blog/developer-burnout-early-detection" className="hover:text-primary transition-colors">Avoid Burnout</Link></li>
-                  <li><a href="https://github.com/devmeter/devmeter" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">GitHub</a></li>
-                </ul>
-              </div>
-
-              {/* Company */}
-              <div>
-                <h4 className="font-bold mb-4">Company</h4>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li><Link href="/blog" className="hover:text-primary transition-colors">Blog</Link></li>
-                  <li><a href="https://discord.com/invite/TRKa2PSBcS" target="_blank" rel="noopener noreferrer" className="hover:text-[#5865F2] transition-colors flex items-center gap-2">
-                    Discord Community
-                    <Badge variant="outline" className="text-[8px] py-0 px-1 border-[#5865F2]/30 text-[#5865F2]">New</Badge>
-                  </a></li>
-                  <li><a href="https://x.com/devmeter_stroke" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">X / Twitter</a></li>
-                  <li><a href="mailto:support@devmeter.io" className="hover:text-primary transition-colors">Contact</a></li>
-                </ul>
-              </div>
-
-              {/* Legal */}
-              <div>
-                <h4 className="font-bold mb-4">Legal</h4>
-                <ul className="space-y-2 text-sm text-muted-foreground">
-                  <li><Link href="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
-                  <li><Link href="/terms" className="hover:text-primary transition-colors">Terms of Service</Link></li>
-                  <li><a href="https://github.com/devmeter/devmeter/blob/main/LICENSE" target="_blank" rel="noopener noreferrer" className="hover:text-primary transition-colors">License (MIT)</a></li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="text-center pt-8 border-t border-white/5">
-              <p className="text-muted-foreground text-sm font-medium">
-                © {new Date().getFullYear()} DevMeter. Built with passion for open source.
-              </p>
-            </div>
-          </div>
-        </footer>
+        <LandingNavbar
+          onHome={() => router.push("/")}
+          onSignIn={() => router.push("/auth/sign-in")}
+          onSignUp={() => router.push("/auth/sign-up")}
+        />
+        <LandingHeroSection />
+        <LandingFeaturesSection />
+        <LandingStackHighlightsSection />
+        <LandingSupportSection donateUrl={DONATE_URL} />
+        <LandingCtaSection />
+        <LandingFooter />
       </main>
     </div>
-  );
-}
-
-function FeatureCard({ icon: Icon, title, description, color }: any) {
-  return (
-    <Card className="bg-white/5 border-white/5 p-8 hover:bg-white/10 transition-colors group relative overflow-hidden">
-      <div className={`p-3 rounded-2xl bg-white/5 w-fit mb-6 ${color} group-hover:scale-110 transition-transform`}>
-        <Icon className="h-8 w-8" />
-      </div>
-      <h3 className="text-xl font-bold mb-3">{title}</h3>
-      <p className="text-muted-foreground leading-relaxed">{description}</p>
-    </Card>
   );
 }
