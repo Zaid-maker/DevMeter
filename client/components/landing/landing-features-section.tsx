@@ -1,17 +1,25 @@
 import { LucideIcon, BarChart3, Shield, Zap } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
+type FeatureColor = "primary" | "blue" | "green";
+
 interface FeatureCardProps {
   icon: LucideIcon;
   title: string;
   description: string;
-  color: string;
+  color: FeatureColor;
 }
 
 function FeatureCard({ icon: Icon, title, description, color }: FeatureCardProps) {
+  const colorClassMap: Record<FeatureColor, string> = {
+    primary: "text-primary",
+    blue: "text-blue-400",
+    green: "text-green-400",
+  };
+
   return (
     <Card className="bg-white/5 border-white/5 p-8 hover:bg-white/10 transition-colors group relative overflow-hidden">
-      <div className={`p-3 rounded-2xl bg-white/5 w-fit mb-6 ${color} group-hover:scale-110 transition-transform`}>
+      <div className={`p-3 rounded-2xl bg-white/5 w-fit mb-6 ${colorClassMap[color]} group-hover:scale-110 transition-transform`}>
         <Icon className="h-8 w-8" />
       </div>
       <h3 className="text-xl font-bold mb-3">{title}</h3>
@@ -35,19 +43,19 @@ export function LandingFeaturesSection() {
           icon={Zap}
           title="Automated Precision"
           description="Record your focus time without lifting a finger. Our extension handles everything silently."
-          color="text-primary"
+          color="primary"
         />
         <FeatureCard
           icon={BarChart3}
           title="Deep Visuals"
           description="Understand your habits with vibrant charts, language breakdowns, and project intensity stats."
-          color="text-blue-400"
+          color="blue"
         />
         <FeatureCard
           icon={Shield}
           title="Audit-Ready"
           description="100% open-source software. Verify exactly how your data is handled from heartbeats to dashboard."
-          color="text-green-400"
+          color="green"
         />
       </div>
     </section>
