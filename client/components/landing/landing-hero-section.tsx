@@ -3,6 +3,7 @@ import { ArrowRight, Download, Terminal, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { LANDING_LINKS } from "@/components/landing/landing-config";
 
 export function LandingHeroSection() {
   return (
@@ -11,7 +12,7 @@ export function LandingHeroSection() {
         <Zap className="h-3 w-3 mr-2" /> 100% Open Source
       </Badge>
       <h1 className="text-5xl md:text-8xl font-black tracking-tighter mb-6 md:mb-8 leading-[1.05] md:leading-[1.1]">
-        Master your <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary via-blue-400 to-primary bg-[length:200%_auto] animate-gradient">craft.</span><br className="hidden md:block" />
+        Master your <span className="bg-clip-text text-transparent bg-linear-to-r from-primary via-blue-400 to-primary bg-size-[200%_auto] animate-gradient">craft.</span><br className="hidden md:block" />
         Track every <span className="text-primary/90 italic">stroke.</span>
       </h1>
       <p className="text-muted-foreground text-lg md:text-2xl max-w-2xl mx-auto mb-10 md:mb-12 font-medium leading-relaxed px-2">
@@ -19,7 +20,7 @@ export function LandingHeroSection() {
       </p>
       <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-20">
         <Button size="lg" asChild className="h-14 px-10 text-lg bg-primary text-black hover:bg-primary/90 font-black rounded-full w-full sm:w-auto shadow-[0_0_20px_rgba(var(--primary-rgb),0.3)]">
-          <a href="https://marketplace.visualstudio.com/items?itemName=DevMitrza.devmeter" target="_blank" rel="noopener noreferrer">
+          <a href={LANDING_LINKS.extensionMarketplace} target="_blank" rel="noopener noreferrer">
             Install Extension <Download className="ml-2 h-5 w-5" />
           </a>
         </Button>
@@ -31,7 +32,7 @@ export function LandingHeroSection() {
       </div>
 
       <div className="relative max-w-4xl mx-auto group">
-        <div className="absolute -inset-1 bg-gradient-to-r from-primary/50 to-blue-500/50 rounded-2xl blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
+        <div className="absolute -inset-1 bg-linear-to-r from-primary/50 to-blue-500/50 rounded-2xl blur opacity-30 group-hover:opacity-100 transition duration-1000 group-hover:duration-200"></div>
         <Card className="relative bg-[#0d0d0d] border-white/10 overflow-hidden rounded-2xl flex flex-col items-center justify-center p-8 md:p-12">
           <div className="w-full flex items-center justify-between mb-8 border-b border-white/5 pb-4">
             <div className="flex gap-1.5">

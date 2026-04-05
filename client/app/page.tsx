@@ -11,8 +11,7 @@ import { LandingStackHighlightsSection } from "@/components/landing/landing-stac
 import { LandingSupportSection } from "@/components/landing/landing-support-section";
 import { LandingCtaSection } from "@/components/landing/landing-cta-section";
 import { LandingFooter } from "@/components/landing/landing-footer";
-
-const DONATE_URL = "https://github.com/sponsors/DevMitrza";
+import { LANDING_LINKS } from "@/components/landing/landing-config";
 
 /**
  * Render the public marketing landing page and redirect authenticated users to the dashboard.
@@ -49,7 +48,7 @@ export default function LandingPage() {
         <LandingHeroSection />
         <LandingFeaturesSection />
         <LandingStackHighlightsSection />
-        <LandingSupportSection donateUrl={DONATE_URL} />
+        <LandingSupportSection donateUrl={LANDING_LINKS.donate} />
         <LandingCtaSection />
         <LandingFooter />
       </main>
