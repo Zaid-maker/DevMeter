@@ -5,5 +5,5 @@ export const LANDING_LINKS = {
   githubRepo: "https://github.com/devmeter/devmeter",
   x: "https://x.com/devmeter_stroke",
   supportEmail: "mailto:support@devmeter.io",
-  mitLicense: "https://github.com/devmeter/devmeter/blob/main/LICENSE",
+  mitLicense: "https://github.com/Zaid-maker/DevMeter/blob/main/LICENSE",
 } as const;

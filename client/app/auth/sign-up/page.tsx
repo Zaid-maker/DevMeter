@@ -191,6 +191,13 @@ export default function SignUpPage() {
                                         {loading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <><ArrowRight className="mr-2 h-5 w-5" /> Get Started Free</>}
                                     </Button>
 
+                                    <p className="text-xs text-center text-muted-foreground">
+                                        By signing up you agree to our{" "}
+                                        <Link href="/terms" className="text-primary font-semibold hover:underline">Terms of Service</Link>{" "}
+                                        and{" "}
+                                        <Link href="/privacy" className="text-primary font-semibold hover:underline">Privacy Policy</Link>
+                                    </p>
+
                                     <p className="text-sm text-center text-muted-foreground pt-4">
                                         Already have an account?{" "}
                                         <Link href="/auth/sign-in" className="text-primary font-bold hover:underline">Sign In</Link>
