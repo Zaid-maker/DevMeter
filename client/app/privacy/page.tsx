@@ -6,6 +6,10 @@ export const metadata: Metadata = {
   title: "Privacy Policy | DevMeter",
   description:
     "Read how DevMeter collects, uses, stores, and protects your data.",
+  robots: {
+    index: true,
+    follow: true,
+  },
   alternates: {
     canonical: "https://devmeter-v2.zaidcode.me/privacy",
   },

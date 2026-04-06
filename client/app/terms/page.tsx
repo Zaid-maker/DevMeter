@@ -5,6 +5,10 @@ import { FileText, Scale, ShieldCheck, AlertTriangle, Clock, Mail } from "lucide
 export const metadata: Metadata = {
   title: "Terms of Service | DevMeter",
   description: "Read the terms that govern use of DevMeter services and platform.",
+  robots: {
+    index: true,
+    follow: true,
+  },
   alternates: {
     canonical: "https://devmeter-v2.zaidcode.me/terms",
   },
