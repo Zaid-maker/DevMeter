@@ -7,6 +7,8 @@ interface LandingSupportSectionProps {
 }
 
 export function LandingSupportSection({ donateUrl }: LandingSupportSectionProps) {
+  void donateUrl;
+
   return (
     <section className="py-16 px-6 border-t border-white/5">
       <div className="max-w-4xl mx-auto rounded-3xl border border-primary/20 bg-linear-to-r from-primary/10 via-blue-500/10 to-transparent p-8 md:p-10">
@@ -18,10 +20,13 @@ export function LandingSupportSection({ donateUrl }: LandingSupportSectionProps)
               If DevMeter helps your workflow, consider donating. Your support helps us maintain the project, ship improvements, and keep DevMeter healthy for the open-source community.
             </p>
           </div>
-          <Button asChild size="lg" className="bg-primary text-black hover:bg-primary/90 font-black rounded-full px-8 w-full md:w-auto">
-            <a href={donateUrl} target="_blank" rel="noopener noreferrer">
-              Support Project <Github className="ml-2 h-5 w-5" />
-            </a>
+          <Button
+            size="lg"
+            disabled
+            title="Support approval pending"
+            className="bg-primary/50 text-black/60 hover:bg-primary/50 font-black rounded-full px-8 w-full md:w-auto cursor-not-allowed"
+          >
+            Support Project (Coming Soon) <Github className="ml-2 h-5 w-5" />
           </Button>
         </div>
       </div>
