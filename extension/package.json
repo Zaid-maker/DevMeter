@@ -76,6 +76,11 @@
           "type": "boolean",
           "default": true,
           "description": "Show current streak in status bar"
+        },
+        "devmeter.syncWindow": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable 24-hour sync window: heartbeats are stored locally and synced to the dashboard in a single batch after 24 hours, instead of being sent immediately."
         }
       }
     }

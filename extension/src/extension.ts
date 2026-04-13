@@ -12,6 +12,24 @@ import * as semver from 'semver';
 let statusBarItem: vscode.StatusBarItem;
 let refreshInterval: NodeJS.Timeout | undefined;
 let outputChannel: vscode.OutputChannel;
+let extensionContext: vscode.ExtensionContext;
+
+const PENDING_HEARTBEATS_KEY = 'pendingHeartbeats';
+const LAST_SYNC_TIME_KEY = 'lastSyncTime';
+const SYNC_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+interface PendingHeartbeat {
+    project: string;
+    language: string;
+    file: string;
+    type: string;
+    is_save: boolean;
+    timestamp: number;
+    editor: string;
+    platform: string;
+    release: string;
+    arch: string;
+}
 
 const IS_MAINTENANCE_MODE = false;
 const MAINTENANCE_MESSAGE = "We're currently performing some scheduled maintenance to improve DevMeter. Coding activity tracking is temporarily paused and will resume shortly. We appreciate your patience!";
@@ -25,6 +43,7 @@ function log(message: string) {
 
 export function activate(context: vscode.ExtensionContext) {
     outputChannel = vscode.window.createOutputChannel("DevMeter");
+    extensionContext = context;
     log('DevMeter is now active!');
 
     if (IS_MAINTENANCE_MODE) {
@@ -72,6 +91,11 @@ export function activate(context: vscode.ExtensionContext) {
         log('Manual sync triggered');
         statusBarItem.text = '$(sync~spin) DevMeter: Syncing…';
         try {
+            const config = vscode.workspace.getConfiguration('devmeter');
+            const syncWindow = config.get<boolean>('syncWindow');
+            if (syncWindow) {
+                await flushPendingHeartbeats();
+            }
             await updateStatusBar();
             vscode.window.showInformationMessage('DevMeter: Sync complete.');
         } catch (error) {
@@ -87,11 +111,23 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Command to show Menu
     context.subscriptions.push(vscode.commands.registerCommand('devmeter.showMenu', async () => {
+        const config = vscode.workspace.getConfiguration('devmeter');
+        const syncWindow = config.get<boolean>('syncWindow');
+        const pendingHeartbeats = extensionContext.globalState.get<PendingHeartbeat[]>(PENDING_HEARTBEATS_KEY, []);
+        const pendingCount = pendingHeartbeats.length;
+
+        const syncLabel = syncWindow && pendingCount > 0
+            ? `$(sync) Sync Now (${pendingCount} pending heartbeats)`
+            : "$(sync) Sync Now";
+        const syncDescription = syncWindow && pendingCount > 0
+            ? "Upload buffered heartbeats to the dashboard"
+            : "Manually refresh your stats";
+
         const items = [
             { label: "$(layout) Open Private Dashboard", description: "View your personal stats", command: 'devmeter.dashboard' },
             { label: "$(person) View Public Profile", description: "View your shareable profile", command: 'devmeter.profile' },
             { label: "$(key) Update API Key", description: "Change your authentication key", command: 'devmeter.apiKey' },
-            { label: "$(sync) Sync Now", description: "Manually refresh your stats", command: 'devmeter.syncNow' },
+            { label: syncLabel, description: syncDescription, command: 'devmeter.syncNow' },
             { label: "$(output) Show Logs", description: "Open the DevMeter output channel", command: 'devmeter.showLogs' },
             { label: "$(settings) Extension Settings", description: "Configure visibility options", command: 'workbench.action.openSettings', args: '@ext:DevMitrza.devmeter' }
         ];
@@ -123,9 +159,13 @@ export function activate(context: vscode.ExtensionContext) {
     updateStatusBar();
     checkForUpdates(context);
 
+    // On startup, check if 24-hour sync window has elapsed for pending heartbeats
+    checkAndFlushSyncWindow();
+
     // Refresh status bar every 5 minutes
     refreshInterval = setInterval(() => {
         updateStatusBar();
+        checkAndFlushSyncWindow();
     }, 5 * 60 * 1000);
 }
 
@@ -326,12 +366,11 @@ async function sendHeartbeat(document: vscode.TextDocument, isSave: boolean) {
     const config = vscode.workspace.getConfiguration('devmeter');
     const apiKey = config.get<string>('apiKey');
     const apiUrl = config.get<string>('apiUrl');
+    const syncWindow = config.get<boolean>('syncWindow');
 
     if (!apiKey || !apiUrl) {
         return;
     }
-
-    isProcessing = true;
 
     const project = vscode.workspace.name || 'Unknown Project';
     const language = document.languageId;
@@ -359,23 +398,42 @@ async function sendHeartbeat(document: vscode.TextDocument, isSave: boolean) {
         editorName = 'Cursor';
     }
 
-    const payload = {
+    const heartbeatPayload: PendingHeartbeat = {
         project,
         language,
         file,
-        timestamp: now,
-        is_save: isSave,
-        entity: file,
         type: 'file',
+        is_save: isSave,
+        timestamp: now,
         editor: editorName,
-        platform: os.platform(), // More accurate platform from Node
-        release: os.release(),    // OS version
-        arch: os.arch()          // CPU architecture
+        platform: os.platform(),
+        release: os.release(),
+        arch: os.arch()
     };
+
+    // When the 24-hour sync window is enabled, buffer heartbeats locally
+    if (syncWindow) {
+        isProcessing = true;
+        try {
+            const pending = extensionContext.globalState.get<PendingHeartbeat[]>(PENDING_HEARTBEATS_KEY, []);
+            pending.push(heartbeatPayload);
+            await extensionContext.globalState.update(PENDING_HEARTBEATS_KEY, pending);
+            log(`Heartbeat buffered locally (${pending.length} pending). Will sync after 24 hours.`);
+            lastHeartbeat = now;
+        } catch (error: any) {
+            log(`Failed to buffer heartbeat locally: ${error.message}`);
+        } finally {
+            isProcessing = false;
+        }
+        return;
+    }
+
+    // Default path: send heartbeat immediately
+    isProcessing = true;
 
     try {
         log(`Sending heartbeat for ${file} to ${apiUrl}/heartbeat`);
-        await axios.post(`${apiUrl}/heartbeat`, payload, {
+        await axios.post(`${apiUrl}/heartbeat`, heartbeatPayload, {
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
                 'Content-Type': 'application/json',
@@ -397,6 +455,83 @@ async function sendHeartbeat(document: vscode.TextDocument, isSave: boolean) {
         // Don't update lastHeartbeat so we can retry on next change if it's been long enough
     } finally {
         isProcessing = false;
+    }
+}
+
+/**
+ * Checks whether the 24-hour sync window has elapsed and, if so, automatically
+ * flushes all locally buffered heartbeats to the dashboard.
+ */
+async function checkAndFlushSyncWindow() {
+    const config = vscode.workspace.getConfiguration('devmeter');
+    const syncWindow = config.get<boolean>('syncWindow');
+    if (!syncWindow) {
+        return;
+    }
+
+    const pending = extensionContext.globalState.get<PendingHeartbeat[]>(PENDING_HEARTBEATS_KEY, []);
+    if (pending.length === 0) {
+        return;
+    }
+
+    const lastSyncTime = extensionContext.globalState.get<number>(LAST_SYNC_TIME_KEY, 0);
+    const now = Date.now();
+
+    if (now - lastSyncTime >= SYNC_WINDOW_MS) {
+        log(`24-hour sync window elapsed. Flushing ${pending.length} buffered heartbeat(s)…`);
+        await flushPendingHeartbeats();
+    }
+}
+
+/**
+ * Uploads all locally buffered heartbeats to the server in a single batch request,
+ * then clears the local buffer and records the current time as the last sync time.
+ */
+async function flushPendingHeartbeats() {
+    const config = vscode.workspace.getConfiguration('devmeter');
+    const apiKey = config.get<string>('apiKey');
+    const apiUrl = config.get<string>('apiUrl');
+
+    if (!apiKey || !apiUrl) {
+        return;
+    }
+
+    const pending = extensionContext.globalState.get<PendingHeartbeat[]>(PENDING_HEARTBEATS_KEY, []);
+    if (pending.length === 0) {
+        log('No pending heartbeats to sync.');
+        return;
+    }
+
+    log(`Syncing ${pending.length} buffered heartbeat(s) to ${apiUrl}/heartbeat/batch`);
+
+    const editorName = vscode.env.appName || 'unknown';
+
+    try {
+        await axios.post(`${apiUrl}/heartbeat/batch`, { heartbeats: pending }, {
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+                'User-Agent': `DevMeter-VSCode-Extension/${editorName}`
+            },
+            timeout: 30000 // Allow more time for large batches
+        });
+
+        log(`Successfully synced ${pending.length} heartbeat(s).`);
+
+        // Clear the local buffer and record sync time
+        await extensionContext.globalState.update(PENDING_HEARTBEATS_KEY, []);
+        await extensionContext.globalState.update(LAST_SYNC_TIME_KEY, Date.now());
+
+        vscode.window.showInformationMessage(
+            `DevMeter: Synced ${pending.length} buffered heartbeat(s) to the dashboard.`
+        );
+        updateStatusBar();
+    } catch (error: any) {
+        log(`Failed to sync buffered heartbeats: ${error.message}`);
+        if (error.response) {
+            log(`Response error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+        }
+        // Keep pending heartbeats in local storage so they can be retried later
     }
 }
 
