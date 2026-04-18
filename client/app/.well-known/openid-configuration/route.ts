@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { getPublicBaseUrl } from "@/lib/public-url";
 
-export function GET() {
-  const issuer = getPublicBaseUrl();
+export function GET(req: Request) {
+  const issuer = getPublicBaseUrl(req);
 
   return NextResponse.json({
     issuer,

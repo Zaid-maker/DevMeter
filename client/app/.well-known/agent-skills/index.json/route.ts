@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { LOCAL_AGENT_SKILLS, toSha256Digest } from "@/lib/agent-skills";
 import { getPublicBaseUrl } from "@/lib/public-url";
 
-export function GET() {
-  const baseUrl = getPublicBaseUrl();
+export function GET(req: Request) {
+  const baseUrl = getPublicBaseUrl(req);
 
   const payload = {
     $schema: "https://schemas.agentskills.io/discovery/0.2.0/schema.json",
