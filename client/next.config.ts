@@ -9,6 +9,20 @@ const nextConfig: NextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  async headers() {
+    return [
+      {
+        source: "/",
+        headers: [
+          {
+            key: "Link",
+            value:
+              '</.well-known/api-catalog>; rel="api-catalog", </docs>; rel="service-doc"',
+          },
+        ],
+      },
+    ];
+  },
   images: {
     remotePatterns: [
       {
