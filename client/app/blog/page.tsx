@@ -19,6 +19,16 @@ interface BlogPost {
 
 const blogPosts: BlogPost[] = [
   {
+    id: "devmeter-now-has-mcp-server",
+    title: "DevMeter Now Has an MCP Server for Agent Access",
+    description: "DevMeter now exposes a real Model Context Protocol server so AI tools and VS Code agents can discover stats, leaderboard data, and docs directly.",
+    author: "Zaid Code",
+    date: "2026-04-18",
+    readTime: 4,
+    category: "News",
+    featured: true,
+  },
+  {
     id: "devmeter-service-restored-april-2026",
     title: "DevMeter Service Restored: Stable Again and Data Is Flowing",
     description: "DevMeter service is now stable again. Heartbeats and dashboard data are flowing through the server, and recovery monitoring is ongoing.",
@@ -183,6 +193,21 @@ export default function BlogPage() {
             </div>
           </div>
         </div>
+
+          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 md:p-6 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div className="space-y-1">
+              <Badge variant="outline" className="border-primary/30 text-primary">
+                New
+              </Badge>
+              <h2 className="text-xl md:text-2xl font-bold">DevMeter now has an MCP server</h2>
+              <p className="text-sm md:text-base text-muted-foreground max-w-2xl">
+                Agents in VS Code and other MCP-compatible tools can now discover DevMeter stats, leaderboard data, and docs directly through our MCP endpoint.
+              </p>
+            </div>
+            <Link href="/blog/devmeter-now-has-mcp-server" className="inline-flex items-center justify-center rounded-full bg-primary px-4 py-2 text-sm font-semibold text-black transition-colors hover:bg-primary/90">
+              Read the announcement
+            </Link>
+          </div>
 
         {/* Featured Posts */}
         {featuredPosts.length > 0 && (

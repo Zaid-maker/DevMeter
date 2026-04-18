@@ -12,6 +12,7 @@ import { LandingSupportSection } from "@/components/landing/landing-support-sect
 import { LandingCtaSection } from "@/components/landing/landing-cta-section";
 import { LandingFooter } from "@/components/landing/landing-footer";
 import { LANDING_LINKS } from "@/components/landing/landing-config";
+import Link from "next/link";
 
 /**
  * Render the public marketing landing page and redirect authenticated users to the dashboard.
@@ -45,6 +46,19 @@ export default function LandingPage() {
           onSignIn={() => router.push("/auth/sign-in")}
           onSignUp={() => router.push("/auth/sign-up")}
         />
+        <div className="mx-auto mt-4 max-w-7xl px-4 md:px-8">
+          <div className="rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-sm md:text-base flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            <div>
+              <span className="inline-flex items-center rounded-full border border-primary/30 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-primary">
+                New
+              </span>
+              <span className="ml-2 font-medium">DevMeter now has a live MCP server for VS Code and other agent tools.</span>
+            </div>
+            <Link href="/blog/devmeter-now-has-mcp-server" className="font-semibold text-primary hover:underline">
+              Read the announcement
+            </Link>
+          </div>
+        </div>
         <LandingHeroSection />
         <LandingFeaturesSection />
         <LandingStackHighlightsSection />

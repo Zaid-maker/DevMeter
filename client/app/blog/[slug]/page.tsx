@@ -21,6 +21,58 @@ interface BlogArticle {
 }
 
 const blogArticles: Record<string, BlogArticle> = {
+  "devmeter-now-has-mcp-server": {
+    id: "devmeter-now-has-mcp-server",
+    title: "DevMeter Now Has an MCP Server for Agent Access",
+    description: "DevMeter now exposes a real Model Context Protocol server so AI tools and VS Code agents can discover stats, leaderboard data, and docs directly.",
+    author: "Zaid Code",
+    date: "2026-04-18",
+    readTime: 4,
+    category: "News",
+    content: `
+# DevMeter Now Has an MCP Server for Agent Access
+
+DevMeter now exposes a real Model Context Protocol (MCP) server, which means AI tools and MCP-aware editors can discover DevMeter directly instead of relying on manual setup or custom integrations.
+
+This is a big step for the project because it makes DevMeter easier to connect to from modern agent workflows, including VS Code Copilot and other MCP-compatible tools.
+
+## What the MCP Server Can Do
+
+The server currently exposes live tools for:
+
+- Platform statistics
+- Leaderboard data
+- User profile lookup
+- User search
+
+It also exposes resources so agents can discover documentation and other useful context without leaving the protocol.
+
+## Why This Matters
+
+This gives DevMeter a more natural integration path for agentic workflows. Instead of hard-coding knowledge about the product, an MCP-capable tool can ask the server what is available and call the right action directly.
+
+That means:
+
+- Better discoverability for AI assistants
+- Easier testing inside VS Code
+- A cleaner path for future agent features
+- More useful automation around DevMeter data
+
+## What Users Can Try
+
+If you are using a compatible editor or agent, you can now connect it to the DevMeter MCP endpoint and ask things like:
+
+- "What's the current platform statistics?"
+- "Show me the leaderboard"
+- "Find a user by name or email"
+
+## Built for the Real World
+
+This is not just a demo stub. The MCP server is wired into the live DevMeter app, so the tools return real platform data from the production environment.
+
+We'll keep expanding the surface area over time, but the important milestone is here: **DevMeter is now MCP-enabled.**
+    `,
+  },
   "devmeter-service-restored-april-2026": {
     id: "devmeter-service-restored-april-2026",
     title: "DevMeter Service Restored: Stable Again and Data Is Flowing",

@@ -2,6 +2,14 @@ import { Metadata } from "next";
 import { use } from "react";
 
 const blogArticles: Record<string, { title: string; description: string; category: string; date: string; author: string; readTime: number }> = {
+  "devmeter-now-has-mcp-server": {
+    title: "DevMeter Now Has an MCP Server for Agent Access",
+    description: "DevMeter now exposes a real Model Context Protocol server so AI tools and VS Code agents can discover stats, leaderboard data, and docs directly.",
+    category: "News",
+    date: "2026-04-18",
+    author: "Zaid Code",
+    readTime: 4,
+  },
   "devmeter-service-restored-april-2026": {
     title: "DevMeter Service Restored: Stable Again and Data Is Flowing",
     description: "DevMeter service is now stable again. Heartbeats and dashboard data are flowing through the server, and recovery monitoring is ongoing.",
