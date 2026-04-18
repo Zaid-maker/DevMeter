@@ -553,6 +553,131 @@ export default function DocsPage() {
                 </div>
               </CardContent>
             </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Terminal className="h-5 w-5 text-primary" />
+                  MCP Server: How to Connect
+                </CardTitle>
+                <CardDescription>
+                  Connect VS Code or MCP-compatible agents to DevMeter tools
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div>
+                  <h3 className="text-base md:text-lg font-semibold mb-2">What You Get</h3>
+                  <ul className="list-disc list-inside space-y-1 text-sm md:text-base text-muted-foreground">
+                    <li>Live platform stats</li>
+                    <li>Leaderboard queries</li>
+                    <li>User profile lookup</li>
+                    <li>User search tools</li>
+                  </ul>
+                </div>
+
+                <div>
+                  <h3 className="text-base md:text-lg font-semibold mb-2">Step 1: Create MCP config</h3>
+                  <p className="text-sm md:text-base text-muted-foreground mb-3">
+                    In your project, create or update <code className="bg-muted px-1 rounded">.vscode/mcp.json</code>.
+                  </p>
+
+                  <p className="text-xs md:text-sm font-medium mb-2">Production (recommended)</p>
+                  <div className="p-3 md:p-4 bg-muted/50 rounded-lg border border-white/5 overflow-x-auto relative group mb-4">
+                    <code className="text-xs md:text-sm whitespace-pre">{`{
+  "servers": {
+    "devmeter": {
+      "url": "https://devmeter-v2.zaidcode.me/api/mcp",
+      "type": "http"
+    }
+  },
+  "inputs": []
+}`}</code>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="absolute right-2 top-2 h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() =>
+                        copyToClipboard(
+`{
+  "servers": {
+    "devmeter": {
+      "url": "https://devmeter-v2.zaidcode.me/api/mcp",
+      "type": "http"
+    }
+  },
+  "inputs": []
+}`,
+                          "mcp-config-prod"
+                        )
+                      }
+                    >
+                      {copiedText === "mcp-config-prod" ? (
+                        <Check className="h-3 w-3 text-green-500" />
+                      ) : (
+                        <Copy className="h-3 w-3" />
+                      )}
+                    </Button>
+                  </div>
+
+                  <p className="text-xs md:text-sm font-medium mb-2">Local development</p>
+                  <div className="p-3 md:p-4 bg-muted/50 rounded-lg border border-white/5 overflow-x-auto relative group">
+                    <code className="text-xs md:text-sm whitespace-pre">{`{
+  "servers": {
+    "devmeter": {
+      "url": "http://localhost:3000/api/mcp",
+      "type": "http"
+    }
+  },
+  "inputs": []
+}`}</code>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="absolute right-2 top-2 h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() =>
+                        copyToClipboard(
+`{
+  "servers": {
+    "devmeter": {
+      "url": "http://localhost:3000/api/mcp",
+      "type": "http"
+    }
+  },
+  "inputs": []
+}`,
+                          "mcp-config-local"
+                        )
+                      }
+                    >
+                      {copiedText === "mcp-config-local" ? (
+                        <Check className="h-3 w-3 text-green-500" />
+                      ) : (
+                        <Copy className="h-3 w-3" />
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                <div>
+                  <h3 className="text-base md:text-lg font-semibold mb-2">Step 2: Reload VS Code</h3>
+                  <p className="text-sm md:text-base text-muted-foreground">
+                    Run <code className="bg-muted px-1 rounded">Developer: Reload Window</code> from the command palette so the MCP server reconnects.
+                  </p>
+                </div>
+
+                <div>
+                  <h3 className="text-base md:text-lg font-semibold mb-2">Step 3: Test your MCP tools</h3>
+                  <p className="text-sm md:text-base text-muted-foreground mb-2">
+                    Ask your agent queries such as:
+                  </p>
+                  <ul className="list-disc list-inside space-y-1 text-sm md:text-base text-muted-foreground">
+                    <li>Get DevMeter platform statistics</li>
+                    <li>Show the top 10 users by XP</li>
+                    <li>Search users with query "zaid"</li>
+                  </ul>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* FAQ */}

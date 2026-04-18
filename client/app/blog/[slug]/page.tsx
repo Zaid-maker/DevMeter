@@ -66,6 +66,21 @@ If you are using a compatible editor or agent, you can now connect it to the Dev
 - "Show me the leaderboard"
 - "Find a user by name or email"
 
+## How to Connect in VS Code
+
+You can connect in under two minutes:
+
+1. Open the workspace where you want MCP enabled.
+2. Create or update the file: .vscode/mcp.json
+3. Add DevMeter as an HTTP MCP server with URL: https://devmeter-v2.zaidcode.me/api/mcp and type: http
+4. Reload VS Code so MCP servers reconnect.
+5. Ask your agent to call DevMeter tools, for example:
+
+- "Get platform stats from DevMeter"
+- "Show top 10 users by XP"
+
+If you are testing locally, use this URL while your app is running: http://localhost:3000/api/mcp
+
 ## Built for the Real World
 
 This is not just a demo stub. The MCP server is wired into the live DevMeter app, so the tools return real platform data from the production environment.
