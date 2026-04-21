@@ -91,11 +91,9 @@ export function activate(context: vscode.ExtensionContext) {
         log('Manual sync triggered');
         statusBarItem.text = '$(sync~spin) DevMeter: Syncing…';
         try {
-            const config = vscode.workspace.getConfiguration('devmeter');
-            const syncWindow = config.get<boolean>('syncWindow');
-            if (syncWindow) {
-                await flushPendingHeartbeats();
-            }
+            // Always flush pending heartbeats on a manual sync — covers both the
+            // 24-hour sync window and the fallback buffer from connection failures.
+            await flushPendingHeartbeats();
             await updateStatusBar();
             vscode.window.showInformationMessage('DevMeter: Sync complete.');
         } catch (error) {
@@ -116,11 +114,13 @@ export function activate(context: vscode.ExtensionContext) {
         const pendingHeartbeats = extensionContext.globalState.get<PendingHeartbeat[]>(PENDING_HEARTBEATS_KEY, []);
         const pendingCount = pendingHeartbeats.length;
 
-        const syncLabel = syncWindow && pendingCount > 0
+        const syncLabel = pendingCount > 0
             ? `$(sync) Sync Now (${pendingCount} pending heartbeats)`
             : "$(sync) Sync Now";
-        const syncDescription = syncWindow && pendingCount > 0
-            ? "Upload buffered heartbeats to the dashboard"
+        const syncDescription = pendingCount > 0
+            ? syncWindow
+                ? "Upload buffered heartbeats to the dashboard"
+                : "Upload locally saved heartbeats (recovered from connection failure)"
             : "Manually refresh your stats";
 
         const items = [
@@ -452,42 +452,67 @@ async function sendHeartbeat(document: vscode.TextDocument, isSave: boolean) {
                 vscode.window.showErrorMessage("DevMeter: Your account has been deleted. Please check your settings.");
             }
         }
-        // Don't update lastHeartbeat so we can retry on next change if it's been long enough
+
+        // Fallback: if the failure is a server/network error (DB down, connection refused,
+        // 5xx), buffer the heartbeat locally so no data is lost. Auth and bad-request
+        // errors (4xx) are not retried because they will not succeed later.
+        const isServerOrNetworkError = !error.response || error.response.status >= 500;
+        if (isServerOrNetworkError) {
+            try {
+                const pending = extensionContext.globalState.get<PendingHeartbeat[]>(PENDING_HEARTBEATS_KEY, []);
+                pending.push(heartbeatPayload);
+                await extensionContext.globalState.update(PENDING_HEARTBEATS_KEY, pending);
+                log(`Heartbeat saved to local fallback buffer (${pending.length} pending). Will retry when server is reachable.`);
+                lastHeartbeat = now; // Mark as handled to avoid flooding the buffer on rapid events
+            } catch (bufferError: any) {
+                log(`Failed to save heartbeat to local fallback buffer: ${bufferError.message}`);
+            }
+        }
+        // Don't update lastHeartbeat for non-server errors so we can retry on next change if it's been long enough
     } finally {
         isProcessing = false;
     }
 }
 
 /**
- * Checks whether the 24-hour sync window has elapsed and, if so, automatically
- * flushes all locally buffered heartbeats to the dashboard.
+ * Checks for locally buffered heartbeats and flushes them when appropriate:
+ * - In 24-hour sync-window mode: flushes after the 24-hour window has elapsed.
+ * - In fallback mode (syncWindow off): flushes immediately to retry heartbeats
+ *   that were buffered due to a previous server/DB connection failure.
  */
 async function checkAndFlushSyncWindow() {
-    const config = vscode.workspace.getConfiguration('devmeter');
-    const syncWindow = config.get<boolean>('syncWindow');
-    if (!syncWindow) {
-        return;
-    }
-
     const pending = extensionContext.globalState.get<PendingHeartbeat[]>(PENDING_HEARTBEATS_KEY, []);
     if (pending.length === 0) {
         return;
     }
 
-    const lastSyncTime = extensionContext.globalState.get<number>(LAST_SYNC_TIME_KEY, 0);
-    const now = Date.now();
+    const config = vscode.workspace.getConfiguration('devmeter');
+    const syncWindow = config.get<boolean>('syncWindow');
 
-    if (now - lastSyncTime >= SYNC_WINDOW_MS) {
-        log(`24-hour sync window elapsed. Flushing ${pending.length} buffered heartbeat(s)…`);
-        await flushPendingHeartbeats();
+    if (syncWindow) {
+        // 24-hour sync window: only flush once the full window has elapsed
+        const lastSyncTime = extensionContext.globalState.get<number>(LAST_SYNC_TIME_KEY, 0);
+        const now = Date.now();
+        if (now - lastSyncTime >= SYNC_WINDOW_MS) {
+            log(`24-hour sync window elapsed. Flushing ${pending.length} buffered heartbeat(s)…`);
+            await flushPendingHeartbeats();
+        }
+    } else {
+        // Fallback mode: these heartbeats were buffered because the server was unreachable.
+        // Retry immediately now that connectivity may have been restored.
+        log(`Retrying ${pending.length} locally buffered heartbeat(s) from previous failures…`);
+        await flushPendingHeartbeats(true);
     }
 }
 
 /**
  * Uploads all locally buffered heartbeats to the server in a single batch request,
  * then clears the local buffer and records the current time as the last sync time.
+ *
+ * @param silent - When true, suppresses the success notification (used for automatic
+ *   background retries so the user is not interrupted by repeated toasts).
  */
-async function flushPendingHeartbeats() {
+async function flushPendingHeartbeats(silent = false) {
     const config = vscode.workspace.getConfiguration('devmeter');
     const apiKey = config.get<string>('apiKey');
     const apiUrl = config.get<string>('apiUrl');
@@ -522,9 +547,13 @@ async function flushPendingHeartbeats() {
         await extensionContext.globalState.update(PENDING_HEARTBEATS_KEY, []);
         await extensionContext.globalState.update(LAST_SYNC_TIME_KEY, Date.now());
 
-        vscode.window.showInformationMessage(
-            `DevMeter: Synced ${pending.length} buffered heartbeat(s) to the dashboard.`
-        );
+        if (!silent) {
+            vscode.window.showInformationMessage(
+                `DevMeter: Synced ${pending.length} buffered heartbeat(s) to the dashboard.`
+            );
+        } else {
+            log(`Silently recovered ${pending.length} heartbeat(s) from local fallback buffer.`);
+        }
         updateStatusBar();
     } catch (error: any) {
         log(`Failed to sync buffered heartbeats: ${error.message}`);
