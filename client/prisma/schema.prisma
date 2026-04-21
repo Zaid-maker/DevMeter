@@ -143,18 +143,19 @@ model ApiKey {
 }
 
 model Heartbeat {
-  id        String   @id @default(cuid())
-  userId    String
-  project   String
-  language  String
-  file      String
-  type      String
-  isSave    Boolean  @default(false)
-  editor    String?
-  platform  String?
-  timestamp DateTime
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String   @id @default(cuid())
+  heartbeatId String?  @unique
+  userId      String
+  project     String
+  language    String
+  file        String
+  type        String
+  isSave      Boolean  @default(false)
+  editor      String?
+  platform    String?
+  timestamp   DateTime
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([project])

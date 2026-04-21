@@ -16,6 +16,7 @@ const API_KEY_CACHE_TTL = 86400; // 24 hours in seconds
 const XP_PER_HEARTBEAT = 10;
 
 interface IncomingHeartbeat {
+    heartbeatId?: string; // Client-generated unique ID for deduplication
     project?: string;
     language?: string;
     file?: string;
@@ -39,26 +40,38 @@ export async function POST(req: NextRequest) {
     const apiKeyStr = authHeader.split(" ")[1];
 
     try {
-        // Resolve and cache the API key
+        // Resolve and cache the API key (store only userId mapping, not full user data)
         const cacheKey = `apikey:${apiKeyStr}`;
-        let apiKey = await redis.get(cacheKey) as any;
+        let cachedData = await redis.get(cacheKey);
+        let userId: string;
 
-        if (!apiKey) {
-            apiKey = await prisma.apiKey.findUnique({
+        if (cachedData && typeof cachedData === 'object' && 'userId' in cachedData) {
+            // Validate cached shape has userId
+            userId = (cachedData as { userId: string }).userId;
+        } else {
+            // Cache miss: resolve from DB
+            const apiKey = await prisma.apiKey.findUnique({
                 where: { key: apiKeyStr },
-                include: { user: { select: { id: true, deletedAt: true, xp: true, level: true } } }
+                select: { userId: true }
             });
 
             if (!apiKey) {
                 return NextResponse.json({ error: "Invalid API Key" }, { status: 401, headers: CORS_HEADERS });
             }
 
-            // Cache for 24 hours
-            await redis.set(cacheKey, apiKey, { ex: API_KEY_CACHE_TTL });
+            userId = apiKey.userId;
+
+            // Cache only the userId mapping for 24 hours
+            await redis.set(cacheKey, { userId }, { ex: API_KEY_CACHE_TTL });
         }
 
-        // Check if user is soft-deleted
-        if (apiKey.user.deletedAt) {
+        // Always check user soft-delete status fresh from DB (not cached)
+        const user = await prisma.user.findUnique({
+            where: { id: userId },
+            select: { deletedAt: true }
+        });
+
+        if (!user || user.deletedAt) {
             return NextResponse.json({ error: "User account is deleted" }, { status: 401, headers: CORS_HEADERS });
         }
 
@@ -80,9 +93,11 @@ export async function POST(req: NextRequest) {
         }
 
         // Insert all heartbeats in a single transaction for atomicity
+        // Use skipDuplicates to prevent double-inserts on client retries
         await prisma.heartbeat.createMany({
             data: heartbeats.map((h: IncomingHeartbeat) => ({
-                userId: apiKey.userId,
+                heartbeatId: h.heartbeatId || null, // Client-generated unique ID for deduplication
+                userId: userId,
                 project: h.project || "Unknown",
                 language: h.language || "unknown",
                 file: h.file || "unknown",
@@ -92,7 +107,7 @@ export async function POST(req: NextRequest) {
                 platform: h.platform || null,
                 timestamp: new Date(h.timestamp || Date.now()),
             })),
-            skipDuplicates: false,
+            skipDuplicates: true, // Ignore duplicates based on unique heartbeatId
         });
 
         // BACKGROUND PROCESSING: Award XP for the batch, check levels and achievements.
@@ -102,7 +117,7 @@ export async function POST(req: NextRequest) {
                 const totalXp = heartbeats.length * XP_PER_HEARTBEAT;
 
                 const updatedUser = await prisma.user.update({
-                    where: { id: apiKey.userId },
+                    where: { id: userId },
                     data: { xp: { increment: totalXp } }
                 });
 
@@ -111,15 +126,15 @@ export async function POST(req: NextRequest) {
 
                 if (newLevel > updatedUser.level) {
                     await prisma.user.update({
-                        where: { id: apiKey.userId },
+                        where: { id: userId },
                         data: { level: newLevel }
                     });
-                    console.log(`User ${apiKey.userId} leveled up to ${newLevel}!`);
+                    console.log(`User ${userId} leveled up to ${newLevel}!`);
                 }
 
                 // --- Background Achievement Logic ---
                 const userAchievements = await prisma.userAchievement.findMany({
-                    where: { userId: apiKey.userId },
+                    where: { userId: userId },
                     select: { achievement: { select: { slug: true } } }
                 });
                 const unlockedSlugs = new Set(userAchievements.map(ua => ua.achievement.slug));
@@ -131,7 +146,7 @@ export async function POST(req: NextRequest) {
 
                     try {
                         await prisma.userAchievement.create({
-                            data: { userId: apiKey.userId, achievementId: achievement.id }
+                            data: { userId: userId, achievementId: achievement.id }
                         });
                     } catch (e: any) {
                         if (e?.code === 'P2002') return; // Already unlocked concurrently
@@ -140,13 +155,13 @@ export async function POST(req: NextRequest) {
 
                     if (achievement.xpReward > 0) {
                         const afterXPUser = await prisma.user.update({
-                            where: { id: apiKey.userId },
+                            where: { id: userId },
                             data: { xp: { increment: achievement.xpReward } }
                         });
                         const finalLevel = getLevelFromXP(afterXPUser.xp);
                         if (finalLevel > afterXPUser.level) {
                             await prisma.user.update({
-                                where: { id: apiKey.userId },
+                                where: { id: userId },
                                 data: { level: finalLevel }
                             });
                         }
@@ -155,23 +170,23 @@ export async function POST(req: NextRequest) {
 
                 await checkAndUnlock('first-heartbeat');
 
-                const heartbeatCount = await prisma.heartbeat.count({ where: { userId: apiKey.userId } });
+                const heartbeatCount = await prisma.heartbeat.count({ where: { userId: userId } });
                 if (heartbeatCount >= 30) await checkAndUnlock('hour-1');
 
                 const languagesCount = await prisma.heartbeat.groupBy({
                     by: ['language'],
-                    where: { userId: apiKey.userId }
+                    where: { userId: userId }
                 });
                 if (languagesCount.length >= 3) await checkAndUnlock('languages-3');
 
                 // --- Cache Invalidation ---
                 const ranges = ["today", "all", "yesterday", "default"];
                 const keysToDelete = [
-                    `contributions:${apiKey.userId}`,
-                    ...ranges.map(r => `stats:${apiKey.userId}:${r}`)
+                    `contributions:${userId}`,
+                    ...ranges.map(r => `stats:${userId}:${r}`)
                 ];
                 await redis.del(...keysToDelete);
-                console.log(`Cache invalidated for user ${apiKey.userId} after batch sync`);
+                console.log(`Cache invalidated for user ${userId} after batch sync`);
 
             } catch (err) {
                 console.error("Batch background gamification/cache error:", err);
