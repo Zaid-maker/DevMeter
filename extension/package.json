@@ -10,7 +10,7 @@
     "url": "https://github.com/Zaid-maker/DevMeter"
   },
   "engines": {
-    "vscode": "^1.122.1"
+    "vscode": "^1.128.0"
   },
   "categories": [
     "Visualization",
