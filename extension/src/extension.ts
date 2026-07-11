@@ -12,6 +12,27 @@ import * as semver from 'semver';
 let statusBarItem: vscode.StatusBarItem;
 let refreshInterval: NodeJS.Timeout | undefined;
 let outputChannel: vscode.OutputChannel;
+let extensionContext: vscode.ExtensionContext;
+
+const PENDING_HEARTBEATS_KEY = 'pendingHeartbeats';
+const LAST_SYNC_TIME_KEY = 'lastSyncTime';
+const SYNC_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+const MAX_BATCH_SIZE = 1000; // Server limit per batch
+const MAX_BUFFER_SIZE = 5000; // Maximum heartbeats to keep in local buffer
+
+interface PendingHeartbeat {
+    heartbeatId?: string; // Unique ID for deduplication
+    project: string;
+    language: string;
+    file: string;
+    type: string;
+    is_save: boolean;
+    timestamp: number;
+    editor: string;
+    platform: string;
+    release: string;
+    arch: string;
+}
 
 const IS_MAINTENANCE_MODE = false;
 const MAINTENANCE_MESSAGE = "We're currently performing some scheduled maintenance to improve DevMeter. Coding activity tracking is temporarily paused and will resume shortly. We appreciate your patience!";
@@ -23,8 +44,19 @@ function log(message: string) {
     console.log(`[DevMeter] ${message}`);
 }
 
+/**
+ * Generates a client-side unique ID for heartbeat deduplication.
+ * Uses timestamp + random component to ensure uniqueness.
+ */
+function generateHeartbeatId(): string {
+    const timestamp = Date.now().toString(36);
+    const random = Math.random().toString(36).substring(2, 15);
+    return `${timestamp}-${random}`;
+}
+
 export function activate(context: vscode.ExtensionContext) {
     outputChannel = vscode.window.createOutputChannel("DevMeter");
+    extensionContext = context;
     log('DevMeter is now active!');
 
     if (IS_MAINTENANCE_MODE) {
@@ -72,6 +104,9 @@ export function activate(context: vscode.ExtensionContext) {
         log('Manual sync triggered');
         statusBarItem.text = '$(sync~spin) DevMeter: Syncing…';
         try {
+            // Always flush pending heartbeats on a manual sync — covers both the
+            // 24-hour sync window and the fallback buffer from connection failures.
+            await flushPendingHeartbeats();
             await updateStatusBar();
             vscode.window.showInformationMessage('DevMeter: Sync complete.');
         } catch (error) {
@@ -87,11 +122,25 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Command to show Menu
     context.subscriptions.push(vscode.commands.registerCommand('devmeter.showMenu', async () => {
+        const config = vscode.workspace.getConfiguration('devmeter');
+        const syncWindow = config.get<boolean>('syncWindow');
+        const pendingHeartbeats = extensionContext.globalState.get<PendingHeartbeat[]>(PENDING_HEARTBEATS_KEY, []);
+        const pendingCount = pendingHeartbeats.length;
+
+        const syncLabel = pendingCount > 0
+            ? `$(sync) Sync Now (${pendingCount} pending heartbeats)`
+            : "$(sync) Sync Now";
+        const syncDescription = pendingCount > 0
+            ? syncWindow
+                ? "Upload buffered heartbeats to the dashboard"
+                : "Upload locally saved heartbeats (recovered from connection failure)"
+            : "Manually refresh your stats";
+
         const items = [
             { label: "$(layout) Open Private Dashboard", description: "View your personal stats", command: 'devmeter.dashboard' },
             { label: "$(person) View Public Profile", description: "View your shareable profile", command: 'devmeter.profile' },
             { label: "$(key) Update API Key", description: "Change your authentication key", command: 'devmeter.apiKey' },
-            { label: "$(sync) Sync Now", description: "Manually refresh your stats", command: 'devmeter.syncNow' },
+            { label: syncLabel, description: syncDescription, command: 'devmeter.syncNow' },
             { label: "$(output) Show Logs", description: "Open the DevMeter output channel", command: 'devmeter.showLogs' },
             { label: "$(settings) Extension Settings", description: "Configure visibility options", command: 'workbench.action.openSettings', args: '@ext:DevMitrza.devmeter' }
         ];
@@ -123,9 +172,13 @@ export function activate(context: vscode.ExtensionContext) {
     updateStatusBar();
     checkForUpdates(context);
 
+    // On startup, check if 24-hour sync window has elapsed for pending heartbeats
+    checkAndFlushSyncWindow();
+
     // Refresh status bar every 5 minutes
     refreshInterval = setInterval(() => {
         updateStatusBar();
+        checkAndFlushSyncWindow();
     }, 5 * 60 * 1000);
 }
 
@@ -326,12 +379,12 @@ async function sendHeartbeat(document: vscode.TextDocument, isSave: boolean) {
     const config = vscode.workspace.getConfiguration('devmeter');
     const apiKey = config.get<string>('apiKey');
     const apiUrl = config.get<string>('apiUrl');
+    const syncWindow = config.get<boolean>('syncWindow');
 
+    // Don't buffer or send heartbeats if credentials are missing
     if (!apiKey || !apiUrl) {
         return;
     }
-
-    isProcessing = true;
 
     const project = vscode.workspace.name || 'Unknown Project';
     const language = document.languageId;
@@ -359,23 +412,51 @@ async function sendHeartbeat(document: vscode.TextDocument, isSave: boolean) {
         editorName = 'Cursor';
     }
 
-    const payload = {
+    const heartbeatPayload: PendingHeartbeat = {
+        heartbeatId: generateHeartbeatId(), // Generate unique ID for deduplication
         project,
         language,
         file,
-        timestamp: now,
-        is_save: isSave,
-        entity: file,
         type: 'file',
+        is_save: isSave,
+        timestamp: now,
         editor: editorName,
-        platform: os.platform(), // More accurate platform from Node
-        release: os.release(),    // OS version
-        arch: os.arch()          // CPU architecture
+        platform: os.platform(),
+        release: os.release(),
+        arch: os.arch()
     };
+
+    // When the 24-hour sync window is enabled, buffer heartbeats locally
+    // Only buffer if API credentials are present
+    if (syncWindow && apiKey && apiUrl) {
+        isProcessing = true;
+        try {
+            let pending = extensionContext.globalState.get<PendingHeartbeat[]>(PENDING_HEARTBEATS_KEY, []);
+            pending.push(heartbeatPayload);
+
+            // Truncate buffer to most recent entries if it exceeds MAX_BUFFER_SIZE
+            if (pending.length > MAX_BUFFER_SIZE) {
+                log(`Buffer size (${pending.length}) exceeds limit. Truncating to most recent ${MAX_BUFFER_SIZE} entries.`);
+                pending = pending.slice(-MAX_BUFFER_SIZE);
+            }
+
+            await extensionContext.globalState.update(PENDING_HEARTBEATS_KEY, pending);
+            log(`Heartbeat buffered locally (${pending.length} pending). Will sync after 24 hours.`);
+            lastHeartbeat = now;
+        } catch (error: any) {
+            log(`Failed to buffer heartbeat locally: ${error.message}`);
+        } finally {
+            isProcessing = false;
+        }
+        return;
+    }
+
+    // Default path: send heartbeat immediately
+    isProcessing = true;
 
     try {
         log(`Sending heartbeat for ${file} to ${apiUrl}/heartbeat`);
-        await axios.post(`${apiUrl}/heartbeat`, payload, {
+        await axios.post(`${apiUrl}/heartbeat`, heartbeatPayload, {
             headers: {
                 'Authorization': `Bearer ${apiKey}`,
                 'Content-Type': 'application/json',
@@ -394,9 +475,170 @@ async function sendHeartbeat(document: vscode.TextDocument, isSave: boolean) {
                 vscode.window.showErrorMessage("DevMeter: Your account has been deleted. Please check your settings.");
             }
         }
-        // Don't update lastHeartbeat so we can retry on next change if it's been long enough
+
+        // Fallback: if the failure is a server/network error (DB down, connection refused,
+        // 5xx), buffer the heartbeat locally so no data is lost. Auth and bad-request
+        // errors (4xx) are not retried because they will not succeed later.
+        const isServerOrNetworkError = !error.response || error.response.status >= 500;
+        if (isServerOrNetworkError) {
+            try {
+                let pending = extensionContext.globalState.get<PendingHeartbeat[]>(PENDING_HEARTBEATS_KEY, []);
+                pending.push(heartbeatPayload);
+
+                // Truncate buffer to most recent entries if it exceeds MAX_BUFFER_SIZE
+                if (pending.length > MAX_BUFFER_SIZE) {
+                    log(`Fallback buffer size (${pending.length}) exceeds limit. Truncating to most recent ${MAX_BUFFER_SIZE} entries.`);
+                    pending = pending.slice(-MAX_BUFFER_SIZE);
+                }
+
+                await extensionContext.globalState.update(PENDING_HEARTBEATS_KEY, pending);
+                log(`Heartbeat saved to local fallback buffer (${pending.length} pending). Will retry when server is reachable.`);
+                lastHeartbeat = now; // Mark as handled to avoid flooding the buffer on rapid events
+            } catch (bufferError: any) {
+                log(`Failed to save heartbeat to local fallback buffer: ${bufferError.message}`);
+            }
+        }
+        // Don't update lastHeartbeat for non-server errors so we can retry on next change if it's been long enough
     } finally {
         isProcessing = false;
+    }
+}
+
+/**
+ * Checks for locally buffered heartbeats and flushes them when appropriate:
+ * - In 24-hour sync-window mode: flushes after the 24-hour window has elapsed.
+ * - In fallback mode (syncWindow off): flushes immediately to retry heartbeats
+ *   that were buffered due to a previous server/DB connection failure.
+ */
+async function checkAndFlushSyncWindow() {
+    const pending = extensionContext.globalState.get<PendingHeartbeat[]>(PENDING_HEARTBEATS_KEY, []);
+    if (pending.length === 0) {
+        return;
+    }
+
+    const config = vscode.workspace.getConfiguration('devmeter');
+    const syncWindow = config.get<boolean>('syncWindow');
+
+    if (syncWindow) {
+        // 24-hour sync window: only flush once the full window has elapsed
+        const lastSyncTime = extensionContext.globalState.get<number>(LAST_SYNC_TIME_KEY, 0);
+        const now = Date.now();
+        if (now - lastSyncTime >= SYNC_WINDOW_MS) {
+            log(`24-hour sync window elapsed. Flushing ${pending.length} buffered heartbeat(s)…`);
+            await flushPendingHeartbeats();
+        }
+    } else {
+        // Fallback mode: these heartbeats were buffered because the server was unreachable.
+        // Retry immediately now that connectivity may have been restored.
+        log(`Retrying ${pending.length} locally buffered heartbeat(s) from previous failures…`);
+        await flushPendingHeartbeats(true);
+    }
+}
+
+/**
+ * Uploads all locally buffered heartbeats to the server in chunked batch requests,
+ * then clears the local buffer and records the current time as the last sync time.
+ * Enforces a maximum buffer size and splits large buffers into chunks to respect
+ * the server's MAX_BATCH_SIZE limit.
+ *
+ * @param silent - When true, suppresses the success notification (used for automatic
+ *   background retries so the user is not interrupted by repeated toasts).
+ */
+async function flushPendingHeartbeats(silent = false) {
+    const config = vscode.workspace.getConfiguration('devmeter');
+    const apiKey = config.get<string>('apiKey');
+    const apiUrl = config.get<string>('apiUrl');
+
+    if (!apiKey || !apiUrl) {
+        return;
+    }
+
+    let pending = extensionContext.globalState.get<PendingHeartbeat[]>(PENDING_HEARTBEATS_KEY, []);
+    if (pending.length === 0) {
+        log('No pending heartbeats to sync.');
+        return;
+    }
+
+    // Truncate buffer to most recent entries if it exceeds MAX_BUFFER_SIZE
+    if (pending.length > MAX_BUFFER_SIZE) {
+        log(`Buffer size (${pending.length}) exceeds limit (${MAX_BUFFER_SIZE}). Truncating to most recent entries.`);
+        pending = pending.slice(-MAX_BUFFER_SIZE);
+        await extensionContext.globalState.update(PENDING_HEARTBEATS_KEY, pending);
+    }
+
+    log(`Syncing ${pending.length} buffered heartbeat(s) to ${apiUrl}/heartbeat/batch in chunks of ${MAX_BATCH_SIZE}`);
+
+    const editorName = vscode.env.appName || 'unknown';
+    let totalSynced = 0;
+
+    // Process heartbeats in chunks of MAX_BATCH_SIZE
+    for (let i = 0; i < pending.length; i += MAX_BATCH_SIZE) {
+        const chunk = pending.slice(i, i + MAX_BATCH_SIZE);
+        log(`Processing chunk ${Math.floor(i / MAX_BATCH_SIZE) + 1}/${Math.ceil(pending.length / MAX_BATCH_SIZE)} (${chunk.length} heartbeats)`);
+
+        try {
+            await axios.post(`${apiUrl}/heartbeat/batch`, { heartbeats: chunk }, {
+                headers: {
+                    'Authorization': `Bearer ${apiKey}`,
+                    'Content-Type': 'application/json',
+                    'User-Agent': `DevMeter-VSCode-Extension/${editorName}`
+                },
+                timeout: 30000 // Allow more time for large batches
+            });
+
+            log(`Successfully synced chunk of ${chunk.length} heartbeat(s).`);
+            totalSynced += chunk.length;
+
+            // Remove successfully sent chunk from buffer
+            // Read current buffer (in case new heartbeats were added during await)
+            const currentBuffer = extensionContext.globalState.get<PendingHeartbeat[]>(PENDING_HEARTBEATS_KEY, []);
+            // Remove the sent chunk by filtering out items that match the chunk
+            const remaining = currentBuffer.filter(hb => !chunk.some(sent =>
+                sent.timestamp === hb.timestamp &&
+                sent.file === hb.file &&
+                sent.project === hb.project &&
+                sent.is_save === hb.is_save
+            ));
+            await extensionContext.globalState.update(PENDING_HEARTBEATS_KEY, remaining);
+
+        } catch (error: any) {
+            log(`Failed to sync chunk: ${error.message}`);
+            if (error.response) {
+                log(`Response error: ${error.response.status} - ${JSON.stringify(error.response.data)}`);
+
+                // Handle permanent client errors (4xx except 429) by removing the chunk
+                if (error.response.status >= 400 && error.response.status < 500 && error.response.status !== 429) {
+                    log(`Permanent client error (${error.response.status}). Removing failed chunk to prevent infinite retry.`);
+                    const currentBuffer = extensionContext.globalState.get<PendingHeartbeat[]>(PENDING_HEARTBEATS_KEY, []);
+                    const remaining = currentBuffer.filter(hb => !chunk.some(sent =>
+                        sent.timestamp === hb.timestamp &&
+                        sent.file === hb.file &&
+                        sent.project === hb.project &&
+                        sent.is_save === hb.is_save
+                    ));
+                    await extensionContext.globalState.update(PENDING_HEARTBEATS_KEY, remaining);
+                    continue; // Process next chunk
+                }
+            }
+
+            // For 429, 5xx, or network errors: keep the chunk in storage for retry
+            log(`Keeping failed chunk in buffer for later retry.`);
+            break; // Stop processing remaining chunks
+        }
+    }
+
+    // Update sync time if we synced anything
+    if (totalSynced > 0) {
+        await extensionContext.globalState.update(LAST_SYNC_TIME_KEY, Date.now());
+
+        if (!silent) {
+            vscode.window.showInformationMessage(
+                `DevMeter: Synced ${totalSynced} buffered heartbeat(s) to the dashboard.`
+            );
+        } else {
+            log(`Silently recovered ${totalSynced} heartbeat(s) from local fallback buffer.`);
+        }
+        updateStatusBar();
     }
 }
 
