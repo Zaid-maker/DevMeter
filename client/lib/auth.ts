@@ -32,18 +32,6 @@ export const auth = betterAuth({
                 type: "string",
                 required: false,
             },
-            discordUserId: {
-                type: "string",
-                required: false,
-            },
-            discordUsername: {
-                type: "string",
-                required: false,
-            },
-            discordLinkedAt: {
-                type: "date",
-                required: false,
-            },
             deletedAt: {
                 type: "date",
                 required: false,

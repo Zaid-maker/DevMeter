@@ -43,7 +43,6 @@ export default function PrivacyPage() {
             <ul className="list-disc space-y-2 pl-5 text-sm text-muted-foreground md:text-base">
               <li>Account details such as name, email, and authentication metadata.</li>
               <li>Coding activity data sent by the DevMeter extension, including project, language, file path metadata, editor, platform, and timestamps.</li>
-              <li>Optional integrations you choose to connect, such as Discord account linkage metadata.</li>
               <li>Technical and security logs required to keep the service stable and secure.</li>
             </ul>
           </section>

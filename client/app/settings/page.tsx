@@ -22,9 +22,7 @@ import {
     Trash2,
     Lock,
     Zap,
-    ExternalLink,
-    Link2,
-    Unlink2
+    ExternalLink
 } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -35,14 +33,6 @@ interface ApiKey {
     key: string;
     name: string;
     createdAt: string;
-}
-
-interface DiscordLinkStatus {
-    linked: boolean;
-    discordUserId: string | null;
-    discordUsername: string | null;
-    discordLinkedAt: string | null;
-    discordJoinStatus: "joined" | "failed" | "pending" | null;
 }
 
 const fetcher = (url: string) => fetch(url).then(async (res) => {
@@ -69,15 +59,10 @@ function SettingsContent() {
         session ? "/api/keys" : null,
         fetcher
     );
-    const { data: discordLink, isLoading: discordLoading } = useSWR<DiscordLinkStatus>(
-        session ? "/api/user/discord" : null,
-        fetcher
-    );
     const [generating, setGenerating] = useState(false);
     const [revokingId, setRevokingId] = useState<string | null>(null);
     const [showKeyId, setShowKeyId] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
-    const [unlinkingDiscord, setUnlinkingDiscord] = useState(false);
     const [displayName, setDisplayName] = useState("");
     const [profileSlug, setProfileSlug] = useState("");
     const [isSavingProfile, setIsSavingProfile] = useState(false);
@@ -87,56 +72,6 @@ function SettingsContent() {
         setDisplayName(session.user.name || "");
         setProfileSlug(((session.user as any).profileSlug as string | undefined) || "");
     }, [session?.user]);
-
-    useEffect(() => {
-        const status = searchParams.get("discord");
-        if (!status) return;
-
-        if (status === "linked") {
-            toast.success("Discord linked successfully", {
-                description: "Your account is now connected and eligible for role sync.",
-            });
-            mutate("/api/user/discord");
-        } else if (status === "linked_join_failed") {
-            toast.warning("Discord linked, but server join failed", {
-                description: "Your account is connected. Ask an admin to check bot token, guild ID, and bot permissions.",
-            });
-            (async () => {
-                try {
-                    await fetch("/api/user/discord", {
-                        method: "PATCH",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ joinStatus: "failed" }),
-                    });
-                } catch (error) {
-                    console.error("Failed to persist Discord join status:", error);
-                } finally {
-                    mutate("/api/user/discord");
-                }
-            })();
-        } else if (status === "already_linked") {
-            toast.error("Discord account already linked", {
-                description: "That Discord account is already linked to another DevMeter user.",
-            });
-        } else if (status === "state_error") {
-            toast.error("Link verification failed", {
-                description: "Please try linking Discord again.",
-            });
-        } else if (status === "misconfigured") {
-            toast.error("Discord linking is not configured", {
-                description: "Please ask an admin to configure Discord OAuth environment variables.",
-            });
-        } else {
-            toast.error("Failed to link Discord", {
-                description: "Please try again.",
-            });
-        }
-
-        const params = new URLSearchParams(searchParams.toString());
-        params.delete("discord");
-        const nextUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname;
-        router.replace(nextUrl, { scroll: false });
-    }, [pathname, router, searchParams]);
 
     async function generateKey() {
         setGenerating(true);
@@ -191,29 +126,6 @@ function SettingsContent() {
             });
         }
     };
-
-    function connectDiscord() {
-        window.location.href = "/api/user/discord/connect";
-    }
-
-    async function unlinkDiscord() {
-        if (!confirm("Unlink your Discord account from DevMeter?")) return;
-
-        setUnlinkingDiscord(true);
-        try {
-            const res = await fetch("/api/user/discord", { method: "DELETE" });
-            if (!res.ok) {
-                const data = await res.json().catch(() => ({}));
-                throw new Error(data.error || "Failed to unlink Discord");
-            }
-            await mutate("/api/user/discord");
-            toast.success("Discord account unlinked");
-        } catch (error) {
-            toast.error(error instanceof Error ? error.message : "Failed to unlink Discord");
-        } finally {
-            setUnlinkingDiscord(false);
-        }
-    }
 
     async function saveProfile() {
         setIsSavingProfile(true);
@@ -326,72 +238,6 @@ function SettingsContent() {
                                     </>
                                 ) : "Save Changes"}
                             </Button>
-                        </CardFooter>
-                    </Card>
-
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Discord Link</CardTitle>
-                            <CardDescription>Connect your Discord account to receive activity-based roles automatically.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {discordLoading ? (
-                                <p className="text-sm text-muted-foreground">Checking Discord link status...</p>
-                            ) : discordLink?.linked ? (
-                                <div className="space-y-3">
-                                    <div className="rounded-lg border bg-muted/30 p-4">
-                                        <p className="text-sm font-medium">Connected as {discordLink.discordUsername || "Unknown"}</p>
-                                        <p className="text-xs text-muted-foreground mt-1">Discord ID: {discordLink.discordUserId}</p>
-                                        {discordLink.discordLinkedAt ? (
-                                            <p className="text-xs text-muted-foreground mt-1">
-                                                Linked on {new Date(discordLink.discordLinkedAt).toLocaleString()}
-                                            </p>
-                                        ) : null}
-                                    </div>
-                                    {discordLink.discordJoinStatus === "failed" ? (
-                                        <div className="rounded-lg border border-amber-400/40 bg-amber-500/10 p-4">
-                                            <p className="text-sm font-medium text-amber-300">Server join needs attention</p>
-                                            <p className="text-xs text-amber-200/90 mt-1">
-                                                Discord account is linked, but auto-join to the server failed. Use Re-authenticate, then ask an admin to verify bot permissions.
-                                            </p>
-                                        </div>
-                                    ) : null}
-                                </div>
-                            ) : (
-                                <div className="rounded-lg border border-dashed p-4">
-                                    <p className="text-sm text-muted-foreground">
-                                        No Discord account linked yet. Link your account to become eligible for Discord role sync.
-                                    </p>
-                                </div>
-                            )}
-                        </CardContent>
-                        <CardFooter className="border-t px-6 py-4 flex items-center gap-2">
-                            {discordLink?.linked ? (
-                                <>
-                                    <Button variant="outline" size="sm" onClick={connectDiscord} disabled={unlinkingDiscord}>
-                                        <RefreshCw className="mr-2 h-4 w-4" />
-                                        Re-authenticate
-                                    </Button>
-                                    <Button variant="destructive" size="sm" onClick={unlinkDiscord} disabled={unlinkingDiscord}>
-                                        {unlinkingDiscord ? (
-                                            <>
-                                                <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-                                                Unlinking...
-                                            </>
-                                        ) : (
-                                            <>
-                                                <Unlink2 className="mr-2 h-4 w-4" />
-                                                Unlink Discord
-                                            </>
-                                        )}
-                                    </Button>
-                                </>
-                            ) : (
-                                <Button size="sm" onClick={connectDiscord}>
-                                    <Link2 className="mr-2 h-4 w-4" />
-                                    Link Discord
-                                </Button>
-                            )}
                         </CardFooter>
                     </Card>
 
