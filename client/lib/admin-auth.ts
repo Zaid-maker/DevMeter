@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const ADMIN_SECRET = process.env.DEV_ADMIN_SECRET;
-const DISCORD_SYNC_SECRET = process.env.DISCORD_SYNC_SECRET;
 
 /**
  * Gets the active admin secret, with fallback for development
@@ -31,30 +30,6 @@ export function validateAdminAuth(req: NextRequest): NextResponse | null {
     const activeSecret = getAdminSecret();
 
     if (secret !== activeSecret) {
-        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
-    return null;
-}
-
-/**
- * Validates Discord sync authentication from request header.
- * Uses a dedicated least-privilege secret for bot sync operations.
- * @param req - The incoming request
- * @returns Null if authenticated, NextResponse with error if not
- */
-export function validateDiscordSyncAuth(req: NextRequest): NextResponse | null {
-    const secret = req.headers.get("x-admin-secret");
-
-    if (!DISCORD_SYNC_SECRET) {
-        if (process.env.NODE_ENV !== "production") {
-            console.warn("[admin-auth] DISCORD_SYNC_SECRET not set; falling back to DEV_ADMIN_SECRET in non-production");
-            return validateAdminAuth(req);
-        }
-        return NextResponse.json({ error: "Server Misconfigured" }, { status: 500 });
-    }
-
-    if (secret !== DISCORD_SYNC_SECRET) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 

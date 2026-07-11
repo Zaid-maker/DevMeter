@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Cell } from "recharts";
-import { Activity, Clock, Code, Layout, Key, Copy, Plus, RefreshCw, Loader2, Zap, ArrowUpRight, TrendingUp, Link2 } from "lucide-react";
+import { Activity, Clock, Code, Layout, Key, Copy, Plus, RefreshCw, Loader2, Zap, ArrowUpRight, TrendingUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { authClient } from "@/lib/auth-client";
@@ -289,9 +289,6 @@ function DashboardContent() {
         return null;
     }
 
-    const discordLinked = Boolean((session.user as any).discordUserId);
-    const discordUsername = (session.user as any).discordUsername as string | undefined;
-
     const isDeleted = (session.user as any).deletedAt;
 
     if (isDeleted) {
@@ -391,27 +388,6 @@ function DashboardContent() {
                     </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 md:gap-3">
-                    {discordLinked ? (
-                        <Badge
-                            variant="secondary"
-                            className="px-3 py-1.5 border border-indigo-500/20 bg-indigo-500/10 text-indigo-400 text-[10px] md:text-xs"
-                        >
-                            <Link2 className="mr-2 h-4 w-4" />
-                            Discord Linked{discordUsername ? `: ${discordUsername}` : ""}
-                        </Badge>
-                    ) : (
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            className="rounded-lg h-9 border-indigo-500/20 hover:bg-indigo-500/10 hover:text-indigo-400 px-4"
-                            asChild
-                        >
-                            <a href="/api/user/discord/connect">
-                                <Link2 className="mr-2 h-4 w-4" />
-                                Link Discord
-                            </a>
-                        </Button>
-                    )}
                     <Badge
                         variant="secondary"
                         className={`px-3 py-1.5 border transition-all duration-500 text-[10px] md:text-xs ${stats?.summary.isLive
